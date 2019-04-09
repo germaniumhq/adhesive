@@ -1,5 +1,10 @@
+import argparse
+
+
 def main():
-    print("Hello from adhesive")
+    with open('_build.py', 'r', encoding='utf-8') as f:
+        content = f.read()
+    exec(content)
 
 
 if __name__ == '__main__':
