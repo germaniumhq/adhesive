@@ -5,6 +5,13 @@ class Edge():
     """
     An edge between two tasks in a Workflow.
     """
-    def __init__(self, condition: Optional[str]) -> None:
+    def __init__(self,
+                 _id: str,
+                 source_id: str,
+                 target_id: str,
+                 condition: Optional[str] = None) -> None:
+        self._id = _id
+        self.source_id = source_id
+        self.target_id = target_id
         self.condition = condition
 
