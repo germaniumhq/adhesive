@@ -12,4 +12,3 @@ class AdhesiveProcess:
     def __init__(self) -> None:
         self.steps: List[AdhesiveTask] = []
         self.workflow: Workflow = Workflow()
-

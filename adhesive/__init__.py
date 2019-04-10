@@ -5,6 +5,9 @@ import re
 
 from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
+from adhesive.model.WorkflowExecutor import WorkflowExecutor
+
+from adhesive.xml.bpmn import read_bpmn_file
 
 T = TypeVar('T')
 process = AdhesiveProcess()
@@ -20,4 +23,6 @@ def task(namere: str) -> Callable[..., Callable[..., T]]:
 
 def bpmn_build(file_name: str):
     """ Start a build that was described in BPMN """
-    print("build passed")
+    process.workflow = read_bpmn_file(file_name)
+    WorkflowExecutor(process).execute()
+

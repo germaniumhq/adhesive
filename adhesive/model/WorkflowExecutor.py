@@ -2,9 +2,9 @@ from typing import Set, Optional, Dict, List
 
 from adhesive.graph.Task import Task
 from adhesive.steps.AdhesiveTask import AdhesiveTask
+from adhesive.steps.WorkflowContext import WorkflowContext
 
 from .AdhesiveProcess import AdhesiveProcess
-from .WorkflowContext import WorkflowContext
 
 
 class WorkflowExecutor:
@@ -33,7 +33,11 @@ class WorkflowExecutor:
         if task_id not in tasks_impl:
             return
 
-        tasks_impl[task_id].code(WorkflowContext(self.process.workflow.tasks[task_id]))
+        task = self.process.workflow.tasks[task_id]
+        context = WorkflowContext(task)
+        params = [context]
+
+        tasks_impl[task_id].invoke(context)
 
 
     def _validate_tasks(self, tasks_impl) -> None:
@@ -58,7 +62,7 @@ class WorkflowExecutor:
 
     def _match_task(self, task: Task) -> Optional[AdhesiveTask]:
         for step in self.process.steps:
-            if step.matches(task.name):
+            if step.matches(task.name) is not None:
                 return step
 
         return None
