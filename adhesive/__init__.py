@@ -1,16 +1,20 @@
 from typing import Callable, TypeVar, List
-from adhesive.steps.AdhesiveTask import AdhesiveTask
+
 import functools
 import re
 
+from adhesive.steps.AdhesiveTask import AdhesiveTask
+from adhesive.model.AdhesiveProcess import AdhesiveProcess
+
 T = TypeVar('T')
-steps: List[AdhesiveTask] = []
+process = AdhesiveProcess()
 
 
-def task(name: str) -> Callable[..., Callable[..., T]]:
+def task(namere: str) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        steps.append(AdhesiveTask(name , f))
+        process.steps.append(AdhesiveTask(namere , f))
         return f
+
     return wrapper_builder
 
 

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Iterable, List
 
 from .Task import Task
 from .StartEvent import StartEvent
@@ -45,3 +45,13 @@ class Workflow:
 
     def add_end_event(self, event: EndEvent) -> None:
         self._end_events[event._id] = event
+
+    def get_outgoing_edges(self, task_id: str) -> Iterable[Edge]:
+        """ Get the outgoing edges. """
+        result: List[Edge] = []
+
+        for edge_id, edge in self._edges.items():
+            if edge.source_id == task_id:
+                result.append(edge)
+
+        return result

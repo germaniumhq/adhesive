@@ -1,6 +1,6 @@
 import unittest
 from adhesive.xml.bpmn import read_bpmn_file
-from adhesive.graph import Workflow
+from adhesive.graph.Workflow import Workflow
 
 
 class TestReadingBpmn(unittest.TestCase):
@@ -8,7 +8,7 @@ class TestReadingBpmn(unittest.TestCase):
     Test if we can read a BPMN file correctly.
     """
 
-    def test_reading_bpmn(self) -> Workflow:
+    def test_reading_bpmn(self) -> None:
         """
         Try to see if reading a basic BPMN works.
         """

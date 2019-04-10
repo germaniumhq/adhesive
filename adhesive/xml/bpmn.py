@@ -85,5 +85,9 @@ def normalize_name(name: str) -> str:
 
 def parse_tag(name: str) -> Tuple[str, str]:
     m = TAG_NAME.match(name)
+
+    if not m:
+        raise Exception(f"Unable to parse tag name `{name}`")
+
     return m[1], m[2]
 
