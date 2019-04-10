@@ -14,6 +14,7 @@ germaniumPyExePipeline(
             prefix: "/_gbs/lin64/",
             exe: "/src/dist/adhesive",
             dockerTag: "germaniumhq/adhesive:lin64",
+            publishPypi: "sdist",
         ]
     ]
 )
