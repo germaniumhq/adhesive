@@ -21,12 +21,12 @@ class AdhesiveTask:
         if not m:
             return None
 
-        return m.groups()
+        return list(m.groups())
 
     def invoke(self,
         context: WorkflowContext) -> None:
         step_name = context.task.name
         params = self.matches(step_name)
 
-        self.code(context, *params)
+        self.code(context, *params)  # type: ignore
 
