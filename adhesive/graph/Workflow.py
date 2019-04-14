@@ -38,15 +38,17 @@ class Workflow:
 
     def add_edge(self, edge: Edge) -> None:
         """ Add an edge into the graph. """
-        self._edges[edge._id] = edge
+        self._edges[edge.id] = edge
 
     def add_start_event(self, event: StartEvent) -> None:
-        self._start_events[event._id] = event
+        self._start_events[event.id] = event
+        self._tasks[event.id] = event
 
     def add_end_event(self, event: EndEvent) -> None:
-        self._end_events[event._id] = event
+        self._end_events[event.id] = event
+        self._tasks[event.id] = event
 
-    def get_outgoing_edges(self, task_id: str) -> Iterable[Edge]:
+    def get_outgoing_edges(self, task_id: str) -> List[Edge]:
         """ Get the outgoing edges. """
         result: List[Edge] = []
 

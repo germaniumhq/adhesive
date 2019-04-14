@@ -10,7 +10,6 @@ class TestWorkflowExecutor(unittest.TestCase):
     """
     Test if the workflow executor can execute simple workflows.
     """
-
     def test_simple_execution(self):
         """
         Load a simple workflow and execute it.
@@ -26,10 +25,13 @@ class TestWorkflowExecutor(unittest.TestCase):
 
         WorkflowExecutor(adhesive.process).execute()
         self.assertEqual(executed_steps, [
+            "Start Event",
             "Ensure Docker Tooling",
             "Build Germanium Image",
-            "Test Firefox",
             "Test Chrome",
+            "End Event",
+            "Test Firefox",
+            "End Event",
         ])
 
 

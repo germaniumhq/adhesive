@@ -1,11 +1,11 @@
+from .Task import Task
 
-class EndEvent:
+class EndEvent(Task):
     """
     EndEvent
     """
     def __init__(self,
                  _id: str,
                  name: str) -> None:
-        self._id = _id
-        self.name = name
+        super().__init__(_id, name)
 

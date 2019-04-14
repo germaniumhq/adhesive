@@ -8,3 +8,5 @@ class WorkflowContext:
     def __init__(self, task: Task) -> None:
         self.task = task
 
+    def clone(self, task: Task) -> 'WorkflowContext':
+        return WorkflowContext(task)

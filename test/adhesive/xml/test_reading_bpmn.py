@@ -14,7 +14,7 @@ class TestReadingBpmn(unittest.TestCase):
         """
         workflow = read_bpmn_file("test/adhesive/xml/adhesive.bpmn")
 
-        self.assertEqual(4, len(workflow.tasks))
+        self.assertEqual(6, len(workflow.tasks))
         self.assertEqual(6, len(workflow.edges))
         self.assertEqual(1, len(workflow.start_events))
         self.assertEqual(1, len(workflow.end_events))

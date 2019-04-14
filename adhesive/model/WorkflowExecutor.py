@@ -5,6 +5,7 @@ from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.steps.WorkflowContext import WorkflowContext
 
 from .AdhesiveProcess import AdhesiveProcess
+from .ActiveEvent import ActiveEvent
 
 
 class WorkflowExecutor:
@@ -16,28 +17,38 @@ class WorkflowExecutor:
         self.process = process
 
     def execute(self) -> None:
+        """
+        Execute the current events. This will ensure new events are
+        generating for forked events.
+        """
         tasks_impl: Dict[str, AdhesiveTask] = dict()
         self._validate_tasks(tasks_impl)
 
         workflow = self.process.workflow
-        active_events: List[str] = [ _id for _id in workflow.start_events.keys() ]
+        active_events: List[ActiveEvent] = [ ActiveEvent(ev) for ev in workflow.start_events.values() ]
 
         while active_events:
-            event_id = active_events.pop()
-            self.process_event(tasks_impl, event_id)
+            event = active_events.pop()
+            self.process_event(tasks_impl, event)
 
-            for outgoing_edge in workflow.get_outgoing_edges(event_id):
-                active_events.append(outgoing_edge.target_id)
+            outgoing_edges = workflow.get_outgoing_edges(event.task.id)
 
-    def process_event(self, tasks_impl: Dict[str, AdhesiveTask], task_id: str) -> None:
-        if task_id not in tasks_impl:
+            if len(outgoing_edges) == 0:
+                continue
+
+            event.task = workflow.tasks[outgoing_edges.pop().target_id]
+            active_events.append(event)
+
+            for outgoing_edge in outgoing_edges:
+                task = workflow.tasks[outgoing_edge.target_id]
+                active_events.append(event.clone(task))
+
+    def process_event(self, tasks_impl: Dict[str, AdhesiveTask], event: ActiveEvent) -> None:
+        if event.task.id not in tasks_impl:
             return
 
-        task = self.process.workflow.tasks[task_id]
-        context = WorkflowContext(task)
-        params = [context]
-
-        tasks_impl[task_id].invoke(context)
+        task = self.process.workflow.tasks[event.task.id]
+        tasks_impl[event.task.id].invoke(event.context)
 
 
     def _validate_tasks(self, tasks_impl) -> None:

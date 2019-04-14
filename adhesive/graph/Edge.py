@@ -10,7 +10,7 @@ class Edge():
                  source_id: str,
                  target_id: str,
                  condition: Optional[str] = None) -> None:
-        self._id = _id
+        self.id = _id
         self.source_id = source_id
         self.target_id = target_id
         self.condition = condition
