@@ -1,5 +1,7 @@
 from typing import Set, Optional, Dict, List
 
+from adhesive.graph.EndEvent import EndEvent
+from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
 from adhesive.graph.Workflow import Workflow
@@ -75,6 +77,9 @@ class WorkflowExecutor:
         for task_id, task in workflow.tasks.items():
             if isinstance(task, SubProcess):
                 self._validate_tasks(task, tasks_impl)
+                continue
+
+            if isinstance(task, StartEvent) or isinstance(task, EndEvent):
                 continue
 
             adhesive_step = self._match_task(task)
