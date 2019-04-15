@@ -6,11 +6,15 @@ from .EndEvent import EndEvent
 from .Edge import Edge
 
 
-class Workflow:
+class Workflow(Task):
     """
     A workflow for the build
     """
-    def __init__(self) -> None:
+    def __init__(self,
+                 id: str,
+                 name: str = '[root process]') -> None:
+        super(Workflow, self).__init__(id, name)
+
         self._start_events: Dict[str, StartEvent] = dict()
         self._tasks: Dict[str, Task] = dict()
         self._edges: Dict[str, Edge] = dict()
@@ -57,3 +61,10 @@ class Workflow:
                 result.append(edge)
 
         return result
+
+    def has_incoming_edges(self, task: Task) -> bool:
+        for edge_id, edge in self._edges.items():
+            if edge.target_id == task.id:
+                return True
+
+        return False

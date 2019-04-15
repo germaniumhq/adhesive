@@ -3,6 +3,7 @@ from typing import Tuple
 from xml.etree import ElementTree
 import re
 
+from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Workflow import Workflow
 from adhesive.graph.Task import Task
 from adhesive.graph.Edge import Edge
@@ -15,15 +16,10 @@ SPACE = re.compile(r"\s+", re.IGNORECASE)
 
 def read_bpmn_file(file_name: str) -> Workflow:
     """ Read a BPMN file as a build workflow. """
-    result = Workflow()
-
     root_node = ElementTree.parse(file_name).getroot()
     process = find_node(root_node, 'process')
 
-    for node in process.getchildren():
-        process_node(result, node)
-
-    return result
+    return read_process(process)
 
 
 def find_node(parent_node, name: str):
@@ -33,6 +29,27 @@ def find_node(parent_node, name: str):
             return node
 
     return None
+
+
+def read_process(process) -> Workflow:
+    node_ns, node_name = parse_tag(process.tag)
+
+    if "process" == node_name:
+        result = Workflow(process.get('id'))
+    elif "subProcess" == node_name:
+        result = SubProcess(process.get('id'), normalize_name(process.get('name')))
+    else:
+        raise Exception(f"Unknown process node: {process.tag}")
+
+    for node in process.getchildren():
+        process_node(result, node)
+
+    if not result.start_events:
+        for task_id, task in result.tasks.items():
+            if not result.has_incoming_edges(task):
+                result.start_events[task.id] = task
+
+    return result
 
 
 def process_node(result: Workflow,
@@ -47,6 +64,8 @@ def process_node(result: Workflow,
         process_node_start_event(result, node)
     elif "endEvent" == node_name:
         process_node_end_event(result, node)
+    elif "subProcess" == node_name:
+        process_node_sub_process(result, node)
     else:
         print(f"{node_name} node ignored")
 
@@ -70,6 +89,11 @@ def process_node_end_event(w: Workflow, xml_node) -> None:
     node_name = normalize_name(xml_node.get("name"))
     task = EndEvent(xml_node.get("id"), node_name)
     w.add_end_event(task)
+
+
+def process_node_sub_process(w: Workflow, xml_node) -> None:
+    task = read_process(xml_node)
+    w.add_task(task)
 
 
 def process_node_sequence_flow(w: Workflow, xml_node) -> None:

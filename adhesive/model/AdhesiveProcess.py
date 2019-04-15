@@ -9,6 +9,6 @@ class AdhesiveProcess:
     An Adhesive process. Holds the linkage between
     the graph, and the steps.
     """
-    def __init__(self) -> None:
+    def __init__(self, id: str) -> None:
         self.steps: List[AdhesiveTask] = []
-        self.workflow: Workflow = Workflow()
+        self.workflow: Workflow = Workflow(id)
