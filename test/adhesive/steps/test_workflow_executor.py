@@ -16,7 +16,7 @@ class TestWorkflowExecutor(unittest.TestCase):
         """
         Load a simple workflow and execute it.
         """
-        adhesive.process = AdhesiveProcess()
+        adhesive.process = AdhesiveProcess("x")
         executed_steps: List[str] = []
 
         @adhesive.task('.*')
@@ -34,6 +34,30 @@ class TestWorkflowExecutor(unittest.TestCase):
             "End Event",
             "Test Firefox",
             "End Event",
+        ])
+
+    def test_sub_process_execution(self):
+        """
+        Load a workflow that contains a sub process and execute it.
+        """
+        adhesive.process = AdhesiveProcess("x")
+        executed_steps: List[str] = []
+
+        @adhesive.task('.*')
+        def task_impl(context) -> None:
+            executed_steps.append(context.task.name)
+
+        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive_subprocess.bpmn")
+
+        WorkflowExecutor(adhesive.process).execute()
+        self.assertEqual(executed_steps, [
+            'Start Event',
+            'Ensure Docker Tooling',
+            'Build Germanium Image',
+            'Prepare Firefox',
+            'Test Firefox',
+            'Test Chrome',
+            'End Event'
         ])
 
 

@@ -1,6 +1,8 @@
 from typing import Set, Optional, Dict, List
 
+from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
+from adhesive.graph.Workflow import Workflow
 from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.steps.WorkflowContext import WorkflowContext
 
@@ -22,14 +24,20 @@ class WorkflowExecutor:
         generating for forked events.
         """
         tasks_impl: Dict[str, AdhesiveTask] = dict()
-        self._validate_tasks(tasks_impl)
-
         workflow = self.process.workflow
-        active_events: List[ActiveEvent] = [ ActiveEvent(ev) for ev in workflow.start_events.values() ]
 
+        self._validate_tasks(workflow, tasks_impl)
+        self.execute_workflow(workflow,
+                              tasks_impl,
+                              [ActiveEvent(ev) for ev in workflow.start_events.values()])
+
+    def execute_workflow(self,
+                         workflow: Workflow,
+                         tasks_impl: Dict[str, AdhesiveTask],
+                         active_events: List[ActiveEvent]) -> None:
         while active_events:
             event = active_events.pop()
-            self.process_event(tasks_impl, event)
+            self.process_event(workflow, tasks_impl, event)
 
             outgoing_edges = workflow.get_outgoing_edges(event.task.id)
 
@@ -43,18 +51,32 @@ class WorkflowExecutor:
                 task = workflow.tasks[outgoing_edge.target_id]
                 active_events.append(event.clone(task))
 
-    def process_event(self, tasks_impl: Dict[str, AdhesiveTask], event: ActiveEvent) -> None:
+    def process_event(self,
+                      workflow: Workflow,
+                      tasks_impl: Dict[str, AdhesiveTask],
+                      event: ActiveEvent) -> None:
+        task = workflow.tasks[event.task.id]
+
+        if isinstance(task, SubProcess):
+            return self.execute_workflow(task, tasks_impl, [
+                event.clone(start_event) for start_event in task.start_events.values()
+            ])
+
         if event.task.id not in tasks_impl:
             return
 
-        task = self.process.workflow.tasks[event.task.id]
         tasks_impl[event.task.id].invoke(event.context)
 
-
-    def _validate_tasks(self, tasks_impl) -> None:
+    def _validate_tasks(self,
+                        workflow: Workflow,
+                        tasks_impl: Dict[str, AdhesiveTask]) -> None:
         unmatched_tasks: Set[Task] = set()
 
-        for task_id, task in self.process.workflow.tasks.items():
+        for task_id, task in workflow.tasks.items():
+            if isinstance(task, SubProcess):
+                self._validate_tasks(task, tasks_impl)
+                continue
+
             adhesive_step = self._match_task(task)
 
             tasks_impl[task_id] = adhesive_step
