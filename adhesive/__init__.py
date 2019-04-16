@@ -1,7 +1,6 @@
-from typing import Callable, TypeVar, List
+from typing import Callable, TypeVar
 
-import functools
-import re
+import asyncio
 
 from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
@@ -24,4 +23,4 @@ def task(namere: str) -> Callable[..., Callable[..., T]]:
 def bpmn_build(file_name: str):
     """ Start a build that was described in BPMN """
     process.workflow = read_bpmn_file(file_name)
-    WorkflowExecutor(process).execute()
+    return WorkflowExecutor(process).execute()

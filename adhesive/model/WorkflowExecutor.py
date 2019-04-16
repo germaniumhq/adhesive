@@ -1,5 +1,7 @@
 from typing import Set, Optional, Dict, List, TypeVar, cast
 
+from adhesive.steps.WorkflowData import WorkflowData
+
 T = TypeVar('T')
 
 import concurrent.futures
@@ -26,14 +28,14 @@ class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
     """
-    pool = concurrent.futures.ThreadPoolExecutor()
+    pool = concurrent.futures.ProcessPoolExecutor()
 
     def __init__(self,
                  process: AdhesiveProcess) -> None:
         self.process = process
         self.active_futures = set()
 
-    def execute(self) -> None:
+    def execute(self) -> WorkflowData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
@@ -42,14 +44,15 @@ class WorkflowExecutor:
         workflow = self.process.workflow
 
         self._validate_tasks(workflow, tasks_impl)
-        self.execute_workflow(workflow,
-                              tasks_impl,
-                              [ActiveEvent(ev) for ev in workflow.start_events.values()])
+        return self.execute_workflow(
+            workflow,
+            tasks_impl,
+            [ActiveEvent(ev) for ev in workflow.start_events.values()])
 
     def execute_workflow(self,
                          workflow: Workflow,
                          tasks_impl: Dict[str, AdhesiveTask],
-                         active_events: List[ActiveEvent]) -> None:
+                         active_events: List[ActiveEvent]) -> WorkflowData:
         """
         Process the events in a workflow until no more events are available.
         :param workflow:
@@ -57,6 +60,8 @@ class WorkflowExecutor:
         :param active_events:
         :return:
         """
+        processed_data = []
+
         while active_events:
             event = active_events.pop()
             self.process_event(workflow, tasks_impl, event)
@@ -66,15 +71,28 @@ class WorkflowExecutor:
 
             for future in done_futures:
                 processed_event = future.result()
-                self.process_event_result(workflow, active_events, processed_event)
+                self.process_event_result(
+                    workflow,
+                    active_events,
+                    processed_data,
+                    processed_event)
 
             self.active_futures -= done_futures
 
-    def process_event_result(self, workflow, active_events, processed_event):
+        return WorkflowData.merge(*processed_data)
+
+    def process_event_result(self,
+                             workflow: Workflow,
+                             active_events: List[ActiveEvent],
+                             finished_events: List[WorkflowData],
+                             processed_event: ActiveEvent) -> None:
         """
         When one of the futures returns, we traverse the graph further.
         """
         outgoing_edges = workflow.get_outgoing_edges(processed_event.task.id)
+
+        if not outgoing_edges:
+            finished_events.append(processed_event.context.data)
 
         for outgoing_edge in outgoing_edges:
             task = workflow.tasks[outgoing_edge.target_id]

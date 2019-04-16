@@ -31,4 +31,3 @@ class AdhesiveTask:
         self.code(event.context, *params)  # type: ignore
 
         return event
-
