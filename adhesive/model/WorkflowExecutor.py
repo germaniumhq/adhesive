@@ -63,8 +63,9 @@ class WorkflowExecutor:
         processed_data = []
 
         while active_events:
-            event = active_events.pop()
-            self.process_event(workflow, tasks_impl, event)
+            while active_events:
+                event = active_events.pop()
+                self.process_event(workflow, tasks_impl, event)
 
             done_futures, not_done_futures = concurrent.futures.wait(self.active_futures,
                                                                      return_when=concurrent.futures.FIRST_COMPLETED)
@@ -118,9 +119,11 @@ class WorkflowExecutor:
             return
 
         if isinstance(task, SubProcess):
-            self.execute_workflow(task, tasks_impl, [
+            new_data = self.execute_workflow(task, tasks_impl, [
                 event.clone(start_event) for start_event in task.start_events.values()
             ])
+            event.context.data = new_data
+            self.active_futures.add(resolved_future(event))
             return
 
         if event.task.id not in tasks_impl:

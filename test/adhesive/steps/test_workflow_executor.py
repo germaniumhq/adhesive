@@ -2,7 +2,6 @@ import unittest
 
 import adhesive
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
-from adhesive.steps.WorkflowData import WorkflowData
 from adhesive.xml.bpmn import read_bpmn_file
 
 
@@ -33,23 +32,21 @@ class TestWorkflowExecutor(unittest.TestCase):
             "Test Firefox",
         })
 
-    # def test_sub_process_execution(self):
-    #     """
-    #     Load a workflow that contains a sub process and execute it.
-    #     """
-    #     adhesive.process = AdhesiveProcess("x")
-    #     executed_steps: Set[str] = set()
-    #
-    #     adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive_subprocess.bpmn")
-    #
-    #     WorkflowExecutor(adhesive.process).execute()
-    #     self.assertEqual(executed_steps, {
-    #         'Ensure Docker Tooling',
-    #         'Build Germanium Image',
-    #         'Prepare Firefox',
-    #         'Test Firefox',
-    #         'Test Chrome',
-    #     })
+    def test_sub_process_execution(self):
+        """
+        Load a workflow that contains a sub process and execute it.
+        """
+        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive_subprocess.bpmn")
+
+        data = WorkflowExecutor(adhesive.process).execute()
+
+        self.assertEqual(data.steps, {
+            'Ensure Docker Tooling',
+            'Build Germanium Image',
+            'Prepare Firefox',
+            'Test Firefox',
+            'Test Chrome',
+        })
 
 
 if __name__ == '__main__':

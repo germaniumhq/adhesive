@@ -1,20 +1,18 @@
 import time
 import unittest
-from typing import Set, List
 
 import adhesive
-from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
 
 
-@adhesive.task('^Parallel .*$')
+@adhesive.task(r'^Parallel \d+$')
 def task_impl(context) -> None:
     time.sleep(1)
     if not context.data.steps:
-        context.data.steps = []
+        context.data.steps = set()
 
-    context.data.steps.append(context.task.name)
+    context.data.steps.add(context.task.name)
 
 
 class TestWorkflowExecutor(unittest.TestCase):
@@ -23,9 +21,6 @@ class TestWorkflowExecutor(unittest.TestCase):
         Load a bunch of tasks in parallel.
         :return:
         """
-        adhesive.process = AdhesiveProcess("x")
-        executed_steps: Set[str] = set()
-
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
