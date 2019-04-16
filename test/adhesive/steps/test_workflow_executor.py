@@ -1,4 +1,4 @@
-from typing import List
+from typing import Set
 
 import unittest
 import adhesive
@@ -17,48 +17,43 @@ class TestWorkflowExecutor(unittest.TestCase):
         Load a simple workflow and execute it.
         """
         adhesive.process = AdhesiveProcess("x")
-        executed_steps: List[str] = []
+        executed_steps: Set[str] = set()
 
         @adhesive.task('.*')
         def task_impl(context) -> None:
-            executed_steps.append(context.task.name)
+            executed_steps.add(context.task.name)
 
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive.bpmn")
 
         WorkflowExecutor(adhesive.process).execute()
-        self.assertEqual(executed_steps, [
-            "Start Event",
+        self.assertEqual(executed_steps, {
             "Ensure Docker Tooling",
             "Build Germanium Image",
             "Test Chrome",
-            "End Event",
             "Test Firefox",
-            "End Event",
-        ])
+        })
 
     def test_sub_process_execution(self):
         """
         Load a workflow that contains a sub process and execute it.
         """
         adhesive.process = AdhesiveProcess("x")
-        executed_steps: List[str] = []
+        executed_steps: Set[str] = set()
 
         @adhesive.task('.*')
         def task_impl(context) -> None:
-            executed_steps.append(context.task.name)
+            executed_steps.add(context.task.name)
 
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive_subprocess.bpmn")
 
         WorkflowExecutor(adhesive.process).execute()
-        self.assertEqual(executed_steps, [
-            'Start Event',
+        self.assertEqual(executed_steps, {
             'Ensure Docker Tooling',
             'Build Germanium Image',
             'Prepare Firefox',
             'Test Firefox',
             'Test Chrome',
-            'End Event'
-        ])
+        })
 
 
 if __name__ == '__main__':

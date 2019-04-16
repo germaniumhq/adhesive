@@ -1,6 +1,7 @@
 from typing import Callable, Optional, List
 import re
 
+from adhesive.model.ActiveEvent import ActiveEvent
 from .WorkflowContext import WorkflowContext
 
 
@@ -23,10 +24,11 @@ class AdhesiveTask:
 
         return list(m.groups())
 
-    def invoke(self,
-        context: WorkflowContext) -> None:
-        step_name = context.task.name
+    def invoke(self, event: ActiveEvent) -> ActiveEvent:
+        step_name = event.context.task.name
         params = self.matches(step_name)
 
-        self.code(context, *params)  # type: ignore
+        self.code(event.context, *params)  # type: ignore
+
+        return event
 

@@ -1,4 +1,9 @@
-from typing import Set, Optional, Dict, List
+from typing import Set, Optional, Dict, List, TypeVar, cast
+
+T = TypeVar('T')
+
+import concurrent.futures
+from concurrent.futures import Future
 
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.StartEvent import StartEvent
@@ -6,19 +11,27 @@ from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
 from adhesive.graph.Workflow import Workflow
 from adhesive.steps.AdhesiveTask import AdhesiveTask
-from adhesive.steps.WorkflowContext import WorkflowContext
-
-from .AdhesiveProcess import AdhesiveProcess
 from .ActiveEvent import ActiveEvent
+from .AdhesiveProcess import AdhesiveProcess
+
+
+def resolved_future(item: T) -> Future:
+    result = Future()
+    result.set_result(item)
+
+    return result
 
 
 class WorkflowExecutor:
     """
-    An executorof AdhesiveProcesses.
+    An executor of AdhesiveProcesses.
     """
+    pool = concurrent.futures.ThreadPoolExecutor()
+
     def __init__(self,
                  process: AdhesiveProcess) -> None:
         self.process = process
+        self.active_futures = set()
 
     def execute(self) -> None:
         """
@@ -37,37 +50,67 @@ class WorkflowExecutor:
                          workflow: Workflow,
                          tasks_impl: Dict[str, AdhesiveTask],
                          active_events: List[ActiveEvent]) -> None:
+        """
+        Process the events in a workflow until no more events are available.
+        :param workflow:
+        :param tasks_impl:
+        :param active_events:
+        :return:
+        """
         while active_events:
             event = active_events.pop()
             self.process_event(workflow, tasks_impl, event)
 
-            outgoing_edges = workflow.get_outgoing_edges(event.task.id)
+            done_futures, not_done_futures = concurrent.futures.wait(self.active_futures,
+                                                                     return_when=concurrent.futures.FIRST_COMPLETED)
 
-            if len(outgoing_edges) == 0:
-                continue
+            for future in done_futures:
+                processed_event = future.result()
+                self.process_event_result(workflow, active_events, processed_event)
 
-            event.task = workflow.tasks[outgoing_edges.pop().target_id]
-            active_events.append(event)
+            self.active_futures -= done_futures
 
-            for outgoing_edge in outgoing_edges:
-                task = workflow.tasks[outgoing_edge.target_id]
-                active_events.append(event.clone(task))
+    def process_event_result(self, workflow, active_events, processed_event):
+        """
+        When one of the futures returns, we traverse the graph further.
+        """
+        outgoing_edges = workflow.get_outgoing_edges(processed_event.task.id)
+
+        for outgoing_edge in outgoing_edges:
+            task = workflow.tasks[outgoing_edge.target_id]
+            active_events.append(processed_event.clone(task))
 
     def process_event(self,
                       workflow: Workflow,
                       tasks_impl: Dict[str, AdhesiveTask],
                       event: ActiveEvent) -> None:
+        """
+        Process a single event transition in the workflow. This will use a multiprocess
+        pool.
+        :param workflow:
+        :param tasks_impl:
+        :param event:
+        :return:
+        """
         task = workflow.tasks[event.task.id]
 
-        if isinstance(task, SubProcess):
-            return self.execute_workflow(task, tasks_impl, [
-                event.clone(start_event) for start_event in task.start_events.values()
-            ])
-
-        if event.task.id not in tasks_impl:
+        # nothing to do on events
+        if isinstance(task, StartEvent) or isinstance(task, EndEvent):
+            self.active_futures.add(resolved_future(event))
             return
 
-        tasks_impl[event.task.id].invoke(event.context)
+        if isinstance(task, SubProcess):
+            self.execute_workflow(task, tasks_impl, [
+                event.clone(start_event) for start_event in task.start_events.values()
+            ])
+            return
+
+        if event.task.id not in tasks_impl:
+            self.active_futures.add(resolved_future(event))
+            return
+
+        f = WorkflowExecutor.pool.submit(tasks_impl[event.task.id].invoke, event)
+        self.active_futures.add(f)
 
     def _validate_tasks(self,
                         workflow: Workflow,
@@ -104,4 +147,3 @@ class WorkflowExecutor:
                 return step
 
         return None
-
