@@ -1,16 +1,9 @@
 import unittest
 
-import adhesive
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
 
-
-@adhesive.task('.*')
-def task_impl(context) -> None:
-    if not context.data.steps:
-        context.data.steps = set()
-
-    context.data.steps.add(context.task.name)
+from .test_tasks import adhesive
 
 
 class TestWorkflowExecutor(unittest.TestCase):

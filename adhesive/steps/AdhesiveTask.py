@@ -10,19 +10,26 @@ class AdhesiveTask:
     A task implementation.
     """
     def __init__(self,
-                 expression: str,
-                 code: Callable) -> None:
-        self.re_expression = re.compile(expression)
+                 code: Callable,
+                 *expressions: str) -> None:
+        self.re_expressions = list(map(re.compile, expressions))
         self.code = code
-        pass
 
     def matches(self, name: str) -> Optional[List[str]]:
-        m = self.re_expression.match(name)
+        """
+        Checks if this implementation matches any of the expressions
+        bounded to this task. If yes, it returns the potential variables
+        extracted from the expression.
+        :param name:
+        :return:
+        """
+        for re_expression in self.re_expressions:
+            m = re_expression.match(name)
 
-        if not m:
-            return None
+            if m:
+                return list(m.groups())
 
-        return list(m.groups())
+        return None
 
     def invoke(self, event: ActiveEvent) -> ActiveEvent:
         step_name = event.context.task.name

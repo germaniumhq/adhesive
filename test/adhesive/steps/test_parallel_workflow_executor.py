@@ -1,18 +1,11 @@
+import concurrent
 import time
 import unittest
 
-import adhesive
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
 
-
-@adhesive.task(r'^Parallel \d+$')
-def task_impl(context) -> None:
-    time.sleep(1)
-    if not context.data.steps:
-        context.data.steps = set()
-
-    context.data.steps.add(context.task.name)
+from .test_tasks import adhesive
 
 
 class TestWorkflowExecutor(unittest.TestCase):
@@ -21,6 +14,7 @@ class TestWorkflowExecutor(unittest.TestCase):
         Load a bunch of tasks in parallel.
         :return:
         """
+        WorkflowExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
@@ -28,8 +22,11 @@ class TestWorkflowExecutor(unittest.TestCase):
         end_time = time.time() * 1000.0
 
         # the whole thing should be faster than 2 secs
-        self.assertTrue(end_time - start_time < 2000)
-        self.assertTrue(end_time - start_time >= 1000)
+        total_time = end_time - start_time
+        self.assertTrue(total_time < 2000,
+                        f"Total time ({total_time}) should be less than 2000ms.")
+        self.assertTrue(total_time >= 1000,
+                        f"Total time ({total_time}) should be more than 1000ms.")
 
 
 if __name__ == '__main__':

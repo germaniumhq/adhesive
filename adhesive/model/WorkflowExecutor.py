@@ -62,7 +62,7 @@ class WorkflowExecutor:
         """
         processed_data = []
 
-        while active_events:
+        while active_events or self.active_futures:
             while active_events:
                 event = active_events.pop()
                 self.process_event(workflow, tasks_impl, event)
