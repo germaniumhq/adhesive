@@ -44,10 +44,10 @@ def read_process(process) -> Workflow:
     for node in process.getchildren():
         process_node(result, node)
 
-    if not result.start_events:
+    if not result.start_tasks:
         for task_id, task in result.tasks.items():
             if not result.has_incoming_edges(task):
-                result.start_events[task.id] = task
+                result.start_tasks[task.id] = task
 
     return result
 

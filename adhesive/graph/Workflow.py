@@ -21,7 +21,7 @@ class Workflow(Task):
         self._end_events: Dict[str, EndEvent] = dict()
 
     @property
-    def start_events(self) -> Dict[str, StartEvent]:
+    def start_tasks(self) -> Dict[str, StartEvent]:
         return self._start_events
 
     @property
