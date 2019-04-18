@@ -38,36 +38,37 @@ class WorkflowExecutor:
                  process: AdhesiveProcess) -> None:
         self.process = process
         self.active_futures = set()
+        self.pending_events: List[ActiveEvent] = []
 
     def execute(self) -> WorkflowData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
         """
-        tasks_impl: Dict[str, AdhesiveTask] = dict()
         workflow = self.process.workflow
-
-        root_event = self.register_event(ActiveEvent(None, workflow))
+        tasks_impl: Dict[str, AdhesiveTask] = dict()
 
         self._validate_tasks(workflow, tasks_impl)
-        self.execute_workflow(
-            tasks_impl,
-            [self.register_event(ActiveEvent(root_event.id, task)) for task in workflow.start_tasks.values()])
+
+        root_event = self.register_event(ActiveEvent(None, workflow))
+        self.pending_events = [self.register_event(ActiveEvent(root_event.id, task))
+                               for task in workflow.start_tasks.values()]
+
+        self.execute_workflow(tasks_impl)
 
         return root_event.context.data
 
     def execute_workflow(self,
-                         tasks_impl: Dict[str, AdhesiveTask],
-                         pending_events: List[ActiveEvent]) -> None:
+                         tasks_impl: Dict[str, AdhesiveTask]) -> None:
         """
         Process the events in a workflow until no more events are available.
         :param tasks_impl:
         :param pending_events:
         :return:
         """
-        while pending_events or self.active_futures:
-            while pending_events:
-                event = pending_events.pop()
+        while self.pending_events or self.active_futures:
+            while self.pending_events:
+                event = self.pending_events.pop()
                 self.process_event(tasks_impl, event)
 
             done_futures, not_done_futures = concurrent.futures.wait(self.active_futures,
@@ -76,16 +77,13 @@ class WorkflowExecutor:
 
             for future in done_futures:
                 processed_event = future.result()
-                self.process_event_result(
-                    pending_events,
-                    processed_event)
+                self.process_event_result(processed_event)
 
             self.active_futures -= done_futures
 
         return
 
     def process_event_result(self,
-                             active_events: List[ActiveEvent],
                              processed_event: ActiveEvent) -> None:
         """
         When one of the futures returns, we traverse the graph further.
@@ -105,7 +103,7 @@ class WorkflowExecutor:
         for outgoing_edge in outgoing_edges:
             task = workflow.tasks[outgoing_edge.target_id]
             parent = self.get_parent(processed_event.id)
-            active_events.append(self.register_event(processed_event.clone(task, parent)))
+            self.pending_events.append(self.register_event(processed_event.clone(task, parent)))
 
     def process_event(self,
                       tasks_impl: Dict[str, AdhesiveTask],
