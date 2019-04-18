@@ -18,12 +18,12 @@ class TestWorkflowExecutor(unittest.TestCase):
 
         data = WorkflowExecutor(adhesive.process).execute()
 
-        self.assertEqual(data.steps, {
+        self.assertEqual({
             "Ensure Docker Tooling",
             "Build Germanium Image",
             "Test Chrome",
             "Test Firefox",
-        })
+        }, data.steps)
 
     def test_sub_process_execution(self):
         """
@@ -33,13 +33,13 @@ class TestWorkflowExecutor(unittest.TestCase):
 
         data = WorkflowExecutor(adhesive.process).execute()
 
-        self.assertEqual(data.steps, {
+        self.assertEqual({
             'Ensure Docker Tooling',
             'Build Germanium Image',
             'Prepare Firefox',
             'Test Firefox',
             'Test Chrome',
-        })
+        }, data.steps)
 
 
 if __name__ == '__main__':

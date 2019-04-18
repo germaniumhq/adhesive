@@ -22,6 +22,15 @@ class ActiveEvent:
         self.context = WorkflowContext(task)
 
         self.active_children: Set[str] = set()
+        self.future = None
+
+    def __getstate__(self):
+        return {
+            "id": self.id,
+            "parent_id": self.parent_id,
+            "_task": self._task,
+            "context": self.context
+        }
 
     def clone(self,
               task: Task,
@@ -44,6 +53,9 @@ class ActiveEvent:
             self.context.data,
             child.context.data
         )
+
+        if not self.active_children and self.future:
+            self.future.set_result(self)
 
     @property
     def task(self) -> Task:

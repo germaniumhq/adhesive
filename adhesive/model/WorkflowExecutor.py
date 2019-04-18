@@ -51,24 +51,16 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow, tasks_impl)
         self.execute_workflow(
-            workflow,
             tasks_impl,
             [self.register_event(ActiveEvent(root_event.id, task)) for task in workflow.start_tasks.values()])
 
         return root_event.context.data
 
-    def register_event(self,
-                       event: ActiveEvent) -> ActiveEvent:
-        global_events[event.id] = event
-        return event
-
     def execute_workflow(self,
-                         workflow: Workflow,
                          tasks_impl: Dict[str, AdhesiveTask],
                          pending_events: List[ActiveEvent]) -> None:
         """
         Process the events in a workflow until no more events are available.
-        :param workflow:
         :param tasks_impl:
         :param pending_events:
         :return:
@@ -76,15 +68,15 @@ class WorkflowExecutor:
         while pending_events or self.active_futures:
             while pending_events:
                 event = pending_events.pop()
-                self.process_event(workflow, tasks_impl, event)
+                self.process_event(tasks_impl, event)
 
             done_futures, not_done_futures = concurrent.futures.wait(self.active_futures,
-                                                                     return_when=concurrent.futures.FIRST_COMPLETED)
+                                                                     return_when=concurrent.futures.FIRST_COMPLETED,
+                                                                     timeout=5)
 
             for future in done_futures:
                 processed_event = future.result()
                 self.process_event_result(
-                    workflow,
                     pending_events,
                     processed_event)
 
@@ -93,19 +85,22 @@ class WorkflowExecutor:
         return
 
     def process_event_result(self,
-                             workflow: Workflow,
                              active_events: List[ActiveEvent],
                              processed_event: ActiveEvent) -> None:
         """
         When one of the futures returns, we traverse the graph further.
         """
+        workflow = self.get_parent(processed_event.id).task
         outgoing_edges = workflow.get_outgoing_edges(processed_event.task.id)
 
         # If there are no more outgoing edges, the current event is
         # done. We merge its data into the parent event.
+        parent_event = self.get_parent(processed_event.id)
+
         if not outgoing_edges:
-            parent_event = self.get_parent(processed_event.id)
             parent_event.close_child(processed_event)
+        elif processed_event.id in parent_event.active_children:
+            parent_event.active_children.remove(processed_event.id)
 
         for outgoing_edge in outgoing_edges:
             task = workflow.tasks[outgoing_edge.target_id]
@@ -113,17 +108,16 @@ class WorkflowExecutor:
             active_events.append(self.register_event(processed_event.clone(task, parent)))
 
     def process_event(self,
-                      workflow: Workflow,
                       tasks_impl: Dict[str, AdhesiveTask],
                       event: ActiveEvent) -> None:
         """
         Process a single event transition in the workflow. This will use a multiprocess
         pool.
-        :param workflow:
         :param tasks_impl:
         :param event:
         :return:
         """
+        workflow = self.get_parent(event.id).task
         task = workflow.tasks[event.task.id]
 
         # nothing to do on events
@@ -136,19 +130,43 @@ class WorkflowExecutor:
         if isinstance(task, SubProcess):
             for start_task in task.start_tasks.values():
                 start_event = self.register_event(event.clone(start_task, event))
-                self.process_event(task, tasks_impl, start_event)
+                self.process_event(tasks_impl, start_event)
+
+            event.future = Future()
+            self.active_futures.add(event.future)
             return
 
+        # if this is an unknown type of task, we're just jumping over it in the
+        # graph.
         if event.task.id not in tasks_impl:
             self.active_futures.add(resolved_future(event))
             return
 
-        # this submits a new task to the pool.
+        # we submit the user task to the parallel pool, and feed the future
+        # into the active futures that are still to be waited.
         f = WorkflowExecutor.pool.submit(tasks_impl[event.task.id].invoke, event)
         self.active_futures.add(f)
 
+    def register_event(self,
+                       event: ActiveEvent) -> ActiveEvent:
+        """
+        Register the event into a big map for finding, so we can access it later
+        for parents and what not, without serializing the event graph to
+        the subprocesses.
+
+        :param event:
+        :return:
+        """
+        global_events[event.id] = event
+        return event
+
     def get_parent(self,
                    event_id: str) -> ActiveEvent:
+        """
+        Find the parent of an event by looking at the event ids.
+        :param event_id:
+        :return:
+        """
         event = global_events[event_id]
         parent = global_events[event.parent_id]
 
@@ -157,6 +175,14 @@ class WorkflowExecutor:
     def _validate_tasks(self,
                         workflow: Workflow,
                         tasks_impl: Dict[str, AdhesiveTask]) -> None:
+        """
+        Recursively traverse the graph, and print to the user if it needs to implement
+        some tasks.
+
+        :param workflow:
+        :param tasks_impl:
+        :return:
+        """
         unmatched_tasks: Set[Task] = set()
 
         for task_id, task in workflow.tasks.items():
