@@ -88,23 +88,25 @@ class WorkflowExecutor:
         """
         When one of the futures returns, we traverse the graph further.
         """
-        workflow = self.get_parent(processed_event.id).task
+        workflow = cast(Workflow, self.get_parent(processed_event.id).task)
         outgoing_edges = workflow.get_outgoing_edges(processed_event.task.id)
 
-        # If there are no more outgoing edges, the current event is
-        # done. We merge its data into the parent event.
         parent_event = self.get_parent(processed_event.id)
 
-        # FIXME: this looks way too complicated.
-        if not outgoing_edges:
-            parent_event.close_child(processed_event)
-        elif processed_event.id in parent_event.active_children:
-            parent_event.active_children.remove(processed_event.id)
-
+        # we're going to process first the edges, to be able to remove
+        # the edges if they have conditions that don't match.
+        # FIXME: implement gateways here
         for outgoing_edge in outgoing_edges:
             task = workflow.tasks[outgoing_edge.target_id]
             parent = self.get_parent(processed_event.id)
             self.pending_events.append(self.register_event(processed_event.clone(task, parent)))
+
+        # If there are no more outgoing edges, the current event is
+        # done. We merge its data into the parent event.
+        if not outgoing_edges:
+            parent_event.close_child(processed_event)
+        elif processed_event.id in parent_event.active_children:
+            parent_event.active_children.remove(processed_event.id)
 
     def process_event(self,
                       tasks_impl: Dict[str, AdhesiveTask],
