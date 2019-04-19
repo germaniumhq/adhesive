@@ -13,5 +13,5 @@ class Edge():
         self.id = _id
         self.source_id = source_id
         self.target_id = target_id
-        self.condition = condition
+        self.condition = condition if condition else ''
 

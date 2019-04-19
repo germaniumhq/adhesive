@@ -42,6 +42,20 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(2, len(subprocess.start_tasks))
         self.assertEqual(0, len(subprocess.end_events))
 
+    def test_reading_exclusive_gateway_bpmn(self) -> None:
+        workflow = read_bpmn_file("test/adhesive/xml/exclusive_gateway.bpmn")
+
+        self.assertEqual(6, len(workflow.tasks))
+        self.assertEqual(6, len(workflow.edges))
+        self.assertEqual(1, len(workflow.start_tasks))
+        self.assertEqual(1, len(workflow.end_events))
+
+        task_route = workflow.edges["_9"]
+        self.assertEqual('data.route == "task"', task_route.condition)
+
+        task_route = workflow.edges["_10"]
+        self.assertEqual('', task_route.condition)
+
 
 if __name__ == '__main__':
     unittest.main()

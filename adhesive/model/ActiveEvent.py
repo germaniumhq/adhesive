@@ -34,7 +34,7 @@ class ActiveEvent:
 
     def clone(self,
               task: Task,
-              parent: 'ActiveEvent') -> 'ActiveEvent':
+              parent: Optional['ActiveEvent'] = None) -> 'ActiveEvent':
         """
         Clone the current event for another task id target.
         """

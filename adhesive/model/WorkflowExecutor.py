@@ -1,6 +1,7 @@
 from typing import Set, Optional, Dict, List, TypeVar, cast
 import re
 
+from adhesive.graph.Gateway import Gateway
 from adhesive.steps.WorkflowData import WorkflowData
 
 T = TypeVar('T')
@@ -14,6 +15,8 @@ from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
 from adhesive.graph.Workflow import Workflow
 from adhesive.steps.AdhesiveTask import AdhesiveTask
+from adhesive.graph.ExclusiveGateway import ExclusiveGateway
+
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 
@@ -119,7 +122,7 @@ class WorkflowExecutor:
         :param event:
         :return:
         """
-        workflow = self.get_parent(event.id).task
+        workflow = cast(Workflow, self.get_parent(event.id).task)
         task = workflow.tasks[event.task.id]
 
         # nothing to do on events
@@ -137,6 +140,15 @@ class WorkflowExecutor:
             event.future = Future()
             self.active_futures.add(event.future)
             return
+
+        # if this is a gateway, it might create the next route.
+        # if isinstance(task, ExclusiveGateway):
+        #     gateway = cast(Gateway, task)
+        #     new_event = gateway.route_single_output(
+        #         event,
+        #         workflow,
+        #         workflow.get_outgoing_edges(event.task.id))
+        #     self.active_futures.add(resolved_future(new_event))
 
         # if this is an unknown type of task, we're just jumping over it in the
         # graph.
@@ -196,7 +208,9 @@ class WorkflowExecutor:
                 self._validate_tasks(task, tasks_impl)
                 continue
 
-            if isinstance(task, StartEvent) or isinstance(task, EndEvent):
+            if isinstance(task, StartEvent) or \
+                    isinstance(task, EndEvent) or \
+                    isinstance(task, Gateway):
                 continue
 
             adhesive_step = self._match_task(task)

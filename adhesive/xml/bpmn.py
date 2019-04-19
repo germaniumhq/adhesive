@@ -3,6 +3,7 @@ from typing import Tuple
 from xml.etree import ElementTree
 import re
 
+from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Workflow import Workflow
 from adhesive.graph.Task import Task
@@ -24,7 +25,7 @@ def read_bpmn_file(file_name: str) -> Workflow:
 
 def find_node(parent_node, name: str):
     for node in parent_node.getchildren():
-        _, node_name = parse_tag(name)
+        _, node_name = parse_tag(node)
         if node_name == name:
             return node
 
@@ -32,7 +33,7 @@ def find_node(parent_node, name: str):
 
 
 def read_process(process) -> Workflow:
-    node_ns, node_name = parse_tag(process.tag)
+    node_ns, node_name = parse_tag(process)
 
     if "process" == node_name:
         result = Workflow(process.get('id'))
@@ -54,7 +55,7 @@ def read_process(process) -> Workflow:
 
 def process_node(result: Workflow,
                  node) -> None:
-    node_ns, node_name = parse_tag(node.tag)
+    node_ns, node_name = parse_tag(node)
 
     if "task" == node_name:
         process_node_task(result, node)
@@ -66,6 +67,8 @@ def process_node(result: Workflow,
         process_node_end_event(result, node)
     elif "subProcess" == node_name:
         process_node_sub_process(result, node)
+    elif "exclusiveGateway" == node_name:
+        process_exclusive_gateway(result, node)
     else:
         print(f"{node_name} node ignored")
 
@@ -100,18 +103,31 @@ def process_node_sequence_flow(w: Workflow, xml_node) -> None:
     edge = Edge(xml_node.get("id"),
                 xml_node.get("sourceRef"),
                 xml_node.get("targetRef"))
+
+    condition_node = find_node(xml_node, "conditionExpression")
+
+    if condition_node is not None:
+        edge.condition = condition_node.text
+
     w.add_edge(edge)
+
+
+def process_exclusive_gateway(w: Workflow, xml_node) -> None:
+    """ Create an end event from the workflow """
+    node_name = normalize_name(xml_node.get("name"))
+    task = ExclusiveGateway(xml_node.get("id"), node_name)
+    w.add_task(task)
 
 
 def normalize_name(name: str) -> str:
     return SPACE.sub(' ', name)
 
 
-def parse_tag(name: str) -> Tuple[str, str]:
-    m = TAG_NAME.match(name)
+def parse_tag(node) -> Tuple[str, str]:
+    m = TAG_NAME.match(node.tag)
 
     if not m:
-        raise Exception(f"Unable to parse tag name `{name}`")
+        raise Exception(f"Unable to parse tag name `{node}`")
 
     return m[1], m[2]
 

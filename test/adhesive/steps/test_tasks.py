@@ -7,7 +7,12 @@ import time
     'Test Chrome',
     'Test Firefox',
     'Build Germanium Image',
-    'Prepare Firefox')
+    'Prepare Firefox',
+    # exclusive gateway
+    'Exclusive\ Task\ Branch',
+    'Populate\ task\ data',
+    'Exclusive\ default\ branch'
+)
 def basic_task(context) -> None:
     if not context.data.steps:
         context.data.steps = set()
