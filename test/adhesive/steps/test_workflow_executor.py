@@ -16,7 +16,8 @@ class TestWorkflowExecutor(unittest.TestCase):
         """
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive.bpmn")
 
-        data = WorkflowExecutor(adhesive.process).execute()
+        workflow_executor = WorkflowExecutor(adhesive.process)
+        data = workflow_executor.execute()
 
         self.assertEqual({
             "Ensure Docker Tooling",
@@ -24,6 +25,7 @@ class TestWorkflowExecutor(unittest.TestCase):
             "Test Chrome",
             "Test Firefox",
         }, data.steps)
+        self.assertFalse(workflow_executor.events)
 
     def test_sub_process_execution(self):
         """
@@ -31,7 +33,8 @@ class TestWorkflowExecutor(unittest.TestCase):
         """
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive_subprocess.bpmn")
 
-        data = WorkflowExecutor(adhesive.process).execute()
+        workflow_executor = WorkflowExecutor(adhesive.process)
+        data = workflow_executor.execute()
 
         self.assertEqual({
             'Ensure Docker Tooling',
@@ -40,6 +43,7 @@ class TestWorkflowExecutor(unittest.TestCase):
             'Test Firefox',
             'Test Chrome',
         }, data.steps)
+        self.assertFalse(workflow_executor.events)
 
 
 if __name__ == '__main__':

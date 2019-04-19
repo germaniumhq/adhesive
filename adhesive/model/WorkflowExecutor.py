@@ -53,6 +53,7 @@ class WorkflowExecutor:
                                for task in workflow.start_tasks.values()]
 
         self.execute_workflow(tasks_impl)
+        self.unregister_event(root_event)
 
         return root_event.context.data
 
@@ -106,6 +107,8 @@ class WorkflowExecutor:
         elif processed_event.id in parent_event.active_children:
             parent_event.active_children.remove(processed_event.id)
 
+        self.unregister_event(processed_event)
+
     def process_event(self,
                       tasks_impl: Dict[str, AdhesiveTask],
                       event: ActiveEvent) -> None:
@@ -158,6 +161,10 @@ class WorkflowExecutor:
         """
         self.events[event.id] = event
         return event
+
+    def unregister_event(self,
+                         event: ActiveEvent) -> None:
+        del self.events[event.id]
 
     def get_parent(self,
                    event_id: str) -> ActiveEvent:
