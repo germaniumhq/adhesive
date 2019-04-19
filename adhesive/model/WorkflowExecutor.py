@@ -95,6 +95,7 @@ class WorkflowExecutor:
         # done. We merge its data into the parent event.
         parent_event = self.get_parent(processed_event.id)
 
+        # FIXME: this looks way too complicated.
         if not outgoing_edges:
             parent_event.close_child(processed_event)
         elif processed_event.id in parent_event.active_children:
