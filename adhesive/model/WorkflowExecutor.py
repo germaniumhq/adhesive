@@ -1,6 +1,7 @@
 from typing import Set, Optional, Dict, List, TypeVar, cast
 import re
 
+from adhesive.graph.Edge import Edge
 from adhesive.graph.Gateway import Gateway
 from adhesive.steps.WorkflowData import WorkflowData
 
@@ -91,13 +92,21 @@ class WorkflowExecutor:
         When one of the futures returns, we traverse the graph further.
         """
         workflow = cast(Workflow, self.get_parent(processed_event.id).task)
-        outgoing_edges = workflow.get_outgoing_edges(processed_event.task.id)
-
-        parent_event = self.get_parent(processed_event.id)
 
         # we're going to process first the edges, to be able to remove
         # the edges if they have conditions that don't match.
+
         # FIXME: implement gateways here
+        if isinstance(processed_event.task, Gateway):
+            gateway = cast(Gateway, processed_event.task)
+            e = WorkflowExecutor.route_single_output(workflow, gateway, processed_event)
+            outgoing_edges = [e]
+        else:
+            outgoing_edges = workflow.get_outgoing_edges(processed_event.task.id)
+
+        parent_event = self.get_parent(processed_event.id)
+
+        # publish the remaining edges as events to be processed.
         for outgoing_edge in outgoing_edges:
             task = workflow.tasks[outgoing_edge.target_id]
             parent = self.get_parent(processed_event.id)
@@ -142,13 +151,9 @@ class WorkflowExecutor:
             return
 
         # if this is a gateway, it might create the next route.
-        # if isinstance(task, ExclusiveGateway):
-        #     gateway = cast(Gateway, task)
-        #     new_event = gateway.route_single_output(
-        #         event,
-        #         workflow,
-        #         workflow.get_outgoing_edges(event.task.id))
-        #     self.active_futures.add(resolved_future(new_event))
+        if isinstance(task, ExclusiveGateway):
+            self.active_futures.add(resolved_future(event))
+            return
 
         # if this is an unknown type of task, we're just jumping over it in the
         # graph.
@@ -235,3 +240,37 @@ class WorkflowExecutor:
                 return step
 
         return None
+
+    @staticmethod
+    def route_single_output(
+            workflow: Workflow,
+            gateway: Gateway,
+            event: ActiveEvent) -> Edge:
+
+        default_edge = None
+        result_edge = None
+
+        edges = workflow.get_outgoing_edges(gateway.id)
+
+        for edge in edges:
+            if not edge.condition:
+                if default_edge is not None:
+                    raise Exception("Duplicate default edge.")
+
+                default_edge = edge
+                continue
+
+            if eval(edge.condition, globals(), event.context.as_mapping()):
+                if result_edge is not None:
+                    raise Exception("Duplicate output edge 2")
+
+                result_edge = workflow.tasks[edge.target_id]
+                continue
+
+        if result_edge is None and default_edge is not None:
+            result_edge = default_edge
+
+        if not result_edge:
+            raise Exception("No branch matches")
+
+        return result_edge

@@ -20,10 +20,8 @@ class TestWorkflowExecutor(unittest.TestCase):
         data = workflow_executor.execute()
 
         self.assertEqual({
-            "Ensure Docker Tooling",
-            "Build Germanium Image",
-            "Test Chrome",
-            "Test Firefox",
+            "Populate task data",
+            "Exclusive default branch"
         }, data.steps)
         self.assertFalse(workflow_executor.events)
 
