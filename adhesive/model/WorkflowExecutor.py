@@ -25,9 +25,6 @@ def resolved_future(item: T) -> Future:
     return result
 
 
-global_events: Dict[str, ActiveEvent] = dict()
-
-
 class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -39,6 +36,7 @@ class WorkflowExecutor:
         self.process = process
         self.active_futures = set()
         self.pending_events: List[ActiveEvent] = []
+        self.events: Dict[str, ActiveEvent] = dict()
 
     def execute(self) -> WorkflowData:
         """
@@ -158,7 +156,7 @@ class WorkflowExecutor:
         :param event:
         :return:
         """
-        global_events[event.id] = event
+        self.events[event.id] = event
         return event
 
     def get_parent(self,
@@ -168,8 +166,8 @@ class WorkflowExecutor:
         :param event_id:
         :return:
         """
-        event = global_events[event_id]
-        parent = global_events[event.parent_id]
+        event = self.events[event_id]
+        parent = self.events[event.parent_id]
 
         return parent
 
