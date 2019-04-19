@@ -3,7 +3,7 @@ import unittest
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
 
-from .test_tasks import adhesive
+from .test_tasks import adhesive, _async
 
 
 class TestWorkflowExecutor(unittest.TestCase):
@@ -17,7 +17,7 @@ class TestWorkflowExecutor(unittest.TestCase):
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/exclusive_gateway.bpmn")
 
         workflow_executor = WorkflowExecutor(adhesive.process)
-        data = workflow_executor.execute()
+        data = _async(workflow_executor.execute())
 
         self.assertEqual({
             "Populate task data",

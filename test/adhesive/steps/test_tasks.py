@@ -1,6 +1,11 @@
 import adhesive
 import time
+import asyncio
 
+
+def _async(fn):
+    data = asyncio.get_event_loop().run_until_complete(fn)
+    return data
 
 @adhesive.task(
     'Ensure Docker Tooling',

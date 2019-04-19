@@ -42,7 +42,7 @@ class WorkflowExecutor:
         self.pending_events: List[ActiveEvent] = []
         self.events: Dict[str, ActiveEvent] = dict()
 
-    def execute(self) -> WorkflowData:
+    async def execute(self) -> WorkflowData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
@@ -56,13 +56,13 @@ class WorkflowExecutor:
         self.pending_events = [self.register_event(ActiveEvent(root_event.id, task))
                                for task in workflow.start_tasks.values()]
 
-        self.execute_workflow(tasks_impl)
+        await self.execute_workflow(tasks_impl)
         self.unregister_event(root_event)
 
         return root_event.context.data
 
-    def execute_workflow(self,
-                         tasks_impl: Dict[str, AdhesiveTask]) -> None:
+    async def execute_workflow(self,
+                               tasks_impl: Dict[str, AdhesiveTask]) -> None:
         """
         Process the events in a workflow until no more events are available.
         :param tasks_impl:

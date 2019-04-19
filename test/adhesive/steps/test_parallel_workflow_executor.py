@@ -5,7 +5,7 @@ import unittest
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
 
-from .test_tasks import adhesive
+from .test_tasks import adhesive, _async
 
 
 class TestWorkflowExecutor(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestWorkflowExecutor(unittest.TestCase):
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
-        WorkflowExecutor(adhesive.process).execute()
+        _async(WorkflowExecutor(adhesive.process).execute())
         end_time = time.time() * 1000.0
 
         # the whole thing should be faster than 2 secs
@@ -37,7 +37,7 @@ class TestWorkflowExecutor(unittest.TestCase):
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
 
         start_time = time.time() * 1000.0
-        WorkflowExecutor(adhesive.process).execute()
+        _async(WorkflowExecutor(adhesive.process).execute())
         end_time = time.time() * 1000.0
 
         # the whole thing should be faster than 2 secs
