@@ -17,6 +17,7 @@
     <task completionQuantity="1" id="_5" isForCompensation="false" name="Build Germanium Image" startQuantity="1">
       <incoming>_9</incoming>
       <incoming>_10</incoming>
+      <incoming>_14</incoming>
       <outgoing>_11</outgoing>
     </task>
     <sequenceFlow id="_7" sourceRef="_2" targetRef="_3"/>
@@ -28,11 +29,20 @@
     <startEvent id="_2" isInterrupting="true" name="Start Event" parallelMultiple="false">
       <outgoing>_7</outgoing>
       <outgoing>_8</outgoing>
+      <outgoing>_13</outgoing>
       <outputSet/>
     </startEvent>
     <sequenceFlow id="_9" sourceRef="_3" targetRef="_5"/>
     <sequenceFlow id="_10" sourceRef="_4" targetRef="_5"/>
     <sequenceFlow id="_11" sourceRef="_5" targetRef="_6"/>
+    <task completionQuantity="1" id="_12" isForCompensation="false" name="Test Firefox" startQuantity="1">
+      <incoming>_13</incoming>
+      <outgoing>_14</outgoing>
+    </task>
+    <sequenceFlow id="_13" sourceRef="_2" targetRef="_12"/>
+    <sequenceFlow id="_14" sourceRef="_12" targetRef="_5">
+      <conditionExpression><![CDATA[False]]></conditionExpression>
+    </sequenceFlow>
   </process>
   <bpmndi:BPMNDiagram id="Yaoqiang_Diagram-PROCESS_1" name="Untitled Diagram" resolution="96.0">
     <bpmndi:BPMNPlane bpmnElement="PROCESS_1">
@@ -66,6 +76,26 @@
           <dc:Bounds height="18.8" width="69.0" x="121.5" y="150.68"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="_12" id="Yaoqiang-_12">
+        <dc:Bounds height="55.0" width="85.0" x="240.0" y="250.0"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="18.8" width="73.0" x="246.0" y="270.1"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="_14" id="Yaoqiang-_14">
+        <di:waypoint x="325.0" y="277.5"/>
+        <di:waypoint x="380.0" y="127.5"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="18.8" width="36.0" x="334.5" y="193.1"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_13" id="Yaoqiang-_13">
+        <di:waypoint x="172.0" y="126.0"/>
+        <di:waypoint x="240.0" y="277.5"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="18.8" width="6.0" x="203.0" y="192.35"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="_9" id="Yaoqiang-_9">
         <di:waypoint x="325.0" y="87.5"/>
         <di:waypoint x="380.0" y="127.5"/>

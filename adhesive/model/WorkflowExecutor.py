@@ -1,8 +1,8 @@
 import re
 from typing import Set, Optional, Dict, List, TypeVar, cast
 
-from adhesive.graph.Edge import Edge
 from adhesive.graph.Gateway import Gateway
+from adhesive.model.GatewayController import GatewayController
 from adhesive.model.TaskFuture import TaskFuture
 from adhesive.steps.WorkflowData import WorkflowData
 
@@ -63,6 +63,9 @@ class WorkflowExecutor:
                                tasks_impl: Dict[str, AdhesiveTask]) -> None:
         """
         Process the events in a workflow until no more events are available.
+        For example an event is the start of the workflow. The events are
+        then creating futures (i.e. actual stuff that's being processed)
+        that in turn might generate new events.
         :param tasks_impl:
         :param pending_events:
         :return:
@@ -95,13 +98,17 @@ class WorkflowExecutor:
         # we're going to process first the edges, to be able to remove
         # the edges if they have conditions that don't match.
 
-        # FIXME: implement gateways here
+        # if the processed event was on a gateway, we need to do
+        # the routing to the next events, depending on the gateway
+        # type. For this, the routing will select only the edges that
+        # activate, and create events for each.
         if isinstance(processed_event.task, Gateway):
             gateway = cast(Gateway, processed_event.task)
-            e = WorkflowExecutor.route_single_output(workflow, gateway, processed_event)
-            outgoing_edges = [e]
+            outgoing_edges = GatewayController.route_single_output(
+                workflow, gateway, processed_event)
         else:
-            outgoing_edges = workflow.get_outgoing_edges(processed_event.task.id)
+            outgoing_edges = GatewayController.route_all_outputs(
+                workflow, processed_event.task, processed_event)
 
         parent_event = self.get_parent(processed_event.id)
 
@@ -241,37 +248,3 @@ class WorkflowExecutor:
                 return step
 
         return None
-
-    @staticmethod
-    def route_single_output(
-            workflow: Workflow,
-            gateway: Gateway,
-            event: ActiveEvent) -> Edge:
-
-        default_edge = None
-        result_edge = None
-
-        edges = workflow.get_outgoing_edges(gateway.id)
-
-        for edge in edges:
-            if not edge.condition:
-                if default_edge is not None:
-                    raise Exception("Duplicate default edge.")
-
-                default_edge = edge
-                continue
-
-            if eval(edge.condition, globals(), event.context.as_mapping()):
-                if result_edge is not None:
-                    raise Exception("Duplicate output edge 2")
-
-                result_edge = workflow.tasks[edge.target_id]
-                continue
-
-        if result_edge is None and default_edge is not None:
-            result_edge = default_edge
-
-        if not result_edge:
-            raise Exception("No branch matches")
-
-        return result_edge

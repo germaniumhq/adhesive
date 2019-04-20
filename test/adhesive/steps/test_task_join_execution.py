@@ -22,7 +22,7 @@ class TestTaskJoinExecution(unittest.TestCase):
         self.assertEqual({
             'Build Germanium Image': [1],
             'Test Chrome': [1],
-            'Test Firefox': [1]
+            'Test Firefox': [1, 1]
         }, data.steps)
         self.assertFalse(workflow_executor.events)
 
