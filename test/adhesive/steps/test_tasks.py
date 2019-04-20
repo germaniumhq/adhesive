@@ -20,9 +20,12 @@ def _async(fn):
 )
 def basic_task(context) -> None:
     if not context.data.steps:
-        context.data.steps = set()
+        context.data.steps = dict()
 
-    context.data.steps.add(context.task.name)
+    if context.task.name not in context.data.steps:
+        context.data.steps[context.task.name] = []
+
+    context.data.steps[context.task.name].append(1)
 
 
 @adhesive.task(r'^Parallel \d+$')

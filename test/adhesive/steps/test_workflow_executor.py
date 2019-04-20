@@ -24,7 +24,7 @@ class TestWorkflowExecutor(unittest.TestCase):
             "Build Germanium Image",
             "Test Chrome",
             "Test Firefox",
-        }, data.steps)
+        }, data.steps.keys())
         self.assertFalse(workflow_executor.events)
 
     def test_sub_process_execution(self):
@@ -42,8 +42,8 @@ class TestWorkflowExecutor(unittest.TestCase):
             'Prepare Firefox',
             'Test Firefox',
             'Test Chrome',
-        }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        }, data.steps.keys())
+        self.assertFalse(workflow_executor.events.keys())
 
 
 if __name__ == '__main__':

@@ -1,8 +1,9 @@
-from typing import Set, Optional, Dict, List, TypeVar, cast
 import re
+from typing import Set, Optional, Dict, List, TypeVar, cast
 
 from adhesive.graph.Edge import Edge
 from adhesive.graph.Gateway import Gateway
+from adhesive.model.TaskFuture import TaskFuture
 from adhesive.steps.WorkflowData import WorkflowData
 
 T = TypeVar('T')
@@ -22,13 +23,6 @@ from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 
 
-def resolved_future(item: T) -> Future:
-    result = Future()
-    result.set_result(item)
-
-    return result
-
-
 class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -38,7 +32,11 @@ class WorkflowExecutor:
     def __init__(self,
                  process: AdhesiveProcess) -> None:
         self.process = process
-        self.active_futures = set()
+
+        # holds a mapping from the ActiveEvent id that generated it, to the TaskFuture
+        # holding both the node in the graph (Task), and the Future that is going
+        # to resolve when the task is done.
+        self.active_futures: Dict[str, TaskFuture] = dict()
         self.pending_events: List[ActiveEvent] = []
         self.events: Dict[str, ActiveEvent] = dict()
 
@@ -74,15 +72,16 @@ class WorkflowExecutor:
                 event = self.pending_events.pop()
                 self.process_event(tasks_impl, event)
 
-            done_futures, not_done_futures = concurrent.futures.wait(self.active_futures,
-                                                                     return_when=concurrent.futures.FIRST_COMPLETED,
-                                                                     timeout=5)
+            active_futures = list(map(lambda it: it.future, self.active_futures.values()))
+            done_futures, not_done_futures = concurrent.futures.wait(
+                active_futures,
+                return_when=concurrent.futures.FIRST_COMPLETED,
+                timeout=5)
 
             for future in done_futures:
-                processed_event = future.result()
+                processed_event: ActiveEvent = future.result()
                 self.process_event_result(processed_event)
-
-            self.active_futures -= done_futures
+                self.active_futures.pop(processed_event.id)
 
         return
 
@@ -136,7 +135,7 @@ class WorkflowExecutor:
 
         # nothing to do on events
         if isinstance(task, StartEvent) or isinstance(task, EndEvent):
-            self.active_futures.add(resolved_future(event))
+            self.active_futures[event.id] = TaskFuture.resolved(task, event)
             return
 
         # if this is a subprocess, we're going to create events that point
@@ -146,26 +145,27 @@ class WorkflowExecutor:
                 start_event = self.register_event(event.clone(start_task, event))
                 self.process_event(tasks_impl, start_event)
 
+            # This event will finish only when the child sub events will finish.
             event.future = Future()
-            self.active_futures.add(event.future)
+            self.active_futures[event.id] = TaskFuture(task, event.future)
             return
 
         # if this is an exclusive gateway, the current event is immediately passed
         # through.
         if isinstance(task, ExclusiveGateway):
-            self.active_futures.add(resolved_future(event))
+            self.active_futures[event.id] = TaskFuture.resolved(task, event)
             return
 
         # if this is an unknown type of task, we're just jumping over it in the
         # graph.
         if event.task.id not in tasks_impl:
-            self.active_futures.add(resolved_future(event))
+            self.active_futures[event.id] = TaskFuture.resolved(task, event)
             return
 
         # we submit the user task to the parallel pool, and feed the future
         # into the active futures that are still to be waited.
-        f = WorkflowExecutor.pool.submit(tasks_impl[event.task.id].invoke, event)
-        self.active_futures.add(f)
+        future = WorkflowExecutor.pool.submit(tasks_impl[event.task.id].invoke, event)
+        self.active_futures[event.id] = TaskFuture(task, future)
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
