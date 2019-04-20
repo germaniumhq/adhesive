@@ -150,7 +150,8 @@ class WorkflowExecutor:
             self.active_futures.add(event.future)
             return
 
-        # if this is a gateway, it might create the next route.
+        # if this is an exclusive gateway, the current event is immediately passed
+        # through.
         if isinstance(task, ExclusiveGateway):
             self.active_futures.add(resolved_future(event))
             return

@@ -56,6 +56,10 @@ class TestReadingBpmn(unittest.TestCase):
         task_route = workflow.edges["_10"]
         self.assertEqual('', task_route.condition)
 
+    def test_reading_unsupported_elements_fails(self) -> None:
+        with self.assertRaises(Exception):
+            read_bpmn_file("test/adhesive/xml/unsupported-call-activity.bpmn")
+
 
 if __name__ == '__main__':
     unittest.main()

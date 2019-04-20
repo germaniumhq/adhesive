@@ -14,6 +14,15 @@ from adhesive.graph.EndEvent import EndEvent
 TAG_NAME = re.compile(r'^(\{.+\})?(.+)$')
 SPACE = re.compile(r"\s+", re.IGNORECASE)
 
+ignored_elements = {
+    # we obviously ignore extensions.
+    "extensionElements",
+    # we ignore the incoming and outgoing from inside the subprocesses
+    # because we use the sequenceFlow elements to trace the connections.
+    "incoming",
+    "outgoing",
+}
+
 
 def read_bpmn_file(file_name: str) -> Workflow:
     """ Read a BPMN file as a build workflow. """
@@ -69,8 +78,8 @@ def process_node(result: Workflow,
         process_node_sub_process(result, node)
     elif "exclusiveGateway" == node_name:
         process_exclusive_gateway(result, node)
-    else:
-        print(f"{node_name} node ignored")
+    elif node_name not in ignored_elements:
+        raise Exception(f"Unknown process node: {node.tag}")
 
 
 def process_node_task(w: Workflow, xml_node) -> None:
