@@ -35,10 +35,18 @@ class WorkflowExecutor:
 
         # holds a mapping from the ActiveEvent id that generated it, to the TaskFuture
         # holding both the node in the graph (Task), and the Future that is going
-        # to resolve when the task is done.
+        # to resolve when the task is done. These are futures that are currently running.
         self.active_futures: Dict[str, TaskFuture] = dict()
         self.pending_events: List[ActiveEvent] = []
+
+        # A dictionary of events that are currently active. This is just to find out
+        # the parent of an event, since from it we can also derive the current parent
+        # workflow.
         self.events: Dict[str, ActiveEvent] = dict()
+
+        # A dictionary of events that are currently waiting on other active events,
+        # or executing futures ahead in the execution graph.
+        self.waiting_events: Dict[str, ActiveEvent] = dict()
 
     async def execute(self) -> WorkflowData:
         """
@@ -51,7 +59,7 @@ class WorkflowExecutor:
         self._validate_tasks(workflow, tasks_impl)
 
         root_event = self.register_event(ActiveEvent(None, workflow))
-        self.pending_events = [self.register_event(ActiveEvent(root_event.id, task))
+        self.pending_events = [self.register_event(root_event.clone(task, root_event))
                                for task in workflow.start_tasks.values()]
 
         await self.execute_workflow(tasks_impl)
@@ -86,7 +94,9 @@ class WorkflowExecutor:
                 self.process_event_result(processed_event)
                 self.active_futures.pop(processed_event.id)
 
-        return
+        if self.waiting_events:
+            raise Exception(f"Execution of the workflow finished, but some "
+                            f"events were still waiting: {self.waiting_events}")
 
     def process_event_result(self,
                              processed_event: ActiveEvent) -> None:
@@ -110,7 +120,11 @@ class WorkflowExecutor:
             outgoing_edges = GatewayController.route_all_outputs(
                 workflow, processed_event.task, processed_event)
 
+        # If there are no more outgoing edges, the current event is
+        # done. We merge its data into the parent event.
         parent_event = self.get_parent(processed_event.id)
+        parent_event.close_child(processed_event,
+                                 merge_data=not outgoing_edges)
 
         # publish the remaining edges as events to be processed.
         for outgoing_edge in outgoing_edges:
@@ -118,12 +132,13 @@ class WorkflowExecutor:
             parent = self.get_parent(processed_event.id)
             self.pending_events.append(self.register_event(processed_event.clone(task, parent)))
 
-        # If there are no more outgoing edges, the current event is
-        # done. We merge its data into the parent event.
-        if not outgoing_edges:
-            parent_event.close_child(processed_event)
-        elif processed_event.id in parent_event.active_children:
-            parent_event.active_children.remove(processed_event.id)
+        # this needs to happen after the publishing of the remaining edges,
+        # so we catch eventual pending events for the finished task in a
+        # subprocess.
+        if not parent_event.active_children and \
+                isinstance(parent_event.task, SubProcess) and \
+                parent_event.task not in map(lambda it: it.task, self.pending_events):
+            self.active_futures[parent_event.id].future.set_result(parent_event)
 
         self.unregister_event(processed_event)
 
@@ -145,6 +160,44 @@ class WorkflowExecutor:
             self.active_futures[event.id] = TaskFuture.resolved(task, event)
             return
 
+        # if this is an exclusive gateway, the current event is immediately passed
+        # through.
+        if isinstance(task, ExclusiveGateway):
+            self.active_futures[event.id] = TaskFuture.resolved(task, event)
+            return
+
+        # if this is an unknown type of task, we're just jumping over it in the
+        # graph.
+        #if event.task.id not in tasks_impl:
+        #    raise Exception(f"No task implementation found for: "
+        #                    f"{event.task.name}(id:{event.task.id})")
+
+        # If this is a parallel gateway, or task, it needs to wait for all
+        # the incoming messages, before we can release the event. We also need
+        # to create an event that gathers all the data from the incoming edges.
+        # This means a single instance can exist at a time that's not yet fired,
+        # and is still pending.
+        if isinstance(task, Task):  # FIXME: there should be a BaseTask for elements
+            active_tasks = [ev.task for ev in self.pending_events]
+            active_tasks.extend(map(lambda it: it.task, self.active_futures.values()))
+
+            waiting_event = self.waiting_event(event)
+
+            # If we have predecessors, we need to wait until they are done. This also
+            # means that the current event is actually defacto consumed.
+            if self.process.workflow.are_predecessors(task, active_tasks):
+                return
+
+            self.waiting_events.pop(waiting_event.task.id)
+
+            # We can now invoke the actual method if that's the case. If it's
+            # only a gateway we just need to mark it as done:
+            if isinstance(task, Gateway):  # FIXME: waiting gateway?
+                self.active_futures[event.id] = TaskFuture.resolved(task, waiting_event)
+                return
+
+            event = waiting_event
+
         # if this is a subprocess, we're going to create events that point
         # to the current event.
         if isinstance(task, SubProcess):
@@ -157,22 +210,33 @@ class WorkflowExecutor:
             self.active_futures[event.id] = TaskFuture(task, event.future)
             return
 
-        # if this is an exclusive gateway, the current event is immediately passed
-        # through.
-        if isinstance(task, ExclusiveGateway):
-            self.active_futures[event.id] = TaskFuture.resolved(task, event)
-            return
-
-        # if this is an unknown type of task, we're just jumping over it in the
-        # graph.
-        if event.task.id not in tasks_impl:
-            self.active_futures[event.id] = TaskFuture.resolved(task, event)
-            return
-
         # we submit the user task to the parallel pool, and feed the future
         # into the active futures that are still to be waited.
         future = WorkflowExecutor.pool.submit(tasks_impl[event.task.id].invoke, event)
         self.active_futures[event.id] = TaskFuture(task, future)
+
+    def waiting_event(self,
+                      event: ActiveEvent) -> ActiveEvent:
+        """
+        Ensures a waiting event is registered for the target task from the
+        source event. If it's already registered it merges the data
+        into the already waiting event.
+        :param event:
+        :return:
+        """
+        waiting_event = self.waiting_events.get(event.task.id, None)
+
+        if waiting_event:
+            waiting_event.context.data = WorkflowData.merge(
+                waiting_event.context.data,
+                event.context.data)
+            result = waiting_event
+            self.unregister_event(event)
+        else:
+            self.waiting_events[event.task.id] = event
+            result = event
+
+        return result
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:

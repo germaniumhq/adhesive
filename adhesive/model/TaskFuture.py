@@ -12,6 +12,9 @@ class TaskFuture:
     A Future that is bound to a task. It allows retrieving what
     task the future is assigned to. The Future should regardless
     return the ActiveEvent.
+
+    Some tasks / gateways consume multiple elements before firing
+    their event.
     """
     def __init__(self,
                  task: Task,
@@ -25,3 +28,6 @@ class TaskFuture:
         future.set_result(item)
 
         return TaskFuture(task, future)
+
+    def __str__(self) -> str:
+        return f"TaskFuture {self.task}"

@@ -11,3 +11,6 @@ class Task:
         self.id = _id
         self.name = name
 
+    def __str__(self) -> str:
+        return f"Task({self.id}): {self.name}"
+

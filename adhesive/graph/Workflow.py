@@ -1,4 +1,6 @@
-from typing import Dict, Iterable, List
+from typing import Dict, List
+
+import networkx as nx
 
 from .Task import Task
 from .StartEvent import StartEvent
@@ -20,6 +22,8 @@ class Workflow(Task):
         self._edges: Dict[str, Edge] = dict()
         self._end_events: Dict[str, EndEvent] = dict()
 
+        self._graph = nx.MultiDiGraph()
+
     @property
     def start_tasks(self) -> Dict[str, StartEvent]:
         return self._start_events
@@ -40,9 +44,25 @@ class Workflow(Task):
         """ Add a task into the graph. """
         self._tasks[task.id] = task
 
+        if isinstance(task, Workflow):
+            self._graph.add_nodes_from(task._graph.nodes)
+            self._graph.add_edges_from(task._graph.edges)
+            self._graph.add_node(f"{task.id}:start")
+            self._graph.add_node(f"{task.id}:end")
+
+            for start_task in task.start_tasks:
+                self._graph.add_edge(f"{task.id}:start", start_task)
+            for end_task in task.end_events:
+                self._graph.add_edge(end_task, f"{task.id}:end")
+        else:
+            self._graph.add_node(task.id)
+
     def add_edge(self, edge: Edge) -> None:
-        """ Add an edge into the graph. """
+        """Add an edge into the graph. """
         self._edges[edge.id] = edge
+        self._graph.add_edge(
+            edge.source_id,
+            edge.target_id)
 
     def add_start_event(self, event: StartEvent) -> None:
         self._start_events[event.id] = event
@@ -67,4 +87,22 @@ class Workflow(Task):
             if edge.target_id == task.id:
                 return True
 
+        return False
+
+    def has_outgoing_edges(self, task: Task) -> bool:
+        for edge_id, edge in self._edges.items():
+            if edge.source_id == task.id:
+                return True
+
+        return False
+
+    def are_predecessors(self,
+                         task: Task,
+                         potential_predecessors: List[Task]) -> bool:
+        for potential_predecessor in potential_predecessors:
+            if nx.algorithms.has_path(
+                    self._graph,
+                    potential_predecessor.id,
+                    task.id):
+                return True
         return False

@@ -22,7 +22,6 @@ class ActiveEvent:
         self.context = WorkflowContext(task)
 
         self.active_children: Set[str] = set()
-        self.future = None
 
     def __getstate__(self):
         return {
@@ -34,11 +33,11 @@ class ActiveEvent:
 
     def clone(self,
               task: Task,
-              parent: Optional['ActiveEvent'] = None) -> 'ActiveEvent':
+              parent: 'ActiveEvent') -> 'ActiveEvent':
         """
         Clone the current event for another task id target.
         """
-        resolved_parent_id = parent.id if parent else self.parent_id
+        resolved_parent_id = parent.id
         result = ActiveEvent(resolved_parent_id, task)
         result.context = self.context.clone(task)
 
@@ -47,15 +46,15 @@ class ActiveEvent:
         return result
 
     def close_child(self,
-                    child: 'ActiveEvent') -> None:
+                    child: 'ActiveEvent',
+                    merge_data: bool) -> None:
         self.active_children.remove(child.id)
-        self.context.data = WorkflowData.merge(
-            self.context.data,
-            child.context.data
-        )
 
-        if not self.active_children and self.future:
-            self.future.set_result(self)
+        if merge_data:
+            self.context.data = WorkflowData.merge(
+                self.context.data,
+                child.context.data
+            )
 
     @property
     def task(self) -> Task:
@@ -65,3 +64,6 @@ class ActiveEvent:
     def task(self, task: Task) -> None:
         self.context.task = task
         self._task = task
+
+    def __repr__(self) -> str:
+        return f"ActiveEvent({self.id}): {self.task}"

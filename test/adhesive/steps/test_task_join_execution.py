@@ -24,7 +24,8 @@ class TestTaskJoinExecution(unittest.TestCase):
             'Test Chrome': [1],
             'Test Firefox': [1, 1]
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(workflow_executor.events,
+                         "Some events were not unregistered and/or executed.")
 
 
 if __name__ == '__main__':

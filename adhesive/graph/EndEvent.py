@@ -1,5 +1,6 @@
 from .Task import Task
 
+
 class EndEvent(Task):
     """
     EndEvent

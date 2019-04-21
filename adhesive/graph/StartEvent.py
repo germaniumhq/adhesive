@@ -8,6 +8,5 @@ class StartEvent(Task):
     def __init__(self,
                  _id: str,
                  name: str) -> None:
-        self.id = _id
-        self.name = name
+        super(StartEvent, self).__init__(_id, name)
 

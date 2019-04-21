@@ -51,13 +51,21 @@ def read_process(process) -> Workflow:
     else:
         raise Exception(f"Unknown process node: {process.tag}")
 
+    # we read first the nodes, then the edges so they are findable
+    # when adding the edges by id.
     for node in process.getchildren():
         process_node(result, node)
 
-    if not result.start_tasks:
-        for task_id, task in result.tasks.items():
-            if not result.has_incoming_edges(task):
-                result.start_tasks[task.id] = task
+    for node in process.getchildren():
+        process_edge(result, node)
+
+    for task_id, task in result.tasks.items():
+        if not result.has_incoming_edges(task):
+            result.start_tasks[task.id] = task
+
+    for task_id, task in result.tasks.items():
+        if not result.has_outgoing_edges(task):
+            result.end_events[task.id] = task
 
     return result
 
@@ -69,7 +77,7 @@ def process_node(result: Workflow,
     if "task" == node_name:
         process_node_task(result, node)
     elif "sequenceFlow" == node_name:
-        process_node_sequence_flow(result, node)
+        pass
     elif "startEvent" == node_name:
         process_node_start_event(result, node)
     elif "endEvent" == node_name:
@@ -80,6 +88,14 @@ def process_node(result: Workflow,
         process_exclusive_gateway(result, node)
     elif node_name not in ignored_elements:
         raise Exception(f"Unknown process node: {node.tag}")
+
+
+def process_edge(result: Workflow,
+                 node) -> None:
+    node_ns, node_name = parse_tag(node)
+
+    if "sequenceFlow" == node_name:
+        process_node_sequence_flow(result, node)
 
 
 def process_node_task(w: Workflow, xml_node) -> None:

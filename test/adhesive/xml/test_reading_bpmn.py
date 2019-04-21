@@ -40,7 +40,7 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(3, len(subprocess.tasks))
         self.assertEqual(1, len(subprocess.edges))
         self.assertEqual(2, len(subprocess.start_tasks))
-        self.assertEqual(0, len(subprocess.end_events))
+        self.assertEqual(2, len(subprocess.end_events))
 
     def test_reading_exclusive_gateway_bpmn(self) -> None:
         workflow = read_bpmn_file("test/adhesive/xml/exclusive_gateway.bpmn")
