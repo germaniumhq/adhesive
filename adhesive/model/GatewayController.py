@@ -2,7 +2,7 @@ from typing import List
 
 from adhesive.graph.Edge import Edge
 from adhesive.graph.Gateway import Gateway
-from adhesive.graph.Task import Task
+from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Workflow import Workflow
 from adhesive.model.ActiveEvent import ActiveEvent
 
@@ -45,7 +45,7 @@ class GatewayController:
     @staticmethod
     def route_all_outputs(
             workflow: Workflow,
-            task: Task,
+            task: BaseTask,
             event: ActiveEvent) -> List[Edge]:
 
         result_edges = []

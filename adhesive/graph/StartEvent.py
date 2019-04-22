@@ -1,7 +1,7 @@
-from .Task import Task
+from .BaseTask import BaseTask
 
 
-class StartEvent(Task):
+class StartEvent(BaseTask):
     """
     StartEvent documentation.
     """

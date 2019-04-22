@@ -1,5 +1,5 @@
 
-class Task:
+class BaseTask:
     """
     Create a task. A task must have a name.
     Later this will be bounded to an actual implementation
@@ -13,4 +13,3 @@ class Task:
 
     def __str__(self) -> str:
         return f"Task({self.id}): {self.name}"
-

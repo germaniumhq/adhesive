@@ -2,13 +2,13 @@ from typing import Dict, List
 
 import networkx as nx
 
-from .Task import Task
+from .BaseTask import BaseTask
 from .StartEvent import StartEvent
 from .EndEvent import EndEvent
 from .Edge import Edge
 
 
-class Workflow(Task):
+class Workflow(BaseTask):
     """
     A workflow for the build
     """
@@ -18,7 +18,7 @@ class Workflow(Task):
         super(Workflow, self).__init__(id, name)
 
         self._start_events: Dict[str, StartEvent] = dict()
-        self._tasks: Dict[str, Task] = dict()
+        self._tasks: Dict[str, BaseTask] = dict()
         self._edges: Dict[str, Edge] = dict()
         self._end_events: Dict[str, EndEvent] = dict()
 
@@ -29,7 +29,7 @@ class Workflow(Task):
         return self._start_events
 
     @property
-    def tasks(self) -> Dict[str, Task]:
+    def tasks(self) -> Dict[str, BaseTask]:
         return self._tasks
 
     @property
@@ -40,7 +40,7 @@ class Workflow(Task):
     def end_events(self) -> Dict[str, EndEvent]:
         return self._end_events
 
-    def add_task(self, task: Task) -> None:
+    def add_task(self, task: BaseTask) -> None:
         """ Add a task into the graph. """
         self._tasks[task.id] = task
 
@@ -82,14 +82,14 @@ class Workflow(Task):
 
         return result
 
-    def has_incoming_edges(self, task: Task) -> bool:
+    def has_incoming_edges(self, task: BaseTask) -> bool:
         for edge_id, edge in self._edges.items():
             if edge.target_id == task.id:
                 return True
 
         return False
 
-    def has_outgoing_edges(self, task: Task) -> bool:
+    def has_outgoing_edges(self, task: BaseTask) -> bool:
         for edge_id, edge in self._edges.items():
             if edge.source_id == task.id:
                 return True
@@ -97,8 +97,8 @@ class Workflow(Task):
         return False
 
     def are_predecessors(self,
-                         task: Task,
-                         potential_predecessors: List[Task]) -> bool:
+                         task: BaseTask,
+                         potential_predecessors: List[BaseTask]) -> bool:
         for potential_predecessor in potential_predecessors:
             if nx.algorithms.has_path(
                     self._graph,

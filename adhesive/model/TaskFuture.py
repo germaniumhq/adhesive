@@ -2,7 +2,7 @@ from typing import TypeVar
 
 from concurrent.futures import Future
 
-from adhesive.graph.Task import Task
+from adhesive.graph.BaseTask import BaseTask
 
 T = TypeVar('T')
 
@@ -17,13 +17,13 @@ class TaskFuture:
     their event.
     """
     def __init__(self,
-                 task: Task,
+                 task: BaseTask,
                  future: Future):
         self.task = task
         self.future = future
 
     @staticmethod
-    def resolved(task: Task, item: T) -> 'TaskFuture':
+    def resolved(task: BaseTask, item: T) -> 'TaskFuture':
         future = Future()
         future.set_result(item)
 

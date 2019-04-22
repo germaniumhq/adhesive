@@ -14,7 +14,7 @@ from concurrent.futures import Future
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
-from adhesive.graph.Task import Task
+from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Workflow import Workflow
 from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
@@ -166,18 +166,12 @@ class WorkflowExecutor:
             self.active_futures[event.id] = TaskFuture.resolved(task, event)
             return
 
-        # if this is an unknown type of task, we're just jumping over it in the
-        # graph.
-        #if event.task.id not in tasks_impl:
-        #    raise Exception(f"No task implementation found for: "
-        #                    f"{event.task.name}(id:{event.task.id})")
-
         # If this is a parallel gateway, or task, it needs to wait for all
         # the incoming messages, before we can release the event. We also need
         # to create an event that gathers all the data from the incoming edges.
         # This means a single instance can exist at a time that's not yet fired,
         # and is still pending.
-        if isinstance(task, Task):  # FIXME: there should be a BaseTask for elements
+        if isinstance(task, BaseTask):  # FIXME: there should be a BaseTask for elements
             active_tasks = [ev.task for ev in self.pending_events]
             active_tasks.extend(map(lambda it: it.task, self.active_futures.values()))
 
@@ -278,7 +272,7 @@ class WorkflowExecutor:
         :param tasks_impl:
         :return:
         """
-        unmatched_tasks: Set[Task] = set()
+        unmatched_tasks: Set[BaseTask] = set()
 
         for task_id, task in workflow.tasks.items():
             if isinstance(task, SubProcess):
@@ -306,7 +300,7 @@ class WorkflowExecutor:
 
             raise Exception("Missing tasks implementations")
 
-    def _match_task(self, task: Task) -> Optional[AdhesiveTask]:
+    def _match_task(self, task: BaseTask) -> Optional[AdhesiveTask]:
         for step in self.process.steps:
             if step.matches(task.name) is not None:
                 return step

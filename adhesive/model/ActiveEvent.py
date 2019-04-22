@@ -3,7 +3,7 @@ from typing import Optional, Set
 import uuid
 
 from adhesive.steps.WorkflowContext import WorkflowContext
-from adhesive.graph.Task import Task
+from adhesive.graph.BaseTask import BaseTask
 from adhesive.steps.WorkflowData import WorkflowData
 
 
@@ -14,7 +14,7 @@ class ActiveEvent:
     """
     def __init__(self,
                  parent_id: Optional['str'],
-                 task: Task) -> None:
+                 task: BaseTask) -> None:
         self.id: str = str(uuid.uuid4())
         self.parent_id = parent_id
 
@@ -32,7 +32,7 @@ class ActiveEvent:
         }
 
     def clone(self,
-              task: Task,
+              task: BaseTask,
               parent: 'ActiveEvent') -> 'ActiveEvent':
         """
         Clone the current event for another task id target.
@@ -57,11 +57,11 @@ class ActiveEvent:
             )
 
     @property
-    def task(self) -> Task:
+    def task(self) -> BaseTask:
         return self._task
 
     @task.setter
-    def task(self, task: Task) -> None:
+    def task(self, task: BaseTask) -> None:
         self.context.task = task
         self._task = task
 

@@ -1,7 +1,7 @@
-from .Task import Task
+from .BaseTask import BaseTask
 
 
-class EndEvent(Task):
+class EndEvent(BaseTask):
     """
     EndEvent
     """
