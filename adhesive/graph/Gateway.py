@@ -7,8 +7,12 @@ from adhesive.model.ActiveEvent import ActiveEvent
 
 
 class Gateway(BaseTask):
-    def __init__(self,
-                 _id: str,
-                 name: str) -> None:
-        super(Gateway, self).__init__(_id, name)
+    pass
 
+
+class NonWaitingGateway(Gateway):
+    pass
+
+
+class WaitingGateway(Gateway):
+    pass

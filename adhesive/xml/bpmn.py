@@ -5,8 +5,8 @@ import re
 
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.SubProcess import SubProcess
+from adhesive.graph.Task import Task
 from adhesive.graph.Workflow import Workflow
-from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Edge import Edge
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.EndEvent import EndEvent
@@ -101,7 +101,7 @@ def process_edge(result: Workflow,
 def process_node_task(w: Workflow, xml_node) -> None:
     """ Create a Task element from the workflow """
     node_name = normalize_name(xml_node.get("name"))
-    task = BaseTask(xml_node.get("id"), node_name)
+    task = Task(xml_node.get("id"), node_name)
     w.add_task(task)
 
 

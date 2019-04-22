@@ -1,7 +1,8 @@
 import re
 from typing import Set, Optional, Dict, List, TypeVar, cast
 
-from adhesive.graph.Gateway import Gateway
+from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
+from adhesive.graph.Task import Task
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.TaskFuture import TaskFuture
 from adhesive.steps.WorkflowData import WorkflowData
@@ -112,7 +113,7 @@ class WorkflowExecutor:
         # the routing to the next events, depending on the gateway
         # type. For this, the routing will select only the edges that
         # activate, and create events for each.
-        if isinstance(processed_event.task, Gateway):
+        if isinstance(processed_event.task, ExclusiveGateway):
             gateway = cast(Gateway, processed_event.task)
             outgoing_edges = GatewayController.route_single_output(
                 workflow, gateway, processed_event)
@@ -162,7 +163,7 @@ class WorkflowExecutor:
 
         # if this is an exclusive gateway, the current event is immediately passed
         # through.
-        if isinstance(task, ExclusiveGateway):
+        if isinstance(task, NonWaitingGateway):
             self.active_futures[event.id] = TaskFuture.resolved(task, event)
             return
 
@@ -171,7 +172,7 @@ class WorkflowExecutor:
         # to create an event that gathers all the data from the incoming edges.
         # This means a single instance can exist at a time that's not yet fired,
         # and is still pending.
-        if isinstance(task, BaseTask):  # FIXME: there should be a BaseTask for elements
+        if isinstance(task, Task) or isinstance(task, WaitingGateway):
             active_tasks = [ev.task for ev in self.pending_events]
             active_tasks.extend(map(lambda it: it.task, self.active_futures.values()))
 
@@ -185,8 +186,9 @@ class WorkflowExecutor:
             self.waiting_events.pop(waiting_event.task.id)
 
             # We can now invoke the actual method if that's the case. If it's
-            # only a gateway we just need to mark it as done:
-            if isinstance(task, Gateway):  # FIXME: waiting gateway?
+            # only a gateway we just need to mark it as done, since they don't have
+            # associated tasks.
+            if isinstance(task, WaitingGateway):
                 self.active_futures[event.id] = TaskFuture.resolved(task, waiting_event)
                 return
 
@@ -279,6 +281,7 @@ class WorkflowExecutor:
                 self._validate_tasks(task, tasks_impl)
                 continue
 
+            # gateways don't have associated tasks with them.
             if isinstance(task, StartEvent) or \
                     isinstance(task, EndEvent) or \
                     isinstance(task, Gateway):
