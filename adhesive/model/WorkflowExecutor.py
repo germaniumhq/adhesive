@@ -228,12 +228,14 @@ class WorkflowExecutor:
                 new_data = WorkflowData.merge(other_waiting.context.data, event.context.data)
                 other_waiting.context.data = new_data
 
+                # FIXME: probably a different state should be routed to check the other
+                # subprocesses
+                event.state.done()
+
                 anyone_else_waiting = get_other_task_waiting(other_waiting)
 
                 if not anyone_else_waiting:
-                    other_waiting.state.route(event.context)
-
-                return ActiveEventState.DONE
+                    other_waiting.state.run()
 
             potential_predecessors = map(
                 lambda e: e.task,
