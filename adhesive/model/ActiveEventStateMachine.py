@@ -9,6 +9,7 @@ class ActiveEventState(Enum):
     WAITING = 'WAITING'
     RUNNING = 'RUNNING'
     ROUTING = 'ROUTING'
+    DONE_END_TASK = 'DONE_END_TASK'
     DONE = 'DONE'
 
 
@@ -18,7 +19,8 @@ STATE_INDEX = {
     'WAITING': 2,
     'RUNNING': 3,
     'ROUTING': 4,
-    'DONE': 5,
+    'DONE_END_TASK': 5,
+    'DONE': 6,
 }
 
 
@@ -106,6 +108,8 @@ register_transition('run', ActiveEventState.WAITING, ActiveEventState.RUNNING)
 register_transition('done', ActiveEventState.WAITING, ActiveEventState.DONE)
 register_transition('route', ActiveEventState.RUNNING, ActiveEventState.ROUTING)
 register_transition('done', ActiveEventState.ROUTING, ActiveEventState.DONE)
+register_transition('done_end_task', ActiveEventState.ROUTING, ActiveEventState.DONE_END_TASK)
+register_transition('done', ActiveEventState.DONE_END_TASK, ActiveEventState.DONE)
 
 
 ChangeStateEventListener = Union[
@@ -125,12 +129,14 @@ class ActiveEventStateMachine(object):
         self._transition_listeners['WAITING'] = EventListener()
         self._transition_listeners['RUNNING'] = EventListener()
         self._transition_listeners['ROUTING'] = EventListener()
+        self._transition_listeners['DONE_END_TASK'] = EventListener()
         self._transition_listeners['DONE'] = EventListener()
         self._data_listeners['NEW'] = EventListener()
         self._data_listeners['PROCESSING'] = EventListener()
         self._data_listeners['WAITING'] = EventListener()
         self._data_listeners['RUNNING'] = EventListener()
         self._data_listeners['ROUTING'] = EventListener()
+        self._data_listeners['DONE_END_TASK'] = EventListener()
         self._data_listeners['DONE'] = EventListener()
         self._currentState = None  # type: Optional[ActiveEventState]
         self._current_change_state_event = None  # type: Optional[ActiveEventStateChangeEvent]
@@ -156,6 +162,9 @@ class ActiveEventStateMachine(object):
 
     def done(self, data: Any=None) -> ActiveEventState:
         return self.transition("done", data)
+
+    def done_end_task(self, data: Any=None) -> ActiveEventState:
+        return self.transition("done_end_task", data)
 
     def _ensure_state_machine_initialized(self) -> None:
         if not self._currentState:

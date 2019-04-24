@@ -51,8 +51,10 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow)
 
-        fake_event = ActiveEvent(None, workflow)
-        root_event = self.clone_event(fake_event, workflow, parent_id=fake_event.id)
+        fake_event = ActiveEvent(parent_id=None, task=workflow)
+        fake_event.id = None
+
+        root_event = self.clone_event(fake_event, workflow)
 
         await self.execute_workflow()
 
@@ -276,11 +278,14 @@ class WorkflowExecutor:
 
             for outgoing_edge in outgoing_edges:
                 target_task = workflow.tasks[outgoing_edge.target_id]
-                self.clone_event(event, target_task, parent_id=event.parent_id)
+                self.clone_event(event, target_task)
+
+            if not outgoing_edges:
+                return event.state.done_end_task()
 
             return event.state.done()
 
-        def done_task(_event) -> None:
+        def done_end_task(_event) -> None:
             # check sub-process termination
             found = False
             for ev in self.events.values():
@@ -288,15 +293,27 @@ class WorkflowExecutor:
                     found = True
                     break
 
-            self.unregister_event(event)
+            # we merge into the parent event if it's an end state.
+            if parent_id is not None:
+                self.events[parent_id].context.data = WorkflowData.merge(
+                    self.events[parent_id].context.data,
+                    event.context.data
+                )
 
-            if not found:
-                self.events[parent_id].state.route(event.context)
+                if not found:
+                    parent_event = self.events[parent_id]
+                    parent_event.state.route(parent_event.context)
+
+            event.state.done()
+
+        def done_task(_event) -> None:
+            self.unregister_event(event)
 
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
         event.state.after_enter(ActiveEventState.WAITING, wait_task)
         event.state.after_enter(ActiveEventState.RUNNING, run_task)
         event.state.after_enter(ActiveEventState.ROUTING, route_task)
+        event.state.after_enter(ActiveEventState.DONE_END_TASK, done_end_task)
         event.state.after_enter(ActiveEventState.DONE, done_task)
 
         return event

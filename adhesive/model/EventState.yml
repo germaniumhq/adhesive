@@ -6,6 +6,7 @@ states:
   - WAITING
   - RUNNING
   - ROUTING
+  - DONE_END_TASK
   - DONE
 transitions:
   NEW:
@@ -21,5 +22,8 @@ transitions:
   RUNNING:
     route: ROUTING
   ROUTING:
+    done: DONE
+    done_end_task: DONE_END_TASK
+  DONE_END_TASK:
     done: DONE
 
