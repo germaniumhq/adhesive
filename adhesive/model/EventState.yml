@@ -1,0 +1,25 @@
+name: ActiveEvent
+package: .
+states:
+  - NEW
+  - PROCESSING
+  - WAITING
+  - RUNNING
+  - ROUTING
+  - DONE
+transitions:
+  NEW:
+    process: PROCESSING
+  PROCESSING:
+    route: ROUTING
+    wait_check: WAITING
+    run: RUNNING
+    done: DONE
+  WAITING:
+    run: RUNNING
+    done: DONE
+  RUNNING:
+    route: ROUTING
+  ROUTING:
+    done: DONE
+

@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Iterator
 
 import networkx as nx
 
@@ -43,19 +43,7 @@ class Workflow(BaseTask):
     def add_task(self, task: BaseTask) -> None:
         """ Add a task into the graph. """
         self._tasks[task.id] = task
-
-        if isinstance(task, Workflow):
-            self._graph.add_nodes_from(task._graph.nodes)
-            self._graph.add_edges_from(task._graph.edges)
-            self._graph.add_node(f"{task.id}:start")
-            self._graph.add_node(f"{task.id}:end")
-
-            for start_task in task.start_tasks:
-                self._graph.add_edge(f"{task.id}:start", start_task)
-            for end_task in task.end_events:
-                self._graph.add_edge(end_task, f"{task.id}:end")
-        else:
-            self._graph.add_node(task.id)
+        self._graph.add_node(task.id)
 
     def add_edge(self, edge: Edge) -> None:
         """Add an edge into the graph. """
@@ -98,11 +86,16 @@ class Workflow(BaseTask):
 
     def are_predecessors(self,
                          task: BaseTask,
-                         potential_predecessors: List[BaseTask]) -> bool:
+                         potential_predecessors: Iterator[BaseTask]) -> bool:
         for potential_predecessor in potential_predecessors:
-            if nx.algorithms.has_path(
-                    self._graph,
-                    potential_predecessor.id,
-                    task.id):
-                return True
+            # FIXME: cross subprocess exceptions are handled as no predecessors
+            try:
+                if nx.algorithms.has_path(
+                        self._graph,
+                        potential_predecessor.id,
+                        task.id):
+                    return True
+            except Exception:
+                pass
+
         return False

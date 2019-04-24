@@ -1,6 +1,7 @@
 from typing import cast
 import unittest
 
+from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.xml.bpmn import read_bpmn_file
 
@@ -55,6 +56,16 @@ class TestReadingBpmn(unittest.TestCase):
 
         task_route = workflow.edges["_10"]
         self.assertEqual('', task_route.condition)
+
+    def test_reading_parallel_gateway_bpmn(self) -> None:
+        workflow = read_bpmn_file("test/adhesive/xml/gateway-parallel.bpmn")
+
+        self.assertEqual(9, len(workflow.tasks))
+        self.assertEqual(12, len(workflow.edges))
+        self.assertEqual(1, len(workflow.start_tasks))
+        self.assertEqual(1, len(workflow.end_events))
+
+        self.assertTrue(isinstance(workflow.tasks["_9"], ParallelGateway))
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):
