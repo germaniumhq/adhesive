@@ -19,7 +19,7 @@ class TestGatewayParallel(unittest.TestCase):
         data = _async(workflow_executor.execute())
 
         self.assertEqual({
-            "Test Chrome": [1, 1, 1],
+            "Test Chrome": [1, 1, 1, 1, 1, 1, 1, 1, 1],
             "Build Germanium Image": [1, 1, 1],
         }, data.steps)
         self.assertFalse(workflow_executor.events)

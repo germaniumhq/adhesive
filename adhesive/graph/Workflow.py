@@ -87,7 +87,8 @@ class Workflow(BaseTask):
     def are_predecessors(self,
                          task: BaseTask,
                          potential_predecessors: Iterator[BaseTask]) -> bool:
-        for potential_predecessor in potential_predecessors:
+        predecessors = list(potential_predecessors)
+        for potential_predecessor in predecessors:
             # FIXME: cross subprocess exceptions are handled as no predecessors
             try:
                 if nx.algorithms.has_path(

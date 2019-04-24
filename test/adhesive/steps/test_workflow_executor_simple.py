@@ -19,11 +19,11 @@ class TestWorkflowExecutorSimple(unittest.TestCase):
         data = _async(workflow_executor.execute())
 
         self.assertEqual({
-            "Ensure Docker Tooling",
-            "Build Germanium Image",
-            "Test Chrome",
-            "Test Firefox",
-        }, data.steps.keys())
+            "Ensure Docker Tooling": [1],
+            "Build Germanium Image": [1],
+            "Test Chrome": [1, 1],
+            "Test Firefox": [1, 1],
+        }, data.steps)
         self.assertFalse(workflow_executor.events)
 
 

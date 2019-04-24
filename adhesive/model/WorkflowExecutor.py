@@ -224,6 +224,13 @@ class WorkflowExecutor:
             # is another waiting task already present?
             other_waiting = get_other_task_waiting(event)
 
+            potential_predecessors = list(map(
+                lambda e: e.task,
+                filter(
+                    lambda e: e.state.state != ActiveEventState.DONE and e.task != event.task,
+                    self.events.values()
+                )))
+
             if other_waiting:
                 new_data = WorkflowData.merge(other_waiting.context.data, event.context.data)
                 other_waiting.context.data = new_data
@@ -232,20 +239,12 @@ class WorkflowExecutor:
                 # subprocesses
                 event.state.done()
 
-                anyone_else_waiting = get_other_task_waiting(other_waiting)
-
-                if not anyone_else_waiting:
-                    other_waiting.state.run()
-
-            potential_predecessors = map(
-                lambda e: e.task,
-                filter(
-                    lambda e: e.state.state != ActiveEventState.DONE and e != event,
-                    self.events.values()
-                ))
-
             # if we have predecessors, we stay in waiting
             if workflow.are_predecessors(event.task, potential_predecessors):
+                return None
+
+            if other_waiting:
+                other_waiting.state.run()
                 return None
 
             return event.state.run()
