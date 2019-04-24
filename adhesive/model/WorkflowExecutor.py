@@ -215,7 +215,10 @@ class WorkflowExecutor:
                 if ev == source:
                     continue
 
-                if ev.task == source.task and ev.state.state == ActiveEventState.WAITING:
+                if ev.task == source.task and\
+                        (ev.state.state == ActiveEventState.WAITING or
+                                ev.state.state == ActiveEventState.NEW or
+                                ev.state.state == ActiveEventState.PROCESSING):
                     return ev
 
             return None
@@ -227,7 +230,7 @@ class WorkflowExecutor:
             potential_predecessors = list(map(
                 lambda e: e.task,
                 filter(
-                    lambda e: e.state.state != ActiveEventState.DONE and e.task != event.task,
+                    lambda e: e.state.state != ActiveEventState.DONE and e.state.state != ActiveEventState.DONE_END_TASK and e.task != event.task,
                     self.events.values()
                 )))
 

@@ -1,4 +1,3 @@
-import traceback
 from enum import Enum
 from typing import Any, Dict, Optional, Callable, Union
 import uuid
@@ -419,7 +418,7 @@ class EventListener(object):
 
         listeners = self.registered[event_type.value]
 
-        for callback in list(listeners.values()):
+        for callback in listeners.values():
             try:
                 potential_result = callback.__call__(ev)
 
@@ -428,7 +427,6 @@ class EventListener(object):
 
                 result = potential_result
             except Exception as e:
-                traceback.print_exc()
                 print(e)
                 if isinstance(e, ActiveEventStateException):
                     raise e
