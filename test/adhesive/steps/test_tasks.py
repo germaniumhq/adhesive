@@ -1,6 +1,7 @@
 import adhesive
 import time
 import asyncio
+import uuid
 
 
 def _async(fn):
@@ -23,9 +24,9 @@ def basic_task(context) -> None:
         context.data.steps = dict()
 
     if context.task.name not in context.data.steps:
-        context.data.steps[context.task.name] = []
+        context.data.steps[context.task.name] = set()
 
-    context.data.steps[context.task.name].append(1)
+    context.data.steps[context.task.name].add(str(uuid.uuid4()))
 
 
 @adhesive.task(r'^Parallel \d+$')

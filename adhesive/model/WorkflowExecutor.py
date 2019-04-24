@@ -1,17 +1,15 @@
 import re
-from typing import Set, Optional, Dict, List, TypeVar, cast, Tuple
+from typing import Set, Optional, Dict, TypeVar, cast
 
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.Task import Task
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
-from adhesive.model.TaskFuture import TaskFuture
 from adhesive.steps.WorkflowData import WorkflowData
 
 T = TypeVar('T')
 
 import concurrent.futures
-from concurrent.futures import Future
 
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.StartEvent import StartEvent
@@ -192,8 +190,10 @@ class WorkflowExecutor:
         event = old_event.clone(task, parent_id)
         self.register_event(event)
 
-        # FIXME: detect the workflow of the event.
-        workflow = self.process.workflow
+        if parent_id is None:
+            workflow = self.process.workflow
+        else:
+            workflow = self.events[parent_id].task
 
         def process_event(_event) -> ActiveEventState:
             # if there is no processing needed, we skip to routing
@@ -235,8 +235,6 @@ class WorkflowExecutor:
                 new_data = WorkflowData.merge(other_waiting.context.data, event.context.data)
                 other_waiting.context.data = new_data
 
-                # FIXME: probably a different state should be routed to check the other
-                # subprocesses
                 event.state.done()
 
             # if we have predecessors, we stay in waiting
@@ -287,6 +285,23 @@ class WorkflowExecutor:
             return event.state.done()
 
         def done_end_task(_event) -> None:
+            # we should check all the WAITING processes if they finished.
+            waiting_events = list(filter(
+                lambda e: e.state.state == ActiveEventState.WAITING and e.task != event.task,
+                self.events.values()
+            ))
+
+            for waiting_event in waiting_events:
+                potential_predecessors = list(map(
+                    lambda e: e.task,
+                    filter(
+                        lambda e: e.state.state != ActiveEventState.DONE and e.state.state != ActiveEventState.DONE_END_TASK and e.task != waiting_event.task,
+                        self.events.values()
+                    )))
+
+                if not workflow.are_predecessors(waiting_event.task, potential_predecessors):
+                    waiting_event.state.run()
+
             # check sub-process termination
             found = False
             for ev in self.events.values():

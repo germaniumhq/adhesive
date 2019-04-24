@@ -2,7 +2,9 @@ import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
+
 from .test_tasks import adhesive, _async
+from .check_equals import assert_equal_steps
 
 
 class TestWorkflowExecutorSimple(unittest.TestCase):
@@ -18,11 +20,11 @@ class TestWorkflowExecutorSimple(unittest.TestCase):
         workflow_executor = WorkflowExecutor(adhesive.process)
         data = _async(workflow_executor.execute())
 
-        self.assertEqual({
-            "Ensure Docker Tooling": [1],
-            "Build Germanium Image": [1],
-            "Test Chrome": [1, 1],
-            "Test Firefox": [1, 1],
+        assert_equal_steps({
+            "Ensure Docker Tooling": 1,
+            "Build Germanium Image": 1,
+            "Test Chrome": 1,
+            "Test Firefox": 1,
         }, data.steps)
         self.assertFalse(workflow_executor.events)
 

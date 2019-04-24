@@ -2,7 +2,9 @@ import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
+
 from .test_tasks import adhesive, _async
+from .check_equals import assert_equal_steps
 
 
 class TestGatewayParallel(unittest.TestCase):
@@ -18,9 +20,9 @@ class TestGatewayParallel(unittest.TestCase):
         workflow_executor = WorkflowExecutor(adhesive.process)
         data = _async(workflow_executor.execute())
 
-        self.assertEqual({
-            "Test Chrome": [1, 1, 1, 1, 1, 1, 1, 1, 1],
-            "Build Germanium Image": [1, 1, 1],
+        assert_equal_steps({
+            "Test Chrome": 3,
+            "Build Germanium Image": 3,
         }, data.steps)
         self.assertFalse(workflow_executor.events)
 
