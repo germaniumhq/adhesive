@@ -5,6 +5,7 @@ from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.Task import Task
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
+from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
 from adhesive.steps.WorkflowData import WorkflowData
 
 T = TypeVar('T')
@@ -30,7 +31,8 @@ class WorkflowExecutor:
     pool = concurrent.futures.ProcessPoolExecutor()
 
     def __init__(self,
-                 process: AdhesiveProcess) -> None:
+                 process: AdhesiveProcess,
+                 wait_tasks: bool = True) -> None:
         self.process = process
         self.tasks_impl: Dict[str, AdhesiveTask] = dict()
 
@@ -38,6 +40,7 @@ class WorkflowExecutor:
         # the parent of an event, since from it we can also derive the current parent
         # workflow.
         self.events: Dict[str, ActiveEvent] = dict()
+        self.config = WorkflowExecutorConfig(wait_tasks=wait_tasks)
 
     async def execute(self) -> WorkflowData:
         """
@@ -205,7 +208,13 @@ class WorkflowExecutor:
 
             # if we need to wait, we wait.
             # FIXME: we need probably a "WaitingBaseTask" of some sort.
-            if isinstance(event.task, WaitingGateway) or isinstance(event.task, Task) or isinstance(event.task, Workflow):
+            if isinstance(event.task, WaitingGateway):
+                return event.state.wait_check()
+
+            if self.config.wait_tasks and (
+                    isinstance(event.task, Task) or
+                    isinstance(event.task, Workflow)
+            ):
                 return event.state.wait_check()
 
             return event.state.run()

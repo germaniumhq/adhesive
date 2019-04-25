@@ -26,6 +26,21 @@ class TestGatewayParallel(unittest.TestCase):
         }, data.steps)
         self.assertFalse(workflow_executor.events)
 
+    def test_parallel_gateway_non_wait(self):
+        """
+        Load a workflow with a gateway and test it..
+        """
+        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/gateway-parallel.bpmn")
+
+        workflow_executor = WorkflowExecutor(adhesive.process)
+        data = _async(workflow_executor.execute())
+
+        assert_equal_steps({
+            "Test Chrome": 3,
+            "Build Germanium Image": 3,
+        }, data.steps)
+        self.assertFalse(workflow_executor.events)
+
 
 if __name__ == '__main__':
     unittest.main()

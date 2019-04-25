@@ -19,8 +19,9 @@ def task(*task_names: str) -> Callable[..., Callable[..., T]]:
     return wrapper_builder
 
 
-def bpmn_build(file_name: str):
+def bpmn_build(file_name: str,
+               wait_tasks: bool=True):
     """ Start a build that was described in BPMN """
     process.workflow = read_bpmn_file(file_name)
-    fn = WorkflowExecutor(process).execute()
+    fn = WorkflowExecutor(process, wait_tasks=wait_tasks).execute()
     asyncio.get_event_loop().run_until_complete(fn)
