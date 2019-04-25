@@ -1,6 +1,7 @@
 from typing import cast
 import unittest
 
+from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.xml.bpmn import read_bpmn_file
@@ -66,6 +67,23 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(workflow.end_events))
 
         self.assertTrue(isinstance(workflow.tasks["_9"], ParallelGateway))
+
+    def test_reading_error_event_interrupting(self) -> None:
+        workflow = read_bpmn_file("test/adhesive/xml/error-event-interrupting.bpmn")
+
+        self.assertEqual(6, len(workflow.tasks))
+        self.assertEqual(5, len(workflow.edges))
+        self.assertEqual(1, len(workflow.start_tasks))
+        self.assertEqual(1, len(workflow.end_events))
+
+        boundary_event: ErrorBoundaryEvent = workflow.tasks["_6"]
+        self.assertTrue(isinstance(
+            workflow.tasks["_6"],
+            ErrorBoundaryEvent
+        ))
+
+        self.assertTrue(boundary_event.cancel_activity)
+        self.assertFalse(boundary_event.parallel_multiple)
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):

@@ -2,6 +2,7 @@ from typing import Dict, List, Iterator
 
 import networkx as nx
 
+from adhesive.graph.BoundaryEvent import BoundaryEvent
 from .BaseTask import BaseTask
 from .StartEvent import StartEvent
 from .EndEvent import EndEvent
@@ -44,6 +45,11 @@ class Workflow(BaseTask):
         """ Add a task into the graph. """
         self._tasks[task.id] = task
         self._graph.add_node(task.id)
+
+    def add_boundary_event(self, boundary_event: BoundaryEvent) -> None:
+        self._tasks[boundary_event.id] = boundary_event
+        self._graph.add_node(boundary_event.id)
+        self._graph.add_edge(boundary_event.attached_task_id, boundary_event.id)
 
     def add_edge(self, edge: Edge) -> None:
         """Add an edge into the graph. """

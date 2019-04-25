@@ -4,8 +4,10 @@ states:
   - NEW
   - PROCESSING
   - WAITING
+  - ERROR
   - RUNNING
   - ROUTING
+  - DONE_CHECK
   - DONE_END_TASK
   - DONE
 transitions:
@@ -21,7 +23,12 @@ transitions:
     done: DONE
   RUNNING:
     route: ROUTING
+  ERROR:
+    route: ROUTING
+    done_check: DONE_CHECK
   ROUTING:
+    done_check: DONE
+  DONE_CHECK:
     done: DONE
     done_end_task: DONE_END_TASK
   DONE_END_TASK:

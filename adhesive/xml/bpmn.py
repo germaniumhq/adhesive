@@ -2,6 +2,7 @@ import re
 from typing import Tuple
 from xml.etree import ElementTree
 
+from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
@@ -23,6 +24,8 @@ ignored_elements = {
     "outgoing",
 }
 
+boundary_ignored_elements = set(ignored_elements)
+boundary_ignored_elements.add("outputSet")
 
 def read_bpmn_file(file_name: str) -> Workflow:
     """ Read a BPMN file as a build workflow. """
@@ -41,6 +44,20 @@ def find_node(parent_node, name: str):
     return None
 
 
+def get_boolean(parent_node, attr: str, default_value: bool) -> bool:
+    attr_value = parent_node.get(attr)
+
+    if attr_value is None:
+        return default_value
+
+    if attr_value.upper() == "TRUE":
+        return True
+    elif attr_value.upper() == "FALSE":
+        return False
+
+    raise Exception(f"Not a boolean value for {attr}: {attr_value}")
+
+
 def read_process(process) -> Workflow:
     node_ns, node_name = parse_tag(process)
 
@@ -51,17 +68,26 @@ def read_process(process) -> Workflow:
     else:
         raise Exception(f"Unknown process node: {process.tag}")
 
-    # we read first the nodes, then the edges so they are findable
+    # we read first the nodes, then the boundary events,
+    # then only the edges so they are findable
     # when adding the edges by id.
     for node in process.getchildren():
         process_node(result, node)
 
     for node in process.getchildren():
+        process_boundary_event(result, node)
+
+    for node in process.getchildren():
         process_edge(result, node)
 
     for task_id, task in result.tasks.items():
-        if not result.has_incoming_edges(task):
-            result.start_tasks[task.id] = task
+        if isinstance(task, BoundaryEvent):
+            continue
+
+        if result.has_incoming_edges(task):
+            continue
+
+        result.start_tasks[task.id] = task
 
     for task_id, task in result.tasks.items():
         if not result.has_outgoing_edges(task):
@@ -78,6 +104,8 @@ def process_node(result: Workflow,
         process_node_task(result, node)
     elif "sequenceFlow" == node_name:
         pass
+    elif "boundaryEvent" == node_name:
+        pass
     elif "startEvent" == node_name:
         process_node_start_event(result, node)
     elif "endEvent" == node_name:
@@ -90,6 +118,14 @@ def process_node(result: Workflow,
         process_parallel_gateway(result, node)
     elif node_name not in ignored_elements:
         raise Exception(f"Unknown process node: {node.tag}")
+
+
+def process_boundary_event(result: Workflow,
+                           node) -> None:
+    node_ns, node_name = parse_tag(node)
+
+    if "boundaryEvent" == node_name:
+        process_boundary_task(result, node)
 
 
 def process_edge(result: Workflow,
@@ -105,6 +141,36 @@ def process_node_task(w: Workflow, xml_node) -> None:
     node_name = normalize_name(xml_node.get("name"))
     task = Task(xml_node.get("id"), node_name)
     w.add_task(task)
+
+
+def process_boundary_task(w: Workflow, xml_node) -> None:
+    """ Create a Task element from the workflow """
+    for node in xml_node.getchildren():
+        node_ns, node_name = parse_tag(node)
+
+        if node_name in boundary_ignored_elements:
+            continue
+
+        # node is not ignored, we either found the type
+        # or we die with exception.
+        task_name = normalize_name(xml_node.get("name"))
+
+        if node_name == "errorEventDefinition":
+            boundary_task = ErrorBoundaryEvent(
+                xml_node.get("id"),
+                task_name)
+
+            boundary_task.cancel_activity = get_boolean(
+                xml_node, "cancelActivity", True)
+            boundary_task.parallel_multiple = get_boolean(
+                xml_node, "parallelMultiple", True)
+
+            w.add_task(boundary_task)
+
+            return
+
+    raise Exception("Unable to find the type of the boundary event. Only "
+                    "<errorEventDefinition> is supported.")
 
 
 def process_node_start_event(w: Workflow, xml_node) -> None:
@@ -154,6 +220,9 @@ def process_parallel_gateway(w: Workflow, xml_node) -> None:
 
 
 def normalize_name(name: str) -> str:
+    if not name:
+        return "<noname>"
+
     return SPACE.sub(' ', name)
 
 
@@ -164,4 +233,3 @@ def parse_tag(node) -> Tuple[str, str]:
         raise Exception(f"Unable to parse tag name `{node}`")
 
     return m[1], m[2]
-

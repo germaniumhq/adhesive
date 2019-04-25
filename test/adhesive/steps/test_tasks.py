@@ -8,6 +8,7 @@ def _async(fn):
     data = asyncio.get_event_loop().run_until_complete(fn)
     return data
 
+
 @adhesive.task(
     'Ensure Docker Tooling',
     'Test Chrome',
@@ -36,3 +37,8 @@ def parallel_task(context) -> None:
         context.data.steps = set()
 
     context.data.steps.add(context.task.name)
+
+
+@adhesive.task(r'^Throw Some Exception$')
+def throw_some_exception(context) -> None:
+    raise Exception("broken")
