@@ -2,6 +2,7 @@ import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
+from test.adhesive.steps.check_equals import assert_equal_steps
 
 from .test_tasks import adhesive, _async
 
@@ -19,10 +20,10 @@ class TestWorkflowExecutor(unittest.TestCase):
         workflow_executor = WorkflowExecutor(adhesive.process)
         data = _async(workflow_executor.execute())
 
-        self.assertEqual({
-            "Populate task data",
-            "Exclusive default branch"
-        }, data.steps.keys())
+        assert_equal_steps({
+            "Populate task data": 1,
+            "Exclusive default branch": 1,
+        }, data.steps)
         self.assertFalse(workflow_executor.events)
 
 
