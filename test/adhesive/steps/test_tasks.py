@@ -22,13 +22,7 @@ def _async(fn):
     'Cleanup Broken Tasks'
 )
 def basic_task(context) -> None:
-    if not context.data.steps:
-        context.data.steps = dict()
-
-    if context.task.name not in context.data.steps:
-        context.data.steps[context.task.name] = set()
-
-    context.data.steps[context.task.name].add(str(uuid.uuid4()))
+    add_current_task(context)
 
 
 @adhesive.task(r'^Parallel \d+$')
@@ -42,6 +36,23 @@ def parallel_task(context) -> None:
 
 @adhesive.task(r'^Throw Some Exception$')
 def throw_some_exception(context) -> None:
+    add_current_task(context)
+
+    raise Exception("broken")
+
+
+@adhesive.task('Increment\ X\ by\ 1')
+def increment_x_by_1(context):
+    add_current_task(context)
+
+    if not context.data.x:
+        context.data.x = 1
+        return
+
+    context.data.x += 1
+
+
+def add_current_task(context):
     if not context.data.steps:
         context.data.steps = dict()
 
@@ -49,5 +60,3 @@ def throw_some_exception(context) -> None:
         context.data.steps[context.task.name] = set()
 
     context.data.steps[context.task.name].add(str(uuid.uuid4()))
-
-    raise Exception("broken")
