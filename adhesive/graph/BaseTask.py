@@ -1,3 +1,5 @@
+from typing import Optional
+
 
 class BaseTask:
     """
@@ -10,6 +12,10 @@ class BaseTask:
                  name: str) -> None:
         self.id = _id
         self.name = name
+        self.error_task: Optional['ErrorBoundaryEvent'] = None
 
     def __str__(self) -> str:
         return f"Task({self.id}): {self.name}"
+
+
+from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent

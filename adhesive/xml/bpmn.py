@@ -27,6 +27,7 @@ ignored_elements = {
 boundary_ignored_elements = set(ignored_elements)
 boundary_ignored_elements.add("outputSet")
 
+
 def read_bpmn_file(file_name: str) -> Workflow:
     """ Read a BPMN file as a build workflow. """
     root_node = ElementTree.parse(file_name).getroot()
@@ -160,12 +161,15 @@ def process_boundary_task(w: Workflow, xml_node) -> None:
                 xml_node.get("id"),
                 task_name)
 
+            boundary_task.attached_task_id = xml_node.get(
+                "attachedToRef", default="not attached")
+
             boundary_task.cancel_activity = get_boolean(
                 xml_node, "cancelActivity", True)
             boundary_task.parallel_multiple = get_boolean(
                 xml_node, "parallelMultiple", True)
 
-            w.add_task(boundary_task)
+            w.add_boundary_event(boundary_task)
 
             return
 

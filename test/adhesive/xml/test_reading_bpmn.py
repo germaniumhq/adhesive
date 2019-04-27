@@ -4,6 +4,7 @@ import unittest
 from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.SubProcess import SubProcess
+from adhesive.graph.Task import Task
 from adhesive.xml.bpmn import read_bpmn_file
 
 
@@ -84,6 +85,9 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertTrue(boundary_event.cancel_activity)
         self.assertFalse(boundary_event.parallel_multiple)
+
+        parent_event: Task = workflow.tasks['_3']
+        self.assertEqual(parent_event.error_task, boundary_event)
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):

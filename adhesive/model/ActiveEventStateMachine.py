@@ -7,8 +7,10 @@ class ActiveEventState(Enum):
     NEW = 'NEW'
     PROCESSING = 'PROCESSING'
     WAITING = 'WAITING'
+    ERROR = 'ERROR'
     RUNNING = 'RUNNING'
     ROUTING = 'ROUTING'
+    DONE_CHECK = 'DONE_CHECK'
     DONE_END_TASK = 'DONE_END_TASK'
     DONE = 'DONE'
 
@@ -17,10 +19,12 @@ STATE_INDEX = {
     'NEW': 0,
     'PROCESSING': 1,
     'WAITING': 2,
-    'RUNNING': 3,
-    'ROUTING': 4,
-    'DONE_END_TASK': 5,
-    'DONE': 6,
+    'ERROR': 3,
+    'RUNNING': 4,
+    'ROUTING': 5,
+    'DONE_CHECK': 6,
+    'DONE_END_TASK': 7,
+    'DONE': 8,
 }
 
 
@@ -100,15 +104,21 @@ def register_transition(name: Optional[str], from_state: ActiveEventState, to_st
 
 
 register_transition('process', ActiveEventState.NEW, ActiveEventState.PROCESSING)
+register_transition('error', ActiveEventState.NEW, ActiveEventState.DONE)
 register_transition('route', ActiveEventState.PROCESSING, ActiveEventState.ROUTING)
 register_transition('wait_check', ActiveEventState.PROCESSING, ActiveEventState.WAITING)
 register_transition('run', ActiveEventState.PROCESSING, ActiveEventState.RUNNING)
 register_transition('done', ActiveEventState.PROCESSING, ActiveEventState.DONE)
 register_transition('run', ActiveEventState.WAITING, ActiveEventState.RUNNING)
 register_transition('done', ActiveEventState.WAITING, ActiveEventState.DONE)
+register_transition('error', ActiveEventState.WAITING, ActiveEventState.ERROR)
 register_transition('route', ActiveEventState.RUNNING, ActiveEventState.ROUTING)
-register_transition('done', ActiveEventState.ROUTING, ActiveEventState.DONE)
-register_transition('done_end_task', ActiveEventState.ROUTING, ActiveEventState.DONE_END_TASK)
+register_transition('error', ActiveEventState.RUNNING, ActiveEventState.ERROR)
+register_transition('route', ActiveEventState.ERROR, ActiveEventState.ROUTING)
+register_transition('done_check', ActiveEventState.ERROR, ActiveEventState.DONE_CHECK)
+register_transition('done_check', ActiveEventState.ROUTING, ActiveEventState.DONE_CHECK)
+register_transition('done', ActiveEventState.DONE_CHECK, ActiveEventState.DONE)
+register_transition('done_end_task', ActiveEventState.DONE_CHECK, ActiveEventState.DONE_END_TASK)
 register_transition('done', ActiveEventState.DONE_END_TASK, ActiveEventState.DONE)
 
 
@@ -127,15 +137,19 @@ class ActiveEventStateMachine(object):
         self._transition_listeners['NEW'] = EventListener()
         self._transition_listeners['PROCESSING'] = EventListener()
         self._transition_listeners['WAITING'] = EventListener()
+        self._transition_listeners['ERROR'] = EventListener()
         self._transition_listeners['RUNNING'] = EventListener()
         self._transition_listeners['ROUTING'] = EventListener()
+        self._transition_listeners['DONE_CHECK'] = EventListener()
         self._transition_listeners['DONE_END_TASK'] = EventListener()
         self._transition_listeners['DONE'] = EventListener()
         self._data_listeners['NEW'] = EventListener()
         self._data_listeners['PROCESSING'] = EventListener()
         self._data_listeners['WAITING'] = EventListener()
+        self._data_listeners['ERROR'] = EventListener()
         self._data_listeners['RUNNING'] = EventListener()
         self._data_listeners['ROUTING'] = EventListener()
+        self._data_listeners['DONE_CHECK'] = EventListener()
         self._data_listeners['DONE_END_TASK'] = EventListener()
         self._data_listeners['DONE'] = EventListener()
         self._currentState = None  # type: Optional[ActiveEventState]
@@ -151,6 +165,9 @@ class ActiveEventStateMachine(object):
     def process(self, data: Any=None) -> ActiveEventState:
         return self.transition("process", data)
 
+    def error(self, data: Any=None) -> ActiveEventState:
+        return self.transition("error", data)
+
     def route(self, data: Any=None) -> ActiveEventState:
         return self.transition("route", data)
 
@@ -162,6 +179,9 @@ class ActiveEventStateMachine(object):
 
     def done(self, data: Any=None) -> ActiveEventState:
         return self.transition("done", data)
+
+    def done_check(self, data: Any=None) -> ActiveEventState:
+        return self.transition("done_check", data)
 
     def done_end_task(self, data: Any=None) -> ActiveEventState:
         return self.transition("done_end_task", data)

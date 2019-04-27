@@ -18,7 +18,8 @@ def _async(fn):
     # exclusive gateway
     'Exclusive\ Task\ Branch',
     'Populate\ task\ data',
-    'Exclusive\ default\ branch'
+    'Exclusive\ default\ branch',
+    'Cleanup Broken Tasks'
 )
 def basic_task(context) -> None:
     if not context.data.steps:
@@ -41,4 +42,12 @@ def parallel_task(context) -> None:
 
 @adhesive.task(r'^Throw Some Exception$')
 def throw_some_exception(context) -> None:
+    if not context.data.steps:
+        context.data.steps = dict()
+
+    if context.task.name not in context.data.steps:
+        context.data.steps[context.task.name] = set()
+
+    context.data.steps[context.task.name].add(str(uuid.uuid4()))
+
     raise Exception("broken")

@@ -13,6 +13,7 @@ states:
 transitions:
   NEW:
     process: PROCESSING
+    error: DONE
   PROCESSING:
     route: ROUTING
     wait_check: WAITING
@@ -21,16 +22,17 @@ transitions:
   WAITING:
     run: RUNNING
     done: DONE
+    error: ERROR
   RUNNING:
     route: ROUTING
+    error: ERROR
   ERROR:
     route: ROUTING
     done_check: DONE_CHECK
   ROUTING:
-    done_check: DONE
+    done_check: DONE_CHECK
   DONE_CHECK:
     done: DONE
     done_end_task: DONE_END_TASK
   DONE_END_TASK:
     done: DONE
-

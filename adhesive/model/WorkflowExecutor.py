@@ -1,6 +1,7 @@
 import re
-from typing import Set, Optional, Dict, TypeVar, cast
+from typing import Set, Optional, Dict, TypeVar, cast, Any
 
+from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.Task import Task
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
@@ -23,6 +24,21 @@ from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 
+DONE_STATES = {
+    ActiveEventState.DONE_CHECK,
+    ActiveEventState.DONE_END_TASK,
+    ActiveEventState.DONE,
+}
+
+ACTIVE_STATES = {
+    ActiveEventState.NEW,
+    ActiveEventState.PROCESSING,
+    ActiveEventState.WAITING,
+    ActiveEventState.RUNNING,
+    ActiveEventState.ERROR,
+    ActiveEventState.ROUTING,
+}
+
 
 class WorkflowExecutor:
     """
@@ -40,6 +56,8 @@ class WorkflowExecutor:
         # the parent of an event, since from it we can also derive the current parent
         # workflow.
         self.events: Dict[str, ActiveEvent] = dict()
+        self.futures: Dict[Any, str] = dict()
+
         self.config = WorkflowExecutorConfig(wait_tasks=wait_tasks)
 
     async def execute(self) -> WorkflowData:
@@ -79,20 +97,20 @@ class WorkflowExecutor:
             for pending_event in processed_events:
                 pending_event.state.process()
 
-            active_futures = list(map(
-                lambda it: it.future,
-                filter(
-                    lambda e: e.state.state == ActiveEventState.RUNNING and e.future is not None,
-                    self.events.values())))
-
             done_futures, not_done_futures = concurrent.futures.wait(
-                active_futures,
+                self.futures.keys(),
                 return_when=concurrent.futures.FIRST_COMPLETED,
                 timeout=5)
 
             for future in done_futures:
-                event_id, context = future.result()
-                self.events[event_id].state.route(context)
+                try:
+                    event_id, context = future.result()
+                    self.events[event_id].state.route(context)
+                except Exception as e:
+                    event_id = self.futures[future]
+                    self.events[event_id].state.error(e)
+                finally:
+                    del self.futures[future]
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
@@ -156,7 +174,8 @@ class WorkflowExecutor:
             # gateways don't have associated tasks with them.
             if isinstance(task, StartEvent) or \
                     isinstance(task, EndEvent) or \
-                    isinstance(task, Gateway):
+                    isinstance(task, Gateway) or \
+                    isinstance(task, BoundaryEvent):
                 continue
 
             adhesive_step = self._match_task(task)
@@ -207,10 +226,11 @@ class WorkflowExecutor:
                 return event.state.route(event.context)
 
             # if we need to wait, we wait.
-            # FIXME: we need probably a "WaitingBaseTask" of some sort.
             if isinstance(event.task, WaitingGateway):
                 return event.state.wait_check()
 
+            # normally we shouldn't wait for tasks, since it's counter BPMN, so
+            # we allow configuring waiting for it.
             if self.config.wait_tasks and (
                     isinstance(event.task, Task) or
                     isinstance(event.task, Workflow)
@@ -224,10 +244,7 @@ class WorkflowExecutor:
                 if ev == source:
                     continue
 
-                if ev.task == source.task and\
-                        (ev.state.state == ActiveEventState.WAITING or
-                                ev.state.state == ActiveEventState.NEW or
-                                ev.state.state == ActiveEventState.PROCESSING):
+                if ev.task == source.task and ev.state.state in ACTIVE_STATES:
                     return ev
 
             return None
@@ -239,7 +256,7 @@ class WorkflowExecutor:
             potential_predecessors = list(map(
                 lambda e: e.task,
                 filter(
-                    lambda e: e.state.state != ActiveEventState.DONE and e.state.state != ActiveEventState.DONE_END_TASK and e.task != event.task,
+                    lambda e: e.state.state in ACTIVE_STATES and e.task != event.task,
                     self.events.values()
                 )))
 
@@ -271,10 +288,33 @@ class WorkflowExecutor:
                     self.tasks_impl[event.task.id].invoke,
                     event.id,
                     event.context)
+                self.futures[future] = event.id
                 event.future = future
                 return
 
             return event.state.route(event.context)
+
+        def error_task(_event) -> None:
+            if not event.task.error_task:
+                parent_event = self.get_parent(event.id)
+                event.state.done_check(None)  # we kill the current event
+
+                for potential_child in list(self.events.values()):
+                    if potential_child.parent_id != event.id:
+                        continue
+
+                    potential_child.state.error()
+
+                # we move the parent into error
+                parent_event.state.error()
+                return
+
+            self.clone_event(event, event.task.error_task)
+
+            if event.task.error_task.cancel_activity:
+                event.state.done_check(None)
+            else:
+                event.state.route()
 
         def route_task(_event) -> ActiveEventState:
             event.context = _event.data
@@ -290,6 +330,11 @@ class WorkflowExecutor:
             for outgoing_edge in outgoing_edges:
                 target_task = workflow.tasks[outgoing_edge.target_id]
                 self.clone_event(event, target_task)
+
+            event.state.done_check(outgoing_edges)
+
+        def done_check(_event) -> None:
+            outgoing_edges = _event.data
 
             if not outgoing_edges:
                 return event.state.done_end_task()
@@ -307,7 +352,7 @@ class WorkflowExecutor:
                 potential_predecessors = list(map(
                     lambda e: e.task,
                     filter(
-                        lambda e: e.state.state != ActiveEventState.DONE and e.state.state != ActiveEventState.DONE_END_TASK and e.task != waiting_event.task,
+                        lambda e: e.state.state in DONE_STATES and e.task != waiting_event.task,
                         self.events.values()
                     )))
 
@@ -340,7 +385,9 @@ class WorkflowExecutor:
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
         event.state.after_enter(ActiveEventState.WAITING, wait_task)
         event.state.after_enter(ActiveEventState.RUNNING, run_task)
+        event.state.after_enter(ActiveEventState.ERROR, error_task)
         event.state.after_enter(ActiveEventState.ROUTING, route_task)
+        event.state.after_enter(ActiveEventState.DONE_CHECK, done_check)
         event.state.after_enter(ActiveEventState.DONE_END_TASK, done_end_task)
         event.state.after_enter(ActiveEventState.DONE, done_task)
 
