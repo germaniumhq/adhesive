@@ -115,7 +115,7 @@ def process_node(result: Workflow,
         process_node_sub_process(result, node)
     elif "exclusiveGateway" == node_name:
         process_exclusive_gateway(result, node)
-    elif "parallelGateway" == node_name:
+    elif "parallelGateway" == node_name or "inclusiveGateway" == node_name:
         process_parallel_gateway(result, node)
     elif node_name not in ignored_elements:
         raise Exception(f"Unknown process node: {node.tag}")

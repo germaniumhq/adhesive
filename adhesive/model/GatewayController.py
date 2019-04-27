@@ -22,14 +22,14 @@ class GatewayController:
         for edge in edges:
             if not edge.condition:
                 if default_edge is not None:
-                    raise Exception("Duplicate default edge.")
+                    raise Exception(f"Duplicate default edge for gateway {gateway.id}.")
 
                 default_edge = edge
                 continue
 
             if eval(edge.condition, globals(), event.context.as_mapping()):
                 if result_edge is not None:
-                    raise Exception("Duplicate output edge 2")
+                    raise Exception(f"Duplicate output edge for gateway {gateway.id}")
 
                 result_edge = edge
                 continue
@@ -38,7 +38,7 @@ class GatewayController:
             result_edge = default_edge
 
         if not result_edge:
-            raise Exception("No branch matches")
+            raise Exception(f"No branch matches on gateway {gateway.id}")
 
         return [result_edge]
 

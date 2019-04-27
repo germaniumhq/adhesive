@@ -439,16 +439,11 @@ class EventListener(object):
         listeners = self.registered[event_type.value]
 
         for callback in listeners.values():
-            try:
-                potential_result = callback.__call__(ev)
+            potential_result = callback.__call__(ev)
 
-                if potential_result and result:
-                    raise ActiveEventStateException("Data is already returned")
+            if potential_result and result:
+                raise ActiveEventStateException("Data is already returned")
 
-                result = potential_result
-            except Exception as e:
-                print(e)
-                if isinstance(e, ActiveEventStateException):
-                    raise e
+            result = potential_result
 
         return result
