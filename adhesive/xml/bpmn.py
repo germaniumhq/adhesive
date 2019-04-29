@@ -6,6 +6,7 @@ from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
+from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
@@ -103,6 +104,8 @@ def process_node(result: Workflow,
 
     if "task" == node_name:
         process_node_task(result, node)
+    if "userTask" == node_name:
+        process_user_task(result, node)
     elif "sequenceFlow" == node_name:
         pass
     elif "boundaryEvent" == node_name:
@@ -141,6 +144,13 @@ def process_node_task(w: Workflow, xml_node) -> None:
     """ Create a Task element from the workflow """
     node_name = normalize_name(xml_node.get("name"))
     task = Task(xml_node.get("id"), node_name)
+    w.add_task(task)
+
+
+def process_user_task(w: Workflow, xml_node) -> None:
+    """ Create a HumanTask element from the workflow """
+    node_name = normalize_name(xml_node.get("name"))
+    task = UserTask(xml_node.get("id"), node_name)
     w.add_task(task)
 
 

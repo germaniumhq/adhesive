@@ -3,6 +3,7 @@ import unittest
 
 from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
+from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
@@ -109,6 +110,20 @@ class TestReadingBpmn(unittest.TestCase):
 
         parent_event: Task = workflow.tasks['_3']
         self.assertEqual(parent_event.error_task, boundary_event)
+
+    def test_reading_human_task(self) -> None:
+        workflow = read_bpmn_file("test/adhesive/xml/user-task.bpmn")
+
+        self.assertEqual(3, len(workflow.tasks))
+        self.assertEqual(2, len(workflow.edges))
+        self.assertEqual(1, len(workflow.start_tasks))
+        self.assertEqual(1, len(workflow.end_events))
+
+        self.assertTrue(isinstance(
+            workflow.tasks["_3"],
+            UserTask
+        ))
+
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):
