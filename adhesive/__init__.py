@@ -18,6 +18,16 @@ def task(*task_names: str) -> Callable[..., Callable[..., T]]:
     return wrapper_builder
 
 
+# FIXME: they seem different types. Create base, and different implementations?
+# Doesn't seem right using the regular AdhesiveTask here.
+def usertask(*task_names: str) -> Callable[..., Callable[..., T]]:
+    def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
+        process.steps.append(AdhesiveTask(f, *task_names))
+        return f
+
+    return wrapper_builder
+
+
 def bpmn_build(file_name: str,
                wait_tasks: bool=True):
     """ Start a build that was described in BPMN """

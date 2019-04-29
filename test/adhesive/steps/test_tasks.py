@@ -52,6 +52,15 @@ def increment_x_by_1(context):
     context.data.x += 1
 
 
+@adhesive.usertask('Read Data From User')
+def read_data_from_user(context, ui) -> None:
+    ui.add_text_input("branch", title="Branch")
+    ui.add_combo_box("version", title="Version", values=["12.0", "12.1", "12.2", "12.3"])
+
+    ui.add_default_button("OK")
+    ui.add_default_button("Cancel")
+
+
 def add_current_task(context):
     if not context.data.steps:
         context.data.steps = dict()

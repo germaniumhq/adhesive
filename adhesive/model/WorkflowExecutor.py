@@ -1,9 +1,11 @@
 import re
+from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, cast, Any
 
-from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
+from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.Task import Task
+from adhesive.graph.UserTask import UserTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
@@ -48,6 +50,7 @@ class WorkflowExecutor:
 
     def __init__(self,
                  process: AdhesiveProcess,
+                 ut_provider: Optional['UserTaskProvider'] = None,
                  wait_tasks: bool = True) -> None:
         self.process = process
         self.tasks_impl: Dict[str, AdhesiveTask] = dict()
@@ -57,6 +60,7 @@ class WorkflowExecutor:
         # workflow.
         self.events: Dict[str, ActiveEvent] = dict()
         self.futures: Dict[Any, str] = dict()
+        self.ut_provider = ut_provider
 
         self.config = WorkflowExecutorConfig(wait_tasks=wait_tasks)
 
@@ -74,6 +78,11 @@ class WorkflowExecutor:
         fake_event.id = None
 
         root_event = self.clone_event(fake_event, workflow)
+
+        def raise_exception(_ev):
+            raise _ev.data
+
+        root_event.state.after_enter(ActiveEventState.ERROR, raise_exception)
 
         await self.execute_workflow()
 
@@ -103,11 +112,11 @@ class WorkflowExecutor:
                 timeout=5)
 
             for future in done_futures:
+                event_id = self.futures[future]
                 try:
-                    event_id, context = future.result()
+                    context = future.result()
                     self.events[event_id].state.route(context)
                 except Exception as e:
-                    event_id = self.futures[future]
                     self.events[event_id].state.error(e)
                 finally:
                     del self.futures[future]
@@ -286,37 +295,50 @@ class WorkflowExecutor:
             if isinstance(event.task, Task):
                 future = WorkflowExecutor.pool.submit(
                     self.tasks_impl[event.task.id].invoke,
-                    event.id,
                     event.context)
                 self.futures[future] = event.id
                 event.future = future
                 return
 
+            if isinstance(event.task, UserTask):
+                future = Future()
+                self.futures[future] = event.id
+                event.future = future
+
+                self.ut_provider.register_event(self, event)
+
+                return
+
             return event.state.route(event.context)
 
         def error_task(_event) -> None:
-            if not event.task.error_task:
-                parent_event = self.get_parent(event.id)
-                event.state.done_check(None)  # we kill the current event
+            # if we have a boundary error task, we use that one for processing.
+            if event.task.error_task:
+                self.clone_event(event, event.task.error_task)
 
+                if event.task.error_task.cancel_activity:
+                    event.state.done_check(None)
+                else:
+                    event.state.route()
+
+                return
+
+            if event.parent_id in self.events:
+                parent_event = self.get_parent(event.id)
+
+                # we move the parent into error
+                parent_event.state.error(_event.data)
+
+                # FIXME: not sure if this is enough.
                 for potential_child in list(self.events.values()):
                     if potential_child.parent_id != event.id:
                         continue
 
-                    potential_child.state.error()
+                    potential_child.state.error(_event.data)
 
-                # we move the parent into error
-                parent_event.state.error()
-                return
+            event.state.done_check(None)  # we kill the current event
 
-            self.clone_event(event, event.task.error_task)
-
-            if event.task.error_task.cancel_activity:
-                event.state.done_check(None)
-            else:
-                event.state.route()
-
-        def route_task(_event) -> ActiveEventState:
+        def route_task(_event) -> None:
             event.context = _event.data
 
             if isinstance(event.task, ExclusiveGateway):
@@ -392,3 +414,7 @@ class WorkflowExecutor:
         event.state.after_enter(ActiveEventState.DONE, done_task)
 
         return event
+
+
+# circular dependencies
+from adhesive.model.UserTaskProvider import UserTaskProvider

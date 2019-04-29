@@ -104,7 +104,7 @@ def process_node(result: Workflow,
 
     if "task" == node_name:
         process_node_task(result, node)
-    if "userTask" == node_name:
+    elif "userTask" == node_name:
         process_user_task(result, node)
     elif "sequenceFlow" == node_name:
         pass

@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Optional, List, Tuple
+from typing import Callable, Optional, List, Tuple, Any
 
 from .WorkflowContext import WorkflowContext
 
@@ -30,12 +30,23 @@ class AdhesiveTask:
 
         return None
 
-    def invoke(self,
-               event_id: str,
-               context: WorkflowContext) -> Tuple[str, WorkflowContext]:
+    def invoke(
+            self,
+            context: WorkflowContext) -> WorkflowContext:
         step_name = context.task.name
         params = self.matches(step_name)
 
         self.code(context, *params)  # type: ignore
 
-        return event_id, context
+        return context
+
+    def invoke_user_task(
+            self,
+            context: WorkflowContext,
+            ui: Any) -> WorkflowContext:
+        step_name = context.task.name
+        params = self.matches(step_name)
+
+        self.code(context, ui, *params)  # type: ignore
+
+        return context

@@ -48,6 +48,9 @@ class WorkflowData:
 
         self._data[key] = value
 
+    def __setitem__(self, key, value):
+        self._data[key] = value
+
     def __html__(self):
         return self.as_dict()
 

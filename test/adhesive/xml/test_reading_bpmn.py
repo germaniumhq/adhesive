@@ -124,7 +124,6 @@ class TestReadingBpmn(unittest.TestCase):
             UserTask
         ))
 
-
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):
             read_bpmn_file("test/adhesive/xml/unsupported-call-activity.bpmn")
