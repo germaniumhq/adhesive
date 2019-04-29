@@ -48,6 +48,9 @@ class WorkflowData:
 
         self._data[key] = value
 
+    def __html__(self):
+        return self.as_dict()
+
     @staticmethod
     def merge(*data_items: 'WorkflowData') -> 'WorkflowData':
         result = WorkflowData()

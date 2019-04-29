@@ -1,10 +1,9 @@
-from typing import Callable, TypeVar
 import asyncio
+from typing import Callable, TypeVar
 
-from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
-
+from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.xml.bpmn import read_bpmn_file
 
 T = TypeVar('T')
@@ -25,3 +24,11 @@ def bpmn_build(file_name: str,
     process.workflow = read_bpmn_file(file_name)
     fn = WorkflowExecutor(process, wait_tasks=wait_tasks).execute()
     asyncio.get_event_loop().run_until_complete(fn)
+
+
+def bpmn_build_async(
+        file_name: str,
+        wait_tasks: bool=True):
+    """ Start a build that was described in BPMN """
+    process.workflow = read_bpmn_file(file_name)
+    return WorkflowExecutor(process, wait_tasks=wait_tasks).execute()
