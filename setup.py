@@ -8,7 +8,7 @@ packages = find_packages()
 
 setup(
     name='adhesive',
-    version='1.0.0',
+    version='0.1.master',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -19,7 +19,9 @@ setup(
             "adhesive = adhesive.mainapp:main"
         ]
     },
-    install_requires=[],
+    install_requires=[
+        "networkx==2.3",
+        "npyscreen==4.10.5"],
     packages=packages,
     package_data={
         '': ['*.txt', '*.rst']
