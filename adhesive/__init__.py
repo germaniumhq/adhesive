@@ -2,6 +2,7 @@ import asyncio
 from typing import Callable, TypeVar, Optional
 
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
+from adhesive.model.ConsoleUserTaskProvider import ConsoleUserTaskProvider
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.xml.bpmn import read_bpmn_file
@@ -34,6 +35,9 @@ def bpmn_build(file_name: str,
     """ Start a build that was described in BPMN """
     process.workflow = read_bpmn_file(file_name)
 
+    if ut_provider is None:
+        ut_provider = ConsoleUserTaskProvider()
+
     fn = WorkflowExecutor(
         process,
         ut_provider=ut_provider,
@@ -48,6 +52,9 @@ def bpmn_build_async(
         wait_tasks: bool=True):
     """ Start a build that was described in BPMN """
     process.workflow = read_bpmn_file(file_name)
+
+    if ut_provider is None:
+        ut_provider = ConsoleUserTaskProvider()
 
     return WorkflowExecutor(
         process,

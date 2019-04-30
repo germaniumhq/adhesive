@@ -414,7 +414,3 @@ class WorkflowExecutor:
         event.state.after_enter(ActiveEventState.DONE, done_task)
 
         return event
-
-
-# circular dependencies
-from adhesive.model.UserTaskProvider import UserTaskProvider

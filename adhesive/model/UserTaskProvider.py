@@ -10,4 +10,3 @@ class UserTaskProvider:
                        executor: WorkflowExecutor,
                        event: ActiveEvent) -> None:
         pass
-
