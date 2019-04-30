@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, TypeVar
+from typing import Callable, TypeVar, Optional
 
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
@@ -29,16 +29,30 @@ def usertask(*task_names: str) -> Callable[..., Callable[..., T]]:
 
 
 def bpmn_build(file_name: str,
+               ut_provider: Optional['UserTaskProvider'] = None,
                wait_tasks: bool=True):
     """ Start a build that was described in BPMN """
     process.workflow = read_bpmn_file(file_name)
-    fn = WorkflowExecutor(process, wait_tasks=wait_tasks).execute()
+
+    fn = WorkflowExecutor(
+        process,
+        ut_provider=ut_provider,
+        wait_tasks=wait_tasks).execute()
+
     asyncio.get_event_loop().run_until_complete(fn)
 
 
 def bpmn_build_async(
         file_name: str,
+        ut_provider: Optional['UserTaskProvider'] = None,
         wait_tasks: bool=True):
     """ Start a build that was described in BPMN """
     process.workflow = read_bpmn_file(file_name)
-    return WorkflowExecutor(process, wait_tasks=wait_tasks).execute()
+
+    return WorkflowExecutor(
+        process,
+        ut_provider=ut_provider,
+        wait_tasks=wait_tasks).execute()
+
+
+from adhesive.model.UserTaskProvider import UserTaskProvider

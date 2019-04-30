@@ -84,8 +84,8 @@ class TestReadingBpmn(unittest.TestCase):
     def test_reading_gateway_inclusive_sign_bpmn(self) -> None:
         workflow = read_bpmn_file("test/adhesive/xml/gateway-inclusive.bpmn")
 
-        self.assertEqual(7, len(workflow.tasks))
-        self.assertEqual(8, len(workflow.edges))
+        self.assertEqual(8, len(workflow.tasks))
+        self.assertEqual(10, len(workflow.edges))
         self.assertEqual(1, len(workflow.start_tasks))
         self.assertEqual(1, len(workflow.end_events))
 
