@@ -19,7 +19,9 @@ def _async(fn):
     'Exclusive\ Task\ Branch',
     'Populate\ task\ data',
     'Exclusive\ default\ branch',
-    'Cleanup Broken Tasks'
+    'Cleanup Broken Tasks',
+    'Error Was Caught',
+    'Error Was Not Caught',
 )
 def basic_task(context) -> None:
     add_current_task(context)
@@ -34,7 +36,10 @@ def parallel_task(context) -> None:
     context.data.steps.add(context.task.name)
 
 
-@adhesive.task(r'^Throw Some Exception$')
+@adhesive.task(
+    r'^Throw Some Exception$',
+    'Throw Some Error',
+)
 def throw_some_exception(context) -> None:
     add_current_task(context)
 

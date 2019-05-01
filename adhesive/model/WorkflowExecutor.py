@@ -120,7 +120,8 @@ class WorkflowExecutor:
                 except Exception as e:
                     self.events[event_id].state.error(e)
                 finally:
-                    del self.futures[future]
+                    if future in self.futures:
+                        del self.futures[future]
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
@@ -327,12 +328,13 @@ class WorkflowExecutor:
 
                 # FIXME: not sure if this is enough.
                 for potential_child in list(self.events.values()):
-                    if potential_child.parent_id != event.id:
+                    if potential_child.parent_id != event.parent_id:
                         continue
 
-                    potential_child.state.error(_event.data)
+                    # potential_child.state.error(_event.data)
+                    potential_child.state.done()
 
-            event.state.done_check(None)  # we kill the current event
+            # event.state.done_check(None)  # we kill the current event
 
         def route_task(_event) -> None:
             event.context = _event.data
@@ -398,6 +400,11 @@ class WorkflowExecutor:
             event.state.done()
 
         def done_task(_event) -> None:
+            # if the task is done, but the future is still registered, we need to
+            # remove the future.
+            if event.future in self.futures:
+                del self.futures[event.future]
+
             self.unregister_event(event)
 
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
