@@ -18,4 +18,5 @@ class BaseTask:
         return f"Task({self.id}): {self.name}"
 
 
-from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
+# FIXME: this import should be done, for mypy
+# from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent

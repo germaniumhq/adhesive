@@ -5,6 +5,7 @@ from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.steps.AdhesiveTask import AdhesiveTask
+from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.xml.bpmn import read_bpmn_file
 
 T = TypeVar('T')
@@ -19,11 +20,9 @@ def task(*task_names: str) -> Callable[..., Callable[..., T]]:
     return wrapper_builder
 
 
-# FIXME: they seem different types. Create base, and different implementations?
-# Doesn't seem right using the regular AdhesiveTask here.
 def usertask(*task_names: str) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.steps.append(AdhesiveTask(f, *task_names))
+        process.steps.append(AdhesiveUserTask(f, *task_names))
         return f
 
     return wrapper_builder

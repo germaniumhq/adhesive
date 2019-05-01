@@ -1,31 +1,32 @@
-from typing import Callable, List, Optional
+from typing import Callable, Any, List, Optional
 
 from adhesive.graph.BaseTask import BaseTask
-from adhesive.graph.Task import Task
+from adhesive.graph.UserTask import UserTask
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from .WorkflowContext import WorkflowContext
 
 
-class AdhesiveTask(AdhesiveBaseTask):
+class AdhesiveUserTask(AdhesiveBaseTask):
     """
     A task implementation.
     """
     def __init__(self,
                  code: Callable,
                  *expressions: str) -> None:
-        super(AdhesiveTask, self).__init__(code, *expressions)
+        super(AdhesiveUserTask, self).__init__(code, *expressions)
 
     def matches(self, task: BaseTask) -> Optional[List[str]]:
-        if not isinstance(task, Task):
+        if not isinstance(task, UserTask):
             return None
 
-        return super(AdhesiveTask, self).matches(task)
+        return super(AdhesiveUserTask, self).matches(task)
 
-    def invoke(
+    def invoke_user_task(
             self,
-            context: WorkflowContext) -> WorkflowContext:
+            context: WorkflowContext,
+            ui: Any) -> WorkflowContext:
         params = self.matches(context.task)
 
-        self.code(context, *params)  # type: ignore
+        self.code(context, ui, *params)  # type: ignore
 
         return context

@@ -1,4 +1,3 @@
-import re
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, cast, Any
 
@@ -10,6 +9,7 @@ from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
+from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from adhesive.steps.WorkflowData import WorkflowData
 
 T = TypeVar('T')
@@ -199,9 +199,9 @@ class WorkflowExecutor:
             display_unmatched_tasks(unmatched_tasks)
             raise Exception("Missing tasks implementations")
 
-    def _match_task(self, task: BaseTask) -> Optional[AdhesiveTask]:
+    def _match_task(self, task: BaseTask) -> Optional[AdhesiveBaseTask]:
         for step in self.process.steps:
-            if step.matches(task.name) is not None:
+            if step.matches(task) is not None:
                 return step
 
         return None
