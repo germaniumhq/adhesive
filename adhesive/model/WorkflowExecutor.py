@@ -9,6 +9,7 @@ from adhesive.graph.UserTask import UserTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
+from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.WorkflowData import WorkflowData
 
 T = TypeVar('T')
@@ -195,12 +196,7 @@ class WorkflowExecutor:
                 unmatched_tasks.add(task)
 
         if unmatched_tasks:
-            print("Missing tasks implementations. Generate with:\n")
-            for unmatched_task in unmatched_tasks:
-                print(f"@adhesive.task('{re.escape(unmatched_task.name)}')")
-                print("def task_impl(context):")
-                print("    pass\n\n")
-
+            display_unmatched_tasks(unmatched_tasks)
             raise Exception("Missing tasks implementations")
 
     def _match_task(self, task: BaseTask) -> Optional[AdhesiveTask]:
