@@ -49,7 +49,10 @@ class Workflow(BaseTask):
     def add_boundary_event(self, boundary_event: BoundaryEvent) -> None:
         self._tasks[boundary_event.id] = boundary_event
         self._graph.add_node(boundary_event.id)
-        self._graph.add_edge(boundary_event.attached_task_id, boundary_event.id)
+        self._graph.add_edge(
+            boundary_event.attached_task_id,
+            boundary_event.id,
+            _edge=None)
 
         if isinstance(boundary_event, ErrorBoundaryEvent):
             self._tasks[boundary_event.attached_task_id].error_task = boundary_event
@@ -59,7 +62,8 @@ class Workflow(BaseTask):
         self._edges[edge.id] = edge
         self._graph.add_edge(
             edge.source_id,
-            edge.target_id)
+            edge.target_id,
+            _edge=edge)
 
     def add_start_event(self, event: StartEvent) -> None:
         self._start_events[event.id] = event
@@ -73,22 +77,22 @@ class Workflow(BaseTask):
         """ Get the outgoing edges. """
         result: List[Edge] = []
 
-        for edge_id, edge in self._edges.items():
-            if edge.source_id == task_id:
-                result.append(edge)
+        for from_node, to_node, data in self._graph.out_edges(task_id, data=True):
+            if data["_edge"]:
+                result.append(data["_edge"])
 
         return result
 
     def has_incoming_edges(self, task: BaseTask) -> bool:
-        for edge_id, edge in self._edges.items():
-            if edge.target_id == task.id:
+        for from_node, to_node, data in self._graph.in_edges(task.id, data=True):
+            if data["_edge"]:
                 return True
 
         return False
 
     def has_outgoing_edges(self, task: BaseTask) -> bool:
-        for edge_id, edge in self._edges.items():
-            if edge.source_id == task.id:
+        for from_node, to_node, data in self._graph.out_edges(task.id, data=True):
+            if data["_edge"]:
                 return True
 
         return False
