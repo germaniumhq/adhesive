@@ -248,6 +248,8 @@ class WorkflowExecutor:
             # normally we shouldn't wait for tasks, since it's counter BPMN, so
             # we allow configuring waiting for it.
             if self.config.wait_tasks and (
+                    isinstance(event.task, ScriptTask) or
+                    isinstance(event.task, UserTask) or
                     isinstance(event.task, Task) or
                     isinstance(event.task, Workflow)
             ):
