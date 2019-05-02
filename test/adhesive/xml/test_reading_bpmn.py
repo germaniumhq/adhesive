@@ -1,5 +1,6 @@
 from typing import cast
 import unittest
+import textwrap
 
 from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
@@ -140,6 +141,16 @@ class TestReadingBpmn(unittest.TestCase):
 
         script_task: ScriptTask = workflow.tasks["_3"]
         self.assertEqual("text/python", script_task.language)
+        self.assertEqual(textwrap.dedent("""\
+            import uuid
+            
+            if not context.data.steps:
+                context.data.steps = dict()
+            
+            if context.task.name not in context.data.steps:
+                context.data.steps[context.task.name] = set()
+            
+            context.data.steps[context.task.name].add(str(uuid.uuid4()))"""), script_task.script)
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):

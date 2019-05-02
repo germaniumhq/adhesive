@@ -13,9 +13,17 @@
     <scriptTask completionQuantity="1" id="_3" isForCompensation="false" name="Script Task" scriptFormat="text/python" startQuantity="1">
       <incoming>_5</incoming>
       <outgoing>_6</outgoing>
-      <script><![CDATA[context.data.x = "yay"]]></script>
+      <script><![CDATA[import uuid
+
+if not context.data.steps:
+    context.data.steps = dict()
+
+if context.task.name not in context.data.steps:
+    context.data.steps[context.task.name] = set()
+
+context.data.steps[context.task.name].add(str(uuid.uuid4()))]]></script>
     </scriptTask>
-    <task completionQuantity="1" id="_4" isForCompensation="false" name="Task" startQuantity="1">
+    <task completionQuantity="1" id="_4" isForCompensation="false" name="Build Germanium Image" startQuantity="1">
       <incoming>_6</incoming>
       <outgoing>_8</outgoing>
     </task>
@@ -44,7 +52,7 @@
       <bpmndi:BPMNShape bpmnElement="_4" id="Yaoqiang-_4">
         <dc:Bounds height="55.0" width="85.0" x="260.0" y="160.0"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds height="18.8" width="33.0" x="286.0" y="180.1"/>
+          <dc:Bounds height="46.8" width="73.0" x="266.0" y="166.1"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="_7" id="Yaoqiang-_7">

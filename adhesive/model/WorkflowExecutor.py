@@ -3,6 +3,7 @@ from typing import Set, Optional, Dict, TypeVar, cast, Any
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
+from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
@@ -11,6 +12,7 @@ from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from adhesive.steps.WorkflowData import WorkflowData
+from adhesive.steps.call_script_task import call_script_task
 
 T = TypeVar('T')
 
@@ -189,6 +191,13 @@ class WorkflowExecutor:
                     isinstance(task, BoundaryEvent):
                 continue
 
+            if isinstance(task, ScriptTask):
+                if task.language in ("python", "text/python"):
+                    continue
+
+                raise Exception(f"Unknown script task language: {task.language}. Only python and "
+                                f"text/python are supported.")
+
             adhesive_step = self._match_task(task)
 
             self.tasks_impl[task_id] = adhesive_step
@@ -296,6 +305,15 @@ class WorkflowExecutor:
                 self.futures[future] = event.id
                 event.future = future
                 return
+
+            if isinstance(event.task, ScriptTask):
+                future = WorkflowExecutor.pool.submit(
+                    call_script_task,
+                    event)
+                self.futures[future] = event.id
+                event.future = future
+                return
+
 
             if isinstance(event.task, UserTask):
                 future = Future()

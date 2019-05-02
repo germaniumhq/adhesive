@@ -162,10 +162,13 @@ def process_script_task(w: Workflow, xml_node) -> None:
     node_name = normalize_name(xml_node.get("name"))
     language = xml_node.get("scriptFormat")
 
+    script_node = find_node(xml_node, "script")
+
     task = ScriptTask(
         xml_node.get("id"),
         node_name,
-        language=language)
+        language=language,
+        script=script_node.text)
 
     w.add_task(task)
 

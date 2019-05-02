@@ -5,6 +5,9 @@ class ScriptTask(BaseTask):
     def __init__(self,
                  _id: str,
                  name: str,
-                 language: str) -> None:
+                 language: str,
+                 script: str) -> None:
         super(ScriptTask, self).__init__(_id, name)
+
         self.language = language
+        self.script = script
