@@ -1,6 +1,9 @@
 from enum import Enum
 from typing import Any, Dict, Optional, Callable, Union
 import uuid
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 class ActiveEventState(Enum):
@@ -245,6 +248,8 @@ class ActiveEventStateMachine(object):
             assert self._currentState
             return self._currentState
 
+        print(f"Transition: {self._currentState} -> {targetState}")
+
         self._currentState = targetState
         self._current_change_state_event = None
 
@@ -275,8 +280,9 @@ class ActiveEventStateMachine(object):
             return self._currentState
 
         if link_name not in source_state:
-            print("There is no transition named `%s` starting from `%s`." %
-                  (link_name, self._currentState.value))
+            print(
+                "There is no transition named `%s` starting from `%s`." %
+                (link_name, self._currentState.value))
 
             return self._currentState
 

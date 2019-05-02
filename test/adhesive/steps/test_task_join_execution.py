@@ -23,7 +23,7 @@ class TestTaskJoinExecution(unittest.TestCase):
         assert_equal_steps({
             'Build Germanium Image': 1,
             'Test Chrome': 1,
-            'Test Firefox': 2,
+            'Test Firefox': 3,
         }, data.steps)
 
         self.assertFalse(workflow_executor.events,
@@ -39,9 +39,9 @@ class TestTaskJoinExecution(unittest.TestCase):
         data = _async(workflow_executor.execute())
 
         assert_equal_steps({
-            'Build Germanium Image': 2,
+            'Build Germanium Image': 3,  # 1 chrome + 2 firefox
             'Test Chrome': 1,
-            'Test Firefox': 2,
+            'Test Firefox': 3,
         }, data.steps)
 
         self.assertFalse(workflow_executor.events,

@@ -1,3 +1,4 @@
+import sys
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, cast, Any
 
@@ -207,7 +208,7 @@ class WorkflowExecutor:
 
         if unmatched_tasks:
             display_unmatched_tasks(unmatched_tasks)
-            raise Exception("Missing tasks implementations")
+            sys.exit(1)
 
     def _match_task(self, task: BaseTask) -> Optional[AdhesiveBaseTask]:
         for step in self.process.steps:
@@ -314,7 +315,6 @@ class WorkflowExecutor:
                 event.future = future
                 return
 
-
             if isinstance(event.task, UserTask):
                 future = Future()
                 self.futures[future] = event.id
@@ -390,7 +390,7 @@ class WorkflowExecutor:
                 potential_predecessors = list(map(
                     lambda e: e.task,
                     filter(
-                        lambda e: e.state.state in DONE_STATES and e.task != waiting_event.task,
+                        lambda e: e.state.state not in DONE_STATES and e.task != waiting_event.task,
                         self.events.values()
                     )))
 
