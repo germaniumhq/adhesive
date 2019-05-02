@@ -6,6 +6,7 @@ from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
+from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.StartEvent import StartEvent
@@ -38,7 +39,7 @@ def read_bpmn_file(file_name: str) -> Workflow:
 
 
 def find_node(parent_node, name: str):
-    for node in parent_node.getchildren():
+    for node in list(parent_node):
         _, node_name = parse_tag(node)
         if node_name == name:
             return node
@@ -73,13 +74,13 @@ def read_process(process) -> Workflow:
     # we read first the nodes, then the boundary events,
     # then only the edges so they are findable
     # when adding the edges by id.
-    for node in process.getchildren():
+    for node in list(process):
         process_node(result, node)
 
-    for node in process.getchildren():
+    for node in list(process):
         process_boundary_event(result, node)
 
-    for node in process.getchildren():
+    for node in list(process):
         process_edge(result, node)
 
     for task_id, task in result.tasks.items():
@@ -106,6 +107,8 @@ def process_node(result: Workflow,
         process_node_task(result, node)
     elif "userTask" == node_name:
         process_user_task(result, node)
+    elif "scriptTask" == node_name:
+        process_script_task(result, node)
     elif "sequenceFlow" == node_name:
         pass
     elif "boundaryEvent" == node_name:
@@ -151,6 +154,19 @@ def process_user_task(w: Workflow, xml_node) -> None:
     """ Create a HumanTask element from the workflow """
     node_name = normalize_name(xml_node.get("name"))
     task = UserTask(xml_node.get("id"), node_name)
+    w.add_task(task)
+
+
+def process_script_task(w: Workflow, xml_node) -> None:
+    """ Create a ScriptTask element from the workflow """
+    node_name = normalize_name(xml_node.get("name"))
+    language = xml_node.get("scriptFormat")
+
+    task = ScriptTask(
+        xml_node.get("id"),
+        node_name,
+        language=language)
+
     w.add_task(task)
 
 

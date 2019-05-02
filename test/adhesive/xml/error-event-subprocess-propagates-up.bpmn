@@ -20,7 +20,7 @@
       <incoming>_10</incoming>
       <outgoing>_13</outgoing>
     </task>
-    <boundaryEvent attachedToRef="_5" cancelActivity="true" id="_7" name="Boundary Event" parallelMultiple="false">
+    <boundaryEvent attachedToRef="_5" cancelActivity="true" id="_7" parallelMultiple="false">
       <extensionElements>
         <yaoqiang:style align="left" labelPosition="right" verticalAlign="middle" verticalLabelPosition="top"/>
         <yaoqiang:label offset-x="110.0" offset-y="-16.0" x="0.0" y="1.0"/>
@@ -84,7 +84,7 @@
       <bpmndi:BPMNShape bpmnElement="_7" id="Yaoqiang-_7">
         <dc:Bounds height="32.0" width="32.0" x="380.0" y="217.0"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds height="18.8" width="95.0" x="412.0" y="193.6"/>
+          <dc:Bounds height="18.8" width="6.0" x="412.0" y="193.6"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge bpmnElement="_13" id="Yaoqiang-_13">
