@@ -175,7 +175,7 @@ def process_script_task(w: Workflow, xml_node) -> None:
 
 def process_boundary_task(w: Workflow, xml_node) -> None:
     """ Create a Task element from the workflow """
-    for node in xml_node.getchildren():
+    for node in list(xml_node):
         node_ns, node_name = parse_tag(node)
 
         if node_name in boundary_ignored_elements:
