@@ -1,6 +1,7 @@
 import sys
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, cast, Any
+import logging
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
@@ -29,6 +30,8 @@ from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
+
+LOG = logging.getLogger(__name__)
 
 DONE_STATES = {
     ActiveEventState.DONE_CHECK,
@@ -141,7 +144,7 @@ class WorkflowExecutor:
                             f"{self.events[event.id]}. Got a new request to register "
                             f"it as {event}.")
 
-        print(f"Register {event}")
+        LOG.debug(f"Register {event}")
 
         self.events[event.id] = event
 
@@ -153,7 +156,7 @@ class WorkflowExecutor:
             raise Exception(f"{event} not found in events. Either the event was "
                             f"already terminated, either it was not registered.")
 
-        print(f"Unregister {event}")
+        LOG.debug(f"Unregister {event}")
 
         del self.events[event.id]
 

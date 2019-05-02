@@ -1,7 +1,8 @@
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, cast
 
 import npyscreen as npyscreen
 
+from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.UserTaskProvider import UserTaskProvider
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
@@ -75,7 +76,7 @@ class ConsoleUserTaskProvider(UserTaskProvider):
             try:
                 ui = UIBuilder(event)
 
-                adhesive_task = executor.tasks_impl[event.task.id]
+                adhesive_task = cast(AdhesiveUserTask, executor.tasks_impl[event.task.id])
                 context = adhesive_task.invoke_user_task(event.context, ui)
 
                 # call the actual UI

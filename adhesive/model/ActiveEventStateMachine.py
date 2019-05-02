@@ -211,7 +211,7 @@ class ActiveEventStateMachine(object):
 
         if self._currentState and \
                 not transition_set.get(STATE_INDEX[self._currentState.value] << 14 | STATE_INDEX[targetState.value]):
-            print("No transition exists between %s -> %s." % (self._currentState.value, targetState.value))
+            LOG.warning("No transition exists between %s -> %s." % (self._currentState.value, targetState.value))
             return self._currentState
 
         if self._current_change_state_event:
@@ -248,7 +248,7 @@ class ActiveEventStateMachine(object):
             assert self._currentState
             return self._currentState
 
-        print(f"Transition: {self._currentState} -> {targetState}")
+        LOG.debug(f"Transition: {self._currentState} -> {targetState}")
 
         self._currentState = targetState
         self._current_change_state_event = None
@@ -280,7 +280,7 @@ class ActiveEventStateMachine(object):
             return self._currentState
 
         if link_name not in source_state:
-            print(
+            LOG.warning(
                 "There is no transition named `%s` starting from `%s`." %
                 (link_name, self._currentState.value))
 
