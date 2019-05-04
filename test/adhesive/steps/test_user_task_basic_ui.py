@@ -18,6 +18,8 @@ class TestUserTaskBasic(unittest.TestCase):
         self.assertEqual("Cancel", data.Cancel)
         self.assertEqual("branch", data.branch)
         self.assertEqual("12.0", data.version)
+        self.assertEqual("password", data.password)
+        self.assertEqual(('integration',), data.run_tests)
 
         self.assertFalse(workflow_executor.events)
 

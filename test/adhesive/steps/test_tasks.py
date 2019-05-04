@@ -59,8 +59,18 @@ def increment_x_by_1(context):
 
 @adhesive.usertask('Read Data From User')
 def read_data_from_user(context, ui) -> None:
-    ui.add_text_input("branch", title="Branch")
-    ui.add_combo_box("version", title="Version", values=["12.0", "12.1", "12.2", "12.3"])
+    ui.add_input_text("branch", title="Branch")
+    ui.add_input_password("password", title="Password")
+    ui.add_combobox("version", title="Version", values=["12.0", "12.1", "12.2", "12.3"])
+    ui.add_checkbox_group(
+        "run_tests",
+        title="Tests",
+        value=("integration",),
+        values=("integration", "Integration Tests"))
+    ui.add_radio_group(
+        "depman",
+        title="Depman"
+    )
 
     ui.add_default_button("OK")
     ui.add_default_button("Cancel")
