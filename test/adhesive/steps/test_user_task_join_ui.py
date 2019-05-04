@@ -6,9 +6,9 @@ from test.adhesive.steps.ui_provider import TestUserTaskProvider
 from .test_tasks import adhesive, _async
 
 
-class TestUserTaskBasic(unittest.TestCase):
+class TestUserTaskJoin(unittest.TestCase):
     def test_link_back_execution(self):
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/user-task.bpmn")
+        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/user-task-join.bpmn")
 
         workflow_executor = WorkflowExecutor(adhesive.process,
                                              ut_provider=TestUserTaskProvider())

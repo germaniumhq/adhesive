@@ -21,6 +21,10 @@ def merge_dict(dict1: Dict, dict2: Dict) -> None:
             merge_dict(v1, v2)
             continue
 
+        if type(v1) == type(v2):
+            dict1[k2] = v2
+            continue
+
         raise Exception(f"Unable to merge '{k2}' with different types.")
 
 
