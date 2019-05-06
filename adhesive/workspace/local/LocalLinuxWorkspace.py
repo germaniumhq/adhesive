@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import os
 import uuid
@@ -39,7 +40,14 @@ class LocalLinuxWorkspace(Workspace):
         ], cwd=self.pwd)
 
     def rm(self, path: Optional[str]=None) -> None:
-        os.rmdir(os.path.join(self.pwd, path))
+        if path is None:
+            shutil.rmtree(self.pwd)
+            return
+
+        if not path:
+            raise Exception("You need to pass a subpath to delete")
+
+        shutil.rmtree(os.path.join(self.pwd, path))
 
     def mkdir(self, path: str=None) -> None:
         os.mkdir(os.path.join(self.pwd, path))
@@ -50,6 +58,7 @@ class LocalLinuxWorkspace(Workspace):
         folder = os.path.join(self.pwd, str(uuid.uuid4()))
 
         self.mkdir(folder)
+        self.pwd = folder
 
         try:
             yield folder
