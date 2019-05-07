@@ -13,6 +13,7 @@ from adhesive.model.GatewayController import GatewayController
 from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
+from adhesive.steps.WorkflowContext import WorkflowContext
 from adhesive.steps.WorkflowData import WorkflowData
 from adhesive.steps.call_script_task import call_script_task
 
@@ -81,7 +82,8 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow)
 
-        fake_event = ActiveEvent(parent_id=None, task=workflow)
+        workflow_context = WorkflowContext(workflow)
+        fake_event = ActiveEvent(parent_id=None, context=workflow_context)
         fake_event.id = None
 
         root_event = self.clone_event(fake_event, workflow)

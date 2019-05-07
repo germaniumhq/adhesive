@@ -13,15 +13,15 @@ class ActiveEvent:
     """
     def __init__(self,
                  parent_id: Optional['str'],
-                 task: BaseTask) -> None:
+                 context: WorkflowContext) -> None:
         self.id: str = str(uuid.uuid4())
         self.parent_id = parent_id
 
-        if not isinstance(task, BaseTask):
+        if not isinstance(context, WorkflowContext):
             raise Exception(f"Not a task: {task}")
 
-        self._task = task
-        self.context = WorkflowContext(task)
+        self._task = context.task
+        self.context = context
 
         self.state = ActiveEventStateMachine()
         self.future = None
@@ -40,8 +40,7 @@ class ActiveEvent:
         """
         Clone the current event for another task id target.
         """
-        result = ActiveEvent(parent_id, task)
-        result.context = self.context.clone(task)
+        result = ActiveEvent(parent_id, self.context.clone(task))
 
         return result
 
