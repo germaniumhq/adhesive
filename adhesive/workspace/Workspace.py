@@ -1,4 +1,7 @@
+import os
+import uuid
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from typing import Optional
 
 
@@ -50,7 +53,7 @@ class Workspace(ABC):
         """
         pass
 
-    @abstractmethod
+    @contextmanager
     def temp_folder(self):
         """
         Create a temporary folder in the current `pwd` that will be deleted
@@ -58,4 +61,14 @@ class Workspace(ABC):
 
         :return:
         """
-        pass
+        current_folder = self.pwd
+        folder = os.path.join(self.pwd, str(uuid.uuid4()))
+
+        self.mkdir(folder)
+        self.pwd = folder
+
+        try:
+            yield folder
+        finally:
+            self.rm(folder)
+            self.pwd = current_folder

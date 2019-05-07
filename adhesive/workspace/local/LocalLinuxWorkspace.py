@@ -24,6 +24,11 @@ class LocalLinuxWorkspace(Workspace):
 
         super(LocalLinuxWorkspace, self).__init__(pwd=pwd)
 
+    def run(self, command: str) -> None:
+        subprocess.check_call([
+            "/bin/sh", "-c", command
+        ], cwd=self.pwd)
+
     def write_file(
             self,
             file_name: str,
@@ -33,11 +38,6 @@ class LocalLinuxWorkspace(Workspace):
 
         with open(full_path, "wt") as f:
             f.write(content)
-
-    def run(self, command: str) -> None:
-        subprocess.check_call([
-            "/bin/sh", "-c", command
-        ], cwd=self.pwd)
 
     def rm(self, path: Optional[str]=None) -> None:
         if path is None:
@@ -51,17 +51,3 @@ class LocalLinuxWorkspace(Workspace):
 
     def mkdir(self, path: str=None) -> None:
         os.mkdir(os.path.join(self.pwd, path))
-
-    @contextmanager
-    def temp_folder(self):
-        current_folder = self.pwd
-        folder = os.path.join(self.pwd, str(uuid.uuid4()))
-
-        self.mkdir(folder)
-        self.pwd = folder
-
-        try:
-            yield folder
-        finally:
-            self.rm(folder)
-            self.pwd = current_folder
