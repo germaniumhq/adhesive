@@ -52,12 +52,12 @@ class DockerWorkspace(Workspace):
 
 
 @contextmanager
-def inside(context,
+def inside(workspace: Workspace,
            image_name: str):
     w = None
 
     try:
-        w = DockerWorkspace(image_name, pwd=context.workspace.pwd)
+        w = DockerWorkspace(image_name, pwd=workspace.pwd)
         yield w
     finally:
         if w is not None:

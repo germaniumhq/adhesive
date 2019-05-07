@@ -51,10 +51,14 @@ class LocalLinuxWorkspace(Workspace):
         if not path:
             raise Exception("You need to pass a subpath to delete")
 
-        remove_folder = os.path.join(self.pwd, path)
+        remove_path = os.path.join(self.pwd, path)
 
-        LOG.debug("rmtree {}", remove_folder)
-        shutil.rmtree(remove_folder)
+        LOG.debug("rmtree {}", remove_path)
+
+        if os.path.isfile(remove_path):
+            os.remove(remove_path)
+        else:
+            shutil.rmtree(remove_path)
 
     def mkdir(self, path: str=None) -> None:
         LOG.debug("mkdir {}", path)
