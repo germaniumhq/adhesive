@@ -21,16 +21,41 @@ class Workspace(ABC):
 
     @abstractmethod
     def run(self, command: str) -> None:
+        """
+        Run a new command in the current workspace.
+
+        :param command:
+        :return:
+        """
         pass
 
     @abstractmethod
     def rm(self, path: Optional[str]=None) -> None:
+        """
+        Recursively remove the file or folder given as path. If no path is sent,
+        the whole workspace will be cleared.
+
+        :param path:
+        :return:
+        """
         pass
 
     @abstractmethod
     def mkdir(self, path: str=None) -> None:
+        """
+        Create a folder, including all its needed parents.
+
+        :param path:
+        :return:
+        """
         pass
 
     @abstractmethod
     def temp_folder(self):
+        """
+        Create a temporary folder in the current `pwd` that will be deleted
+        when the `with` block ends.
+
+        :return:
+        """
         pass
