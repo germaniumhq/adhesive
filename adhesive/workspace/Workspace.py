@@ -53,6 +53,30 @@ class Workspace(ABC):
         """
         pass
 
+    @abstractmethod
+    def copy_to_agent(self,
+                      from_path: str,
+                      to_path: str) -> None:
+        """
+        Copy the files to the agent from the current disk.
+        :param from_path:
+        :param to_path:
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def copy_from_agent(self,
+                        from_path: str,
+                        to_path: str) -> None:
+        """
+        Copy the files from the agent to the current disk.
+        :param from_path:
+        :param to_path:
+        :return:
+        """
+        pass
+
     @contextmanager
     def temp_folder(self):
         """

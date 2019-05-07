@@ -1,12 +1,15 @@
+import distutils
+import os
 import shutil
 import subprocess
-import os
 import uuid
-
-from contextlib import contextmanager
 from typing import Optional
+from distutils.dir_util import copy_tree
 
 from adhesive.workspace.Workspace import Workspace
+import logging
+
+LOG = logging.getLogger(__name__)
 
 
 class LocalLinuxWorkspace(Workspace):
@@ -41,13 +44,30 @@ class LocalLinuxWorkspace(Workspace):
 
     def rm(self, path: Optional[str]=None) -> None:
         if path is None:
+            LOG.debug("rmtree {}", self.pwd)
             shutil.rmtree(self.pwd)
             return
 
         if not path:
             raise Exception("You need to pass a subpath to delete")
 
-        shutil.rmtree(os.path.join(self.pwd, path))
+        remove_folder = os.path.join(self.pwd, path)
+
+        LOG.debug("rmtree {}", remove_folder)
+        shutil.rmtree(remove_folder)
 
     def mkdir(self, path: str=None) -> None:
+        LOG.debug("mkdir {}", path)
         os.mkdir(os.path.join(self.pwd, path))
+
+    def copy_to_agent(self,
+                      from_path: str,
+                      to_path: str):
+        LOG.debug("copy {} to {}", from_path, to_path)
+        copy_tree(from_path, to_path)
+
+    def copy_from_agent(self,
+                        from_path: str,
+                        to_path: str):
+        LOG.debug("copy {} to {}", from_path, to_path)
+        shutil.copytree(from_path, to_path)

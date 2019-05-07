@@ -31,6 +31,20 @@ class DockerWorkspace(Workspace):
     def mkdir(self, path: str=None) -> None:
         raise Exception("not implemented")
 
+    def copy_to_agent(self,
+                      from_path: str,
+                      to_path: str):
+        subprocess.check_call([
+            "docker", "cp", from_path, f"{self.container_id}:{to_path}"
+        ])
+
+    def copy_from_agent(self,
+                        from_path: str,
+                        to_path: str):
+        subprocess.check_call([
+            "docker", "cp", f"{self.container_id}:{from_path}", to_path
+        ])
+
     def _destroy(self):
         subprocess.check_call([
             "docker", "rm", "-f", self.container_id
