@@ -127,9 +127,6 @@ class WorkflowExecutor:
                     self.events[event_id].state.route(context)
                 except Exception as e:
                     self.events[event_id].state.error(e)
-                finally:
-                    if future in self.futures:
-                        del self.futures[future]
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
