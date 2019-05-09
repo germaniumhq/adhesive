@@ -2,10 +2,12 @@ import re
 from typing import Tuple
 from xml.etree import ElementTree
 
+from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
+from adhesive.graph.Loop import Loop
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
@@ -24,6 +26,9 @@ ignored_elements = {
     # because we use the sequenceFlow elements to trace the connections.
     "incoming",
     "outgoing",
+    # we ignore text annotations, and associations
+    "textAnnotation",
+    "association"
 }
 
 boundary_ignored_elements = set(ignored_elements)
@@ -113,6 +118,8 @@ def process_node(result: Workflow,
         pass
     elif "boundaryEvent" == node_name:
         pass
+    elif "standardLoopCharacteristics" == node_name:
+        pass
     elif "startEvent" == node_name:
         process_node_start_event(result, node)
     elif "endEvent" == node_name:
@@ -147,6 +154,9 @@ def process_node_task(w: Workflow, xml_node) -> None:
     """ Create a Task element from the workflow """
     node_name = normalize_name(xml_node.get("name"))
     task = Task(xml_node.get("id"), node_name)
+
+    task = process_potential_loop(task, xml_node)
+
     w.add_task(task)
 
 
@@ -154,6 +164,9 @@ def process_user_task(w: Workflow, xml_node) -> None:
     """ Create a HumanTask element from the workflow """
     node_name = normalize_name(xml_node.get("name"))
     task = UserTask(xml_node.get("id"), node_name)
+
+    task = process_potential_loop(task, xml_node)
+
     w.add_task(task)
 
 
@@ -169,6 +182,8 @@ def process_script_task(w: Workflow, xml_node) -> None:
         node_name,
         language=language,
         script=script_node.text)
+
+    task = process_potential_loop(task, xml_node)
 
     w.add_task(task)
 
@@ -222,6 +237,8 @@ def process_node_end_event(w: Workflow, xml_node) -> None:
 
 def process_node_sub_process(w: Workflow, xml_node) -> None:
     task = read_process(xml_node)
+    task = process_potential_loop(task, xml_node)
+
     w.add_task(task)
 
 
@@ -242,6 +259,7 @@ def process_exclusive_gateway(w: Workflow, xml_node) -> None:
     """ Create an exclusive gateway from the workflow """
     node_name = normalize_name(xml_node.get("name"))
     task = ExclusiveGateway(xml_node.get("id"), node_name)
+
     w.add_task(task)
 
 
@@ -249,7 +267,20 @@ def process_parallel_gateway(w: Workflow, xml_node) -> None:
     """ Create an end event from the workflow """
     node_name = normalize_name(xml_node.get("name"))
     task = ParallelGateway(xml_node.get("id"), node_name)
+
     w.add_task(task)
+
+
+def process_potential_loop(task: BaseTask, xml_node) -> BaseTask:
+    loop_node = find_node(xml_node, "standardLoopCharacteristics")
+
+    if not loop_node:
+        return task
+
+    loop_expression = find_node(loop_node, "loopCondition")
+    task.loop = Loop(loop_expression=loop_expression.text)
+
+    return task
 
 
 def normalize_name(name: str) -> str:

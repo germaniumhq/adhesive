@@ -22,6 +22,8 @@ def _async(fn):
     'Cleanup Broken Tasks',
     'Error Was Caught',
     'Error Was Not Caught',
+    '^Cleanup Platform .*?$',
+    '^Test Browser .*? on .*?$'
 )
 def basic_task(context) -> None:
     add_current_task(context)
@@ -33,7 +35,7 @@ def parallel_task(context) -> None:
     if not context.data.steps:
         context.data.steps = set()
 
-    context.data.steps.add(context.task.name)
+    context.data.steps.add(context.task_name)
 
 
 @adhesive.task(
@@ -80,7 +82,7 @@ def add_current_task(context):
     if not context.data.steps:
         context.data.steps = dict()
 
-    if context.task.name not in context.data.steps:
-        context.data.steps[context.task.name] = set()
+    if context.task_name not in context.data.steps:
+        context.data.steps[context.task_name] = set()
 
-    context.data.steps[context.task.name].add(str(uuid.uuid4()))
+    context.data.steps[context.task_name].add(str(uuid.uuid4()))

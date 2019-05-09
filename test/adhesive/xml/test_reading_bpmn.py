@@ -4,6 +4,7 @@ import textwrap
 
 from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
+from adhesive.graph.Loop import Loop
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
@@ -151,6 +152,22 @@ class TestReadingBpmn(unittest.TestCase):
                 context.data.steps[context.task.name] = set()
             
             context.data.steps[context.task.name].add(str(uuid.uuid4()))"""), script_task.script)
+
+    def test_reading_loop(self) -> None:
+        workflow = read_bpmn_file("test/adhesive/xml/loop.bpmn")
+
+        self.assertEqual(5, len(workflow.tasks))
+        self.assertEqual(5, len(workflow.edges))
+        self.assertEqual(1, len(workflow.start_tasks))
+        self.assertEqual(1, len(workflow.end_events))
+
+        self.assertTrue(isinstance(
+            workflow.tasks["_5"],
+            Task
+        ))
+
+        loop: Loop = workflow.tasks["_5"].loop
+        self.assertEqual("data.test_platforms", loop.loop_expression)
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):

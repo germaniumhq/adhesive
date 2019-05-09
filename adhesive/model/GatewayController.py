@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, cast
 
 from adhesive.graph.Edge import Edge
+from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Gateway import Gateway
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Workflow import Workflow
@@ -8,6 +9,18 @@ from adhesive.model.ActiveEvent import ActiveEvent
 
 
 class GatewayController:
+    @staticmethod
+    def compute_outgoing_edges(workflow, event) -> List[Edge]:
+        if isinstance(event.task, ExclusiveGateway):
+            gateway = cast(Gateway, event.task)
+            outgoing_edges = GatewayController.route_single_output(
+                workflow, gateway, event)
+        else:
+            outgoing_edges = GatewayController.route_all_outputs(
+                workflow, event.task, event)
+
+        return outgoing_edges
+
     @staticmethod
     def route_single_output(
             workflow: Workflow,
@@ -59,4 +72,3 @@ class GatewayController:
             result_edges.append(edge)
 
         return result_edges
-

@@ -3,7 +3,7 @@ from typing import Callable, Any, List, Optional
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
-from .WorkflowContext import WorkflowContext
+from adhesive.steps.WorkflowContext import WorkflowContext
 
 
 class AdhesiveUserTask(AdhesiveBaseTask):

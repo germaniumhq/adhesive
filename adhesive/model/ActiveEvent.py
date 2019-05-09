@@ -42,6 +42,21 @@ class ActiveEvent:
         """
         result = ActiveEvent(parent_id, self.context.clone(task))
 
+        # if we are exiting the current loop, we need to switch to the
+        # parent loop.
+        # FIXME: this probably doesn't belong here
+        # FIXME: the self.task != task is probably wrong, since we want to support
+        # boolean looping expressions.
+        if self.context.task.loop and self.context.loop \
+                and self.context.loop.task == self.context.task \
+                and self.context.task != task \
+                and parent_id == self.parent_id:
+            result.context.loop = self.context.loop.parent_loop
+        else:
+            result.context.loop = self.context.loop
+
+        result.context.update_title()
+
         return result
 
     @property

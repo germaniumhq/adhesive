@@ -72,11 +72,17 @@ def run_tool(context, tool_name: str) -> None:
         scm.checkout(w)
         w.run("mypy .")
 
-@adhesive.task("^GBS: (.*?)$")
-def gbs_build(context, sub_folder: str) -> None:
+@adhesive.task("GBS: lin64")
+def gbs_build_lin64(context) -> None:
     gbs.build(workspace=context.workspace,
               platform="python",
-              gbs_prefix=f"/_gbs/{sub_folder}/")
+              gbs_prefix=f"/_gbs/lin64/")
+
+@adhesive.task("GBS: win32")
+def gbs_build_win32(context) -> None:
+    gbs.build(workspace=context.workspace,
+              platform="python:win32",
+              gbs_prefix=f"/_gbs/win32/")
 
 adhesive.bpmn_build("adhesive-self.bpmn")
 

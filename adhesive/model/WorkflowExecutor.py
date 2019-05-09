@@ -1,9 +1,10 @@
 import sys
 from concurrent.futures import Future
-from typing import Set, Optional, Dict, TypeVar, cast, Any
+from typing import Set, Optional, Dict, TypeVar, cast, Any, List
 import logging
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
+from adhesive.graph.Edge import Edge
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
@@ -15,6 +16,7 @@ from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from adhesive.steps.WorkflowContext import WorkflowContext
 from adhesive.steps.WorkflowData import WorkflowData
+from adhesive.steps.WorkflowLoop import WorkflowLoop
 from adhesive.steps.call_script_task import call_script_task
 
 T = TypeVar('T')
@@ -297,6 +299,14 @@ class WorkflowExecutor:
             return event.state.run()
 
         def run_task(_event) -> None:
+            # if the event is not yet started as a loop, we need to do that.
+            if event.task.loop and (not event.context.loop or event.context.loop.task != event.task):
+                # we start a loop by firing the loop events, and consume this event.
+                WorkflowLoop.create_loop(event, self.clone_event)
+                event.state.done_check(None)
+
+                return
+
             if isinstance(event.task, Workflow):
                 for start_task in event.task.start_tasks.values():
                     # this automatically registers our events for execution
@@ -360,14 +370,7 @@ class WorkflowExecutor:
 
         def route_task(_event) -> None:
             event.context = _event.data
-
-            if isinstance(event.task, ExclusiveGateway):
-                gateway = cast(Gateway, event.task)
-                outgoing_edges = GatewayController.route_single_output(
-                    workflow, gateway, event)
-            else:
-                outgoing_edges = GatewayController.route_all_outputs(
-                    workflow, event.task, event)
+            outgoing_edges = GatewayController.compute_outgoing_edges(workflow, event)
 
             for outgoing_edge in outgoing_edges:
                 target_task = workflow.tasks[outgoing_edge.target_id]

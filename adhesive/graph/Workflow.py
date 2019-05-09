@@ -68,10 +68,12 @@ class Workflow(BaseTask):
     def add_start_event(self, event: StartEvent) -> None:
         self._start_events[event.id] = event
         self._tasks[event.id] = event
+        self._graph.add_node(event.id)
 
     def add_end_event(self, event: EndEvent) -> None:
         self._end_events[event.id] = event
         self._tasks[event.id] = event
+        self._graph.add_node(event.id)
 
     def get_outgoing_edges(self, task_id: str) -> List[Edge]:
         """ Get the outgoing edges. """
