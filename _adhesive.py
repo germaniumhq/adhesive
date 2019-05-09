@@ -53,6 +53,10 @@ tools = {
 def read_parameters(context) -> None:
     context.data.run_mypy = False
 
+@adhesive.task("Checkout Code")
+def checkout_code(context) -> None:
+    scm.checkout(context.workspace)
+
 @adhesive.task(r"^Ensure Tooling:\s+(.+)$")
 def ensure_tooling(context, tool_name) -> None:
     w = context.workspace
@@ -70,9 +74,6 @@ def run_tool(context, tool_name: str) -> None:
 
 @adhesive.task("^GBS: (.*?)$")
 def gbs_build(context, sub_folder: str) -> None:
-    #context.workspace.run("ls -la && exit 1")
-    scm.checkout(context.workspace)
-
     gbs.build(workspace=context.workspace,
               platform="python",
               gbs_prefix=f"/_gbs/{sub_folder}/")
