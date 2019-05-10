@@ -69,7 +69,6 @@ def ensure_tooling(context, tool_name) -> None:
 def run_tool(context, tool_name: str) -> None:
     with docker.inside(context.workspace,
                        f"germaniumhq/tools-{tool_name}") as w:
-        scm.checkout(w)
         w.run("mypy .")
 
 @adhesive.task("GBS: lin64")
