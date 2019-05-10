@@ -2,13 +2,14 @@ import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
-from .check_equals import assert_equal_steps
-from .test_tasks import adhesive, _async
+
+from test.adhesive.steps.check_equals import assert_equal_steps
+from test.adhesive.steps.test_tasks import adhesive, _async
 
 
 class TestLoopExecution(unittest.TestCase):
 
-    def test_loop_execution_no_wait(self):
+    def test_loop_execution(self):
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/loop.bpmn")
 
         workflow_executor = WorkflowExecutor(adhesive.process)

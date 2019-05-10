@@ -262,25 +262,66 @@ class WorkflowExecutor:
             return event.state.run()
 
         def get_other_task_waiting(source: ActiveEvent) -> Optional[ActiveEvent]:
+            """
+            Get any other task that is waiting to be executed on the
+            same task that's waiting.
+            :param source:
+            :return:
+            """
             for ev in self.events.values():
                 if ev == source:
                     continue
 
-                if ev.task == source.task and ev.state.state in ACTIVE_STATES:
+                if ev.task == source.task and \
+                        ev.state.state in ACTIVE_STATES and \
+                        loop_id(ev) == loop_id(source):
                     return ev
 
             return None
+
+        def parent_loop_id(e: ActiveEvent) -> Optional[str]:
+            if not e.context.loop:
+                return None
+
+            if not e.context.loop.parent_loop:
+                return None
+
+            return e.context.loop.parent_loop.loop_id
+
+        def loop_id(e: ActiveEvent) -> Optional[str]:
+            if not e.context.loop:
+                return None
+
+            return e.context.loop.loop_id
 
         def wait_task(_event) -> Optional[ActiveEventState]:
             # is another waiting task already present?
             other_waiting = get_other_task_waiting(event)
 
+            def is_predecessor(e) -> bool:
+                if e.state.state not in ACTIVE_STATES:
+                    return False
+
+                if e.task == event.task:
+                    return False
+
+                if event.context.loop:
+                    # if we are in a loop and the other predecessor is inside
+                    # a loop of its own, we need to check if it's in the same
+                    # loop as ours
+                    if e.task.loop and parent_loop_id(e) != loop_id(event):
+                        return False
+
+                    # we check if we are in the same loop. each iteration
+                    # will have its own loop id.
+                    if loop_id(e) != loop_id(event):
+                        return False
+
+                return True
+
             potential_predecessors = list(map(
                 lambda e: e.task,
-                filter(
-                    lambda e: e.state.state in ACTIVE_STATES and e.task != event.task,
-                    self.events.values()
-                )))
+                filter(is_predecessor, self.events.values())))
 
             if other_waiting:
                 new_data = WorkflowData.merge(other_waiting.context.data, event.context.data)
@@ -292,11 +333,13 @@ class WorkflowExecutor:
             if workflow.are_predecessors(event.task, potential_predecessors):
                 return None
 
-            if other_waiting:
-                other_waiting.state.run()
-                return None
+            if not other_waiting:
+                return event.state.run()
 
-            return event.state.run()
+            if other_waiting.state.state == ActiveEventState.WAITING:
+                other_waiting.state.run()
+
+            return None
 
         def run_task(_event) -> None:
             # if the event is not yet started as a loop, we need to do that.

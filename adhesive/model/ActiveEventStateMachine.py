@@ -107,6 +107,7 @@ def register_transition(name: Optional[str], from_state: ActiveEventState, to_st
 
 
 register_transition('process', ActiveEventState.NEW, ActiveEventState.PROCESSING)
+register_transition('run', ActiveEventState.NEW, ActiveEventState.RUNNING)
 register_transition('error', ActiveEventState.NEW, ActiveEventState.DONE)
 register_transition('route', ActiveEventState.PROCESSING, ActiveEventState.ROUTING)
 register_transition('wait_check', ActiveEventState.PROCESSING, ActiveEventState.WAITING)
@@ -281,9 +282,12 @@ class ActiveEventStateMachine(object):
             return self._currentState
 
         if link_name not in source_state:
-            LOG.warning(
-                "There is no transition named `%s` starting from `%s`." %
-                (link_name, self._currentState.value))
+            LOG.warning("There is no transition named `{}` starting from `{}`.",
+                        link_name,
+                        self._currentState.value)
+
+            raise Exception("There is no transition named `%s` starting from `%s`." %
+                            (link_name, self._currentState.value))
 
             return self._currentState
 
