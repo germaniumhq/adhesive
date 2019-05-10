@@ -216,7 +216,7 @@ class WorkflowExecutor:
 
     def _match_task(self, task: BaseTask) -> Optional[AdhesiveBaseTask]:
         for step in self.process.steps:
-            if step.matches(task) is not None:
+            if step.matches(task, task.name) is not None:
                 return step
 
         return None

@@ -15,16 +15,18 @@ class AdhesiveTask(AdhesiveBaseTask):
                  *expressions: str) -> None:
         super(AdhesiveTask, self).__init__(code, *expressions)
 
-    def matches(self, task: BaseTask) -> Optional[List[str]]:
+    def matches(self,
+                task: BaseTask,
+                resolved_name: str) -> Optional[List[str]]:
         if not isinstance(task, Task):
             return None
 
-        return super(AdhesiveTask, self).matches(task)
+        return super(AdhesiveTask, self).matches(task, resolved_name)
 
     def invoke(
             self,
             context: WorkflowContext) -> WorkflowContext:
-        params = self.matches(context.task)
+        params = self.matches(context.task, context.task_name)
 
         self.code(context, *params)  # type: ignore
 

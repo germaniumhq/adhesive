@@ -14,16 +14,18 @@ class AdhesiveBaseTask:
         self.re_expressions = list(map(re.compile, expressions))
         self.code = code
 
-    def matches(self, task: BaseTask) -> Optional[List[str]]:
+    def matches(self,
+                task: BaseTask,
+                resolved_name: str) -> Optional[List[str]]:
         """
         Checks if this implementation matches any of the expressions
         bounded to this task. If yes, it returns the potential variables
         extracted from the expression.
-        :param task:
+        :param context:
         :return:
         """
         for re_expression in self.re_expressions:
-            m = re_expression.match(task.name)
+            m = re_expression.match(resolved_name)
 
             if m:
                 return list(m.groups())
