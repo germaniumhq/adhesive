@@ -1,7 +1,5 @@
-import collections
-from typing import Callable, Any, Optional
-
 import uuid
+from typing import Callable, Any, Optional
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.model.ActiveEvent import ActiveEvent
@@ -69,7 +67,7 @@ class WorkflowLoop:
 
             # if we're iterating over a map, we're going to store the
             # values as well.
-            if isinstance(result, collections.Mapping):
+            if isinstance(result, dict):
                 new_event.context.loop._value = result[item]
 
             new_event.context.update_title()

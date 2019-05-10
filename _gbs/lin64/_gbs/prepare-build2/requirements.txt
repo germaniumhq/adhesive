@@ -1,0 +1,2 @@
+networkx==2.3
+npyscreen==4.10.5

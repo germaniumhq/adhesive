@@ -74,14 +74,26 @@ def run_tool(context, tool_name: str) -> None:
 @adhesive.task("GBS: lin64")
 def gbs_build_lin64(context) -> None:
     gbs.build(workspace=context.workspace,
-              platform="python",
+              platform="python:3.7",
               gbs_prefix=f"/_gbs/lin64/")
+
+@adhesive.task("GBS Test: lin64")
+def gbs_test_lin64(context) -> None:
+    image_name = gbs.test(
+        workspace=context.workspace,
+        platform="python:3.7",
+        tag="gbs_test",
+        gbs_prefix=f"/_gbs/lin64/")
+
+    with docker.inside(context.workspace, "gbs_test") as w:
+        w.run("python -m unittest")
 
 @adhesive.task("GBS: win32")
 def gbs_build_win32(context) -> None:
-    gbs.build(workspace=context.workspace,
-              platform="python:win32",
-              gbs_prefix=f"/_gbs/win32/")
+    pass
+    #gbs.build(workspace=context.workspace,
+    #          platform="python:win32",
+    #          gbs_prefix=f"/_gbs/win32/")
 
 adhesive.bpmn_build("adhesive-self.bpmn")
 
