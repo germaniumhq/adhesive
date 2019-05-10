@@ -95,5 +95,31 @@ def gbs_build_win32(context) -> None:
     #          platform="python:win32",
     #          gbs_prefix=f"/_gbs/win32/")
 
+
+@adhesive.task('^PyPI publish to (.+?)$')
+def publish_to_pypi(context, registry):
+    #with docker.inside(context.workspace, "") as w:
+    #    with w.with_file_credential("PYPIRC_RELEASE_FILE", "/home/germanium/.pip/pip.conf"):
+    #        w.run(f"python ... publish {registry}")
+    pass
+
+@adhesive.usertask('Publish to PyPI\?')
+def publish_to_pypi_confirm(context, ui):
+    ui.add_input_text("version", title="Version")
+    ui.add_input_text("pypi_version", title="PyPI Version")
+    ui.add_input_text("pypi_test_version", title="PyPI Test Version")
+
+    ui.add_checkbox_group(
+        "publish",
+        title="Publish",
+        values=(
+            ("nexus", "Publish to Nexus"),
+            ("pypitest", "Publish to PyPI Test"),
+            ("pypi", "Publish to PyPI"),
+        ),
+        value=("nexus","pypitest", "pypi")
+    )
+
+
 adhesive.bpmn_build("adhesive-self.bpmn")
 
