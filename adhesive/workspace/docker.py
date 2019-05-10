@@ -1,6 +1,6 @@
 import subprocess
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Union, Iterable
 
 from .Workspace import Workspace
 
@@ -62,3 +62,21 @@ def inside(workspace: Workspace,
     finally:
         if w is not None:
             w._destroy()
+
+
+@contextmanager
+def build(workspace: Workspace,
+          tags: Union[str, Iterable[str]]):
+
+    # we always consider a list of tags
+    if isinstance(tags, str):
+        tags = [tags]
+
+    command = "docker build "
+
+    for tag in tags:
+        command += f"-t {tag} "
+
+    command += "."
+
+    workspace.run(command)

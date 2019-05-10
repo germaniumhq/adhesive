@@ -1,3 +1,4 @@
+import collections
 from typing import Callable, Any, Optional
 
 import uuid
@@ -18,7 +19,8 @@ class WorkflowLoop:
                  index: int) -> None:
         self.loop_id = loop_id
         self._task = task
-        self._item = item
+        self._key = item
+        self._value = item
         self._index = index
         self.parent_loop = parent_loop
 
@@ -27,8 +29,12 @@ class WorkflowLoop:
         return self._task
 
     @property
-    def item(self) -> Any:
-        return self._item
+    def key(self) -> Any:
+        return self._key
+
+    @property
+    def value(self) -> Any:
+        return self._value
 
     @property
     def index(self) -> int:
@@ -60,6 +66,11 @@ class WorkflowLoop:
                 event.task,
                 item,
                 index)
+
+            # if we're iterating over a map, we're going to store the
+            # values as well.
+            if isinstance(result, collections.Mapping):
+                new_event.context.loop._value = result[item]
 
             new_event.context.update_title()
 

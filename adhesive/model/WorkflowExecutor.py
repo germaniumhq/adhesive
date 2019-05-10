@@ -1,6 +1,6 @@
 import sys
 from concurrent.futures import Future
-from typing import Set, Optional, Dict, TypeVar, cast, Any, List
+from typing import Set, Optional, Dict, TypeVar, cast, Any, List, Tuple
 import logging
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
@@ -51,6 +51,13 @@ ACTIVE_STATES = {
     ActiveEventState.ROUTING,
 }
 
+# When waiting for predecessors it only makes sense to collapse events
+# into ActiveEvents only when the event is not already running.
+PRE_RUN_STATES = {
+    ActiveEventState.NEW,
+    ActiveEventState.PROCESSING,
+    ActiveEventState.WAITING,
+}
 
 class WorkflowExecutor:
     """
@@ -261,23 +268,30 @@ class WorkflowExecutor:
 
             return event.state.run()
 
-        def get_other_task_waiting(source: ActiveEvent) -> Optional[ActiveEvent]:
+        def get_other_task_waiting(source: ActiveEvent) -> \
+                Tuple[Optional[ActiveEvent], int]:
             """
             Get any other task that is waiting to be executed on the
             same task that's waiting.
             :param source:
             :return:
             """
+            result = None
+            count = 0
+
             for ev in self.events.values():
                 if ev == source:
                     continue
 
                 if ev.task == source.task and \
-                        ev.state.state in ACTIVE_STATES and \
+                        ev.state.state in PRE_RUN_STATES and \
                         loop_id(ev) == loop_id(source):
-                    return ev
+                    if not result:
+                        result = ev
 
-            return None
+                    count += 1
+
+            return result, count
 
         def parent_loop_id(e: ActiveEvent) -> Optional[str]:
             if not e.context.loop:
@@ -296,7 +310,7 @@ class WorkflowExecutor:
 
         def wait_task(_event) -> Optional[ActiveEventState]:
             # is another waiting task already present?
-            other_waiting = get_other_task_waiting(event)
+            other_waiting, tasks_waiting_count = get_other_task_waiting(event)
 
             def is_predecessor(e) -> bool:
                 if e.state.state not in ACTIVE_STATES:
@@ -309,8 +323,8 @@ class WorkflowExecutor:
                     # if we are in a loop and the other predecessor is inside
                     # a loop of its own, we need to check if it's in the same
                     # loop as ours
-                    if e.task.loop and parent_loop_id(e) != loop_id(event):
-                        return False
+                    if e.task.loop:
+                        return parent_loop_id(e) == loop_id(event)
 
                     # we check if we are in the same loop. each iteration
                     # will have its own loop id.
@@ -336,7 +350,8 @@ class WorkflowExecutor:
             if not other_waiting:
                 return event.state.run()
 
-            if other_waiting.state.state == ActiveEventState.WAITING:
+            if other_waiting.state.state == ActiveEventState.WAITING and \
+                    tasks_waiting_count == 1:
                 other_waiting.state.run()
 
             return None

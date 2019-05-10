@@ -96,3 +96,15 @@ class Workspace(ABC):
         finally:
             self.rm(folder)
             self.pwd = current_folder
+
+    @contextmanager
+    def chdir(self, target_folder: str):
+        current_folder = self.pwd
+        folder = os.path.join(self.pwd, target_folder)
+
+        self.pwd = folder
+
+        try:
+            yield folder
+        finally:
+            self.pwd = current_folder

@@ -72,4 +72,5 @@ class ActiveEvent:
         self._task = task
 
     def __repr__(self) -> str:
-        return f"ActiveEvent({self.id}, {self.state.state}): {self.task}"
+        return f"ActiveEvent({self.id}, {self.state.state}): " \
+               f"({self.task.id}):{self.context.task_name}"

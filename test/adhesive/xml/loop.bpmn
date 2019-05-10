@@ -21,7 +21,7 @@
       <outgoing>_4</outgoing>
       <outputSet id="OutputSet_1"/>
     </startEvent>
-    <task completionQuantity="1" id="_5" isForCompensation="false" name="Build&#10;Germanium&#10;Image on {loop.item}" startQuantity="1">
+    <task completionQuantity="1" id="_5" isForCompensation="false" name="Build&#10;Germanium&#10;Image on {loop.value}" startQuantity="1">
       <incoming>_6</incoming>
       <outgoing>_8</outgoing>
       <standardLoopCharacteristics id="StandardLoopCharacteristics_1">
@@ -35,13 +35,13 @@
       <incoming>_12</incoming>
       <inputSet id="InputSet_1"/>
     </endEvent>
-    <subProcess completionQuantity="1" id="_10" isForCompensation="false" name="Test Platform {loop.item}" startQuantity="1" triggeredByEvent="false">
+    <subProcess completionQuantity="1" id="_10" isForCompensation="false" name="Test Platform {loop.value}" startQuantity="1" triggeredByEvent="false">
       <incoming>_11</incoming>
       <outgoing>_12</outgoing>
       <standardLoopCharacteristics id="StandardLoopCharacteristics_2">
         <loopCondition id="FormalExpression_1" language="python" xsi:type="tFormalExpression"><![CDATA[context.data.test_platforms]]></loopCondition>
       </standardLoopCharacteristics>
-      <task completionQuantity="1" id="_9" isForCompensation="false" name="Test Browser {loop.item} on {data.platform}" startQuantity="1">
+      <task completionQuantity="1" id="_9" isForCompensation="false" name="Test Browser {loop.value} on {data.platform}" startQuantity="1">
         <incoming>_14</incoming>
         <outgoing>_16</outgoing>
         <standardLoopCharacteristics testBefore="true">
@@ -55,10 +55,10 @@
     "ie",
     "edge"
 ]
-context.data.platform = loop.item]]></script>
+context.data.platform = loop.value]]></script>
       </scriptTask>
       <sequenceFlow id="_14" sourceRef="_13" targetRef="_9"/>
-      <task completionQuantity="1" id="_15" isForCompensation="false" name="Cleanup&#10;Platform&#10;{loop.item}" startQuantity="1">
+      <task completionQuantity="1" id="_15" isForCompensation="false" name="Cleanup&#10;Platform&#10;{loop.value}" startQuantity="1">
         <incoming>_16</incoming>
       </task>
       <sequenceFlow id="_16" sourceRef="_9" targetRef="_15"/>
