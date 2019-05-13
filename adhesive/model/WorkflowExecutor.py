@@ -1,10 +1,9 @@
+import logging
 import sys
 from concurrent.futures import Future
-from typing import Set, Optional, Dict, TypeVar, cast, Any, List, Tuple
-import logging
+from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
-from adhesive.graph.Edge import Edge
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
@@ -29,7 +28,6 @@ from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Workflow import Workflow
 from adhesive.steps.AdhesiveTask import AdhesiveTask
-from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
