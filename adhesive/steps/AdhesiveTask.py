@@ -3,7 +3,7 @@ from typing import Callable, List, Optional
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Task import Task
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
-from .WorkflowContext import WorkflowContext
+from .ExecutionToken import ExecutionToken
 
 
 class AdhesiveTask(AdhesiveBaseTask):
@@ -25,7 +25,7 @@ class AdhesiveTask(AdhesiveBaseTask):
 
     def invoke(
             self,
-            context: WorkflowContext) -> WorkflowContext:
+            context: ExecutionToken) -> ExecutionToken:
         params = self.matches(context.task, context.task_name)
 
         self.code(context, *params)  # type: ignore

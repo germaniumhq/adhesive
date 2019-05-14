@@ -2,10 +2,10 @@ from typing import cast
 
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.model.ActiveEvent import ActiveEvent
-from adhesive.steps.WorkflowContext import WorkflowContext
+from adhesive.steps.ExecutionToken import ExecutionToken
 
 
-def call_script_task(event: ActiveEvent) -> WorkflowContext:
+def call_script_task(event: ActiveEvent) -> ExecutionToken:
     exec(
         cast(ScriptTask, event.task).script,
         {},                          # globals

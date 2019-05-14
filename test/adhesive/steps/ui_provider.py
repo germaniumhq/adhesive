@@ -4,12 +4,12 @@ from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.UiBuilderApi import UiBuilderApi
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.model.UserTaskProvider import UserTaskProvider
-from adhesive.steps.WorkflowContext import WorkflowContext
+from adhesive.steps.ExecutionToken import ExecutionToken
 
 
 class UIBuilder(UiBuilderApi):
     def __init__(self,
-                 context: WorkflowContext):
+                 context: ExecutionToken):
         self.context = context
 
     def add_input_text(self,

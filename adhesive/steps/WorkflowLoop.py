@@ -73,3 +73,20 @@ class WorkflowLoop:
             new_event.context.update_title()
 
             index += 1
+
+
+def parent_loop_id(e: 'ActiveEvent') -> Optional[str]:
+    if not e.context.loop:
+        return None
+
+    if not e.context.loop.parent_loop:
+        return None
+
+    return e.context.loop.parent_loop.loop_id
+
+
+def loop_id(e: 'ActiveEvent') -> Optional[str]:
+    if not e.context.loop:
+        return None
+
+    return e.context.loop.loop_id

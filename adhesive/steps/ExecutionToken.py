@@ -1,23 +1,26 @@
 from typing import Optional, Dict, Any
-from adhesive.steps.WorkflowData import WorkflowData
+from adhesive.steps.ExecutionData import ExecutionData
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.workspace.Workspace import Workspace
 from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 
 
-class WorkflowContext:
+class ExecutionToken:
     """
     A context passed to an execution of a task. It holds the information
     about:
-    - data that's being populated across tasks,
-    - workspace where files can be created.
+    - data that's attached to this token,
+    - workspace where files can be created. This depends on the actual runtime
+      (ie linux, windows, docker)
+
+    A workflow context it's an execution token that's being passed around.
     """
     def __init__(self,
                  task: 'BaseTask',
                  data: Optional[Dict]=None,
                  workspace: Optional[Workspace]=None) -> None:
         self.task = task
-        self.data = WorkflowData(data)
+        self.data = ExecutionData(data)
         self.workspace: Workspace = LocalLinuxWorkspace() if not workspace else workspace
         self.loop: Optional[WorkflowLoop] = None
 
@@ -34,8 +37,8 @@ class WorkflowContext:
         except Exception as e:
             self.task_name = self.task.name
 
-    def clone(self, task: 'BaseTask') -> 'WorkflowContext':
-        result = WorkflowContext(
+    def clone(self, task: 'BaseTask') -> 'ExecutionToken':
+        result = ExecutionToken(
             task,
             self.data.as_dict(),
             self.workspace,  # FIXME: this should be a clone

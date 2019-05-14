@@ -8,7 +8,7 @@ from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.UserTaskProvider import UserTaskProvider
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 
-from adhesive.steps.WorkflowData import WorkflowData
+from adhesive.steps.ExecutionData import ExecutionData
 
 
 class UIBuilder(UiBuilderApi):
@@ -24,7 +24,7 @@ class UIBuilder(UiBuilderApi):
             name=event.task.name)
 
     @property
-    def data(self) -> WorkflowData:
+    def data(self) -> ExecutionData:
         result_dict = dict()
 
         for name, ui_control in self.ui_controls.items():
@@ -45,7 +45,7 @@ class UIBuilder(UiBuilderApi):
 
             result_dict[name] = ui_control.value
 
-        return WorkflowData(result_dict)
+        return ExecutionData(result_dict)
 
     def add_input_text(self,
                        name: str,
@@ -207,7 +207,7 @@ class ConsoleUserTaskProvider(UserTaskProvider):
                 ui.form.edit()
 
                 # put the values in the data.
-                context.data = WorkflowData.merge(context.data, ui.data)
+                context.data = ExecutionData.merge(context.data, ui.data)
 
                 event.future.set_result(context)
             except Exception as e:

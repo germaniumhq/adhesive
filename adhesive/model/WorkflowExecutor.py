@@ -13,9 +13,9 @@ from adhesive.model.GatewayController import GatewayController
 from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
-from adhesive.steps.WorkflowContext import WorkflowContext
-from adhesive.steps.WorkflowData import WorkflowData
-from adhesive.steps.WorkflowLoop import WorkflowLoop
+from adhesive.steps.ExecutionToken import ExecutionToken
+from adhesive.steps.ExecutionData import ExecutionData
+from adhesive.steps.WorkflowLoop import WorkflowLoop, parent_loop_id, loop_id
 from adhesive.steps.call_script_task import call_script_task
 
 T = TypeVar('T')
@@ -80,23 +80,6 @@ def is_predecessor(event, e) -> bool:
     return True
 
 
-def parent_loop_id(e: ActiveEvent) -> Optional[str]:
-    if not e.context.loop:
-        return None
-
-    if not e.context.loop.parent_loop:
-        return None
-
-    return e.context.loop.parent_loop.loop_id
-
-
-def loop_id(e: ActiveEvent) -> Optional[str]:
-    if not e.context.loop:
-        return None
-
-    return e.context.loop.loop_id
-
-
 class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -119,7 +102,7 @@ class WorkflowExecutor:
 
         self.config = WorkflowExecutorConfig(wait_tasks=wait_tasks)
 
-    async def execute(self) -> WorkflowData:
+    async def execute(self) -> ExecutionData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
@@ -129,7 +112,7 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow)
 
-        workflow_context = WorkflowContext(workflow)
+        workflow_context = ExecutionToken(workflow)
         fake_event = ActiveEvent(parent_id=None, context=workflow_context)
         fake_event.id = None
 
@@ -340,7 +323,7 @@ class WorkflowExecutor:
                 filter(lambda e: is_predecessor(event, e), self.events.values())))
 
             if other_waiting:
-                new_data = WorkflowData.merge(other_waiting.context.data, event.context.data)
+                new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
                 other_waiting.context.data = new_data
 
                 event.state.done()
@@ -481,7 +464,7 @@ class WorkflowExecutor:
 
             # we merge into the parent event if it's an end state.
             if parent_id is not None:
-                self.events[parent_id].context.data = WorkflowData.merge(
+                self.events[parent_id].context.data = ExecutionData.merge(
                     self.events[parent_id].context.data,
                     event.context.data
                 )

@@ -28,7 +28,7 @@ def merge_dict(dict1: Dict, dict2: Dict) -> None:
         raise Exception(f"Unable to merge '{k2}' with different types.")
 
 
-class WorkflowData:
+class ExecutionData:
     def __init__(self,
                  initial_data: Optional[Dict] = None):
         self._data = dict(initial_data) if initial_data else dict()
@@ -38,7 +38,7 @@ class WorkflowData:
 
     def __getattr__(self, item: str):
         if item.startswith("__") or item == '_data':
-            return super(WorkflowData, self).__getattribute__(item)
+            return super(ExecutionData, self).__getattribute__(item)
 
         if item not in self._data:
             return None
@@ -47,7 +47,7 @@ class WorkflowData:
 
     def __setattr__(self, key, value):
         if key == "_data":
-            super(WorkflowData, self).__setattr__(key, value)
+            super(ExecutionData, self).__setattr__(key, value)
             return
 
         self._data[key] = value
@@ -59,8 +59,8 @@ class WorkflowData:
         return self.as_dict()
 
     @staticmethod
-    def merge(*data_items: 'WorkflowData') -> 'WorkflowData':
-        result = WorkflowData()
+    def merge(*data_items: 'ExecutionData') -> 'ExecutionData':
+        result = ExecutionData()
 
         for data in data_items:
             merge_dict(result._data, data._data)

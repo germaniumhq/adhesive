@@ -3,7 +3,7 @@ from typing import Optional
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine
-from adhesive.steps.WorkflowContext import WorkflowContext
+from adhesive.steps.ExecutionToken import ExecutionToken
 
 
 class ActiveEvent:
@@ -13,11 +13,11 @@ class ActiveEvent:
     """
     def __init__(self,
                  parent_id: Optional['str'],
-                 context: WorkflowContext) -> None:
+                 context: ExecutionToken) -> None:
         self.id: str = str(uuid.uuid4())
         self.parent_id = parent_id
 
-        if not isinstance(context, WorkflowContext):
+        if not isinstance(context, ExecutionToken):
             raise Exception(f"Not a task: {task}")
 
         self._task = context.task
