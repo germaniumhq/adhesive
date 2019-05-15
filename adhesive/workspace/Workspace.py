@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Optional
 
+from adhesive.steps.Execution import Execution
+
 
 class Workspace(ABC):
     """
@@ -12,7 +14,11 @@ class Workspace(ABC):
     execution.
     """
     def __init__(self,
-                 pwd: str) -> None:
+                 execution: Execution,
+                 pwd: str,
+                 id: Optional[str] = None) -> None:
+        self.id = str(uuid.uuid4()) if not id else id
+        self.execution = execution
         self.pwd = pwd
 
     @abstractmethod

@@ -13,10 +13,12 @@ from adhesive.model.GatewayController import GatewayController
 from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
+from adhesive.steps.Execution import Execution
 from adhesive.steps.ExecutionToken import ExecutionToken
 from adhesive.steps.ExecutionData import ExecutionData
 from adhesive.steps.WorkflowLoop import WorkflowLoop, parent_loop_id, loop_id
 from adhesive.steps.call_script_task import call_script_task
+from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 
 T = TypeVar('T')
 
@@ -112,7 +114,14 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow)
 
-        workflow_context = ExecutionToken(workflow)
+        new_execution = Execution()
+        workflow_context = ExecutionToken(
+            task=workflow,
+            execution=new_execution,
+            data=None,  # FIXME: create the workspace with a factory
+            workspace=LocalLinuxWorkspace(execution=new_execution, pwd=None, id="default")
+        )
+
         fake_event = ActiveEvent(parent_id=None, context=workflow_context)
         fake_event.id = None
 

@@ -6,6 +6,8 @@ import uuid
 from typing import Optional
 from distutils.dir_util import copy_tree
 
+from adhesive.steps.Execution import Execution
+from adhesive.storage.ensure_folder import ensure_folder
 from adhesive.workspace.Workspace import Workspace
 import logging
 
@@ -19,13 +21,17 @@ class LocalLinuxWorkspace(Workspace):
     execution.
     """
     def __init__(self,
-                 pwd: Optional[str]=None) -> None:
-        if not pwd:
-            # FIXME: detect the temp folder
-            pwd = os.path.join("/tmp/", str(uuid.uuid4()))
-            os.mkdir(pwd)
+                 execution: Execution,
+                 pwd: Optional[str]=None,
+                 id: Optional[str] = None) -> None:
+        super(LocalLinuxWorkspace, self).__init__(
+            execution=execution,
+            pwd=pwd,
+            id=id,
+        )
 
-        super(LocalLinuxWorkspace, self).__init__(pwd=pwd)
+        if not pwd:
+            self.pwd = ensure_folder(self)
 
     def run(self, command: str) -> None:
         subprocess.check_call([
