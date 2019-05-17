@@ -2,6 +2,8 @@ from typing import Callable, List, Optional
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Task import Task
+from adhesive.logging.LogRedirect import redirect_stdout
+from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from .ExecutionToken import ExecutionToken
 
@@ -25,9 +27,12 @@ class AdhesiveTask(AdhesiveBaseTask):
 
     def invoke(
             self,
-            context: ExecutionToken) -> ExecutionToken:
-        params = self.matches(context.task, context.task_name)
+            event: ActiveEvent) -> ExecutionToken:
+        with redirect_stdout(event):
+            context = event.context
 
-        self.code(context, *params)  # type: ignore
+            params = self.matches(context.task, context.task_name)
 
-        return context
+            self.code(context, *params)  # type: ignore
+
+            return context

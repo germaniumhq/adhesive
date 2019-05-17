@@ -1,15 +1,12 @@
-import distutils
+import logging
 import os
 import shutil
 import subprocess
-import uuid
-from typing import Optional
 from distutils.dir_util import copy_tree
+from typing import Optional
 
 from adhesive.steps.Execution import Execution
-from adhesive.storage.ensure_folder import ensure_folder
 from adhesive.workspace.Workspace import Workspace
-import logging
 
 LOG = logging.getLogger(__name__)
 
@@ -81,3 +78,6 @@ class LocalLinuxWorkspace(Workspace):
                         to_path: str):
         LOG.debug("copy {} to {}", from_path, to_path)
         shutil.copytree(from_path, to_path)
+
+
+from adhesive.storage.ensure_folder import ensure_folder

@@ -3,7 +3,6 @@ from typing import Optional
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine
-from adhesive.steps.ExecutionToken import ExecutionToken
 
 
 class ActiveEvent:
@@ -13,12 +12,12 @@ class ActiveEvent:
     """
     def __init__(self,
                  parent_id: Optional['str'],
-                 context: ExecutionToken) -> None:
+                 context: 'ExecutionToken') -> None:
         self.id: str = str(uuid.uuid4())
         self.parent_id = parent_id
 
         if not isinstance(context, ExecutionToken):
-            raise Exception(f"Not a task: {task}")
+            raise Exception(f"Not an execution token: {context}")
 
         self._task = context.task
         self.context = context
@@ -74,3 +73,6 @@ class ActiveEvent:
     def __repr__(self) -> str:
         return f"ActiveEvent({self.id}, {self.state.state}): " \
                f"({self.task.id}):{self.context.task_name}"
+
+
+from adhesive.steps.ExecutionToken import ExecutionToken

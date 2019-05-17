@@ -201,7 +201,7 @@ class ConsoleUserTaskProvider(UserTaskProvider):
                 ui = UIBuilder(event)
 
                 adhesive_task = cast(AdhesiveUserTask, executor.tasks_impl[event.task.id])
-                context = adhesive_task.invoke_user_task(event.context, ui)
+                context = adhesive_task.invoke_user_task(event, ui)
 
                 # call the actual UI
                 ui.form.edit()

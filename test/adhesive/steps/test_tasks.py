@@ -3,6 +3,8 @@ import time
 import asyncio
 import uuid
 
+from adhesive.steps.ExecutionToken import ExecutionToken
+
 
 def _async(fn):
     data = asyncio.get_event_loop().run_until_complete(fn)
@@ -59,6 +61,18 @@ def increment_x_by_1(context):
     context.data.x += 1
 
 
+@adhesive.task('Store current execution id')
+def store_current_execution_id(context: ExecutionToken):
+    add_current_task(context)
+    context.data.execution_id = context.execution.id
+
+
+@adhesive.task('^sh:(.*)$')
+def execute_sh_command(context: ExecutionToken, command: str):
+    add_current_task(context)
+    context.workspace.run(command)
+
+
 @adhesive.usertask('Read Data From User')
 def read_data_from_user(context, ui) -> None:
     ui.add_input_text("branch", title="Branch")
@@ -86,3 +100,4 @@ def add_current_task(context):
         context.data.steps[context.task_name] = set()
 
     context.data.steps[context.task_name].add(str(uuid.uuid4()))
+    print(context.task_name)

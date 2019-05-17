@@ -369,7 +369,7 @@ class WorkflowExecutor:
             if isinstance(event.task, Task):
                 future = WorkflowExecutor.pool.submit(
                     self.tasks_impl[event.task.id].invoke,
-                    event.context)
+                    event)
                 self.futures[future] = event.id
                 event.future = future
                 return

@@ -63,7 +63,7 @@ class TestUserTaskProvider(UserTaskProvider):
             ui = UIBuilder(event.context)
 
             adhesive_task = executor.tasks_impl[event.task.id]
-            context = adhesive_task.invoke_user_task(event.context, ui)
+            context = adhesive_task.invoke_user_task(event, ui)
 
             event.future.set_result(context)
         except Exception as e:

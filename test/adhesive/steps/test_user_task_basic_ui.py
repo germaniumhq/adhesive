@@ -3,7 +3,7 @@ import unittest
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.xml.bpmn import read_bpmn_file
 from test.adhesive.steps.ui_provider import TestUserTaskProvider
-from .test_tasks import adhesive, _async
+from test.adhesive.steps.test_tasks import adhesive, _async
 
 
 class TestUserTaskBasic(unittest.TestCase):
