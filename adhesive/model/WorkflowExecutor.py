@@ -3,6 +3,8 @@ import sys
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple
 
+from termcolor_util import green, red, yellow
+
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
@@ -351,6 +353,8 @@ class WorkflowExecutor:
             return None
 
         def run_task(_event) -> None:
+            print(yellow("Running ") + yellow(event.context.task_name, bold=True))
+
             # If the event is not yet started as a loop, we need to do that. We might have a wrong
             # loop context, if we're running in a nested loop.
             if event.task.loop and (not event.context.loop or event.context.loop.task != event.task):
@@ -394,6 +398,8 @@ class WorkflowExecutor:
             return event.state.route(event.context)
 
         def error_task(_event) -> None:
+            print(red("Failed ") + red(event.context.task_name, bold=True))
+
             # if we have a boundary error task, we use that one for processing.
             if event.task.error_task:
                 self.clone_event(event, event.task.error_task)
@@ -485,6 +491,8 @@ class WorkflowExecutor:
             event.state.done()
 
         def done_task(_event) -> None:
+            print(green("Done ") + green(event.context.task_name, bold=True))
+
             # if the task is done, but the future is still registered, we need to
             # remove the future.
             if event.future in self.futures:
