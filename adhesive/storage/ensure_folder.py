@@ -18,5 +18,6 @@ def ensure_folder(item: Union[Workspace]) -> str:
 
 
 def get_folder(item: Union[Workspace]) -> str:
-    # FIXME: make the storage folder configurable.
-    return os.path.join("/tmp/adhesive/", item.execution.id, "workspaces", item.id)
+    adhesive_temp_folder = os.environ.get("ADHESIVE_TEMP_FOLDER", "/tmp/adhesive")
+
+    return os.path.join(adhesive_temp_folder, item.execution.id, "workspaces", item.id)
