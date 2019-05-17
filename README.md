@@ -58,3 +58,10 @@ When a UserTask is encountered in the process flow, the user will be prompted
 to fill in the various parameters. Note that all the other tasks will continue
 running, proceeding forward with the build.
 
+## Configuration
+
+### Environment Variables
+
+`ADHESIVE_TEMP_FOLDER` - Implicitly points to `/tmp/adhesive`. Is where all the
+builds files will be stored.
+
