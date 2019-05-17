@@ -1,10 +1,9 @@
-import adhesive
-import subprocess
 import textwrap
-import gbs
 
-from adhesive.workspace import docker
+import adhesive
+import gbs
 from adhesive import scm
+from adhesive.workspace import docker
 
 tools = {
     "mypy": textwrap.dedent("""\

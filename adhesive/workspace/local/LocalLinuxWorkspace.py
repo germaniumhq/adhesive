@@ -5,6 +5,7 @@ import subprocess
 from distutils.dir_util import copy_tree
 from typing import Optional
 
+from adhesive.logging import LogRedirect
 from adhesive.steps.Execution import Execution
 from adhesive.workspace.Workspace import Workspace
 
@@ -31,9 +32,13 @@ class LocalLinuxWorkspace(Workspace):
             self.pwd = ensure_folder(self)
 
     def run(self, command: str) -> None:
-        subprocess.check_call([
-            "/bin/sh", "-c", command
-        ], cwd=self.pwd)
+        subprocess.check_call(
+            [
+                "/bin/sh", "-c", command
+            ],
+            cwd=self.pwd,
+            stdout=LogRedirect.stdout.log,
+            stderr=LogRedirect.stderr.log)
 
     def write_file(
             self,

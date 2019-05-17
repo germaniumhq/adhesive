@@ -2,6 +2,7 @@ import subprocess
 from contextlib import contextmanager
 from typing import Optional, Union, Iterable
 
+from adhesive.logging import LogRedirect
 from .Workspace import Workspace
 
 
@@ -20,9 +21,13 @@ class DockerWorkspace(Workspace):
         ]).decode('utf-8').strip()
 
     def run(self, command: str) -> None:
-        subprocess.check_call([
-            "docker", "exec", "-w", self.pwd, self.container_id, "/bin/sh", "-c", command
-        ], cwd=self.pwd)
+        subprocess.check_call(
+            [
+                "docker", "exec", "-w", self.pwd, self.container_id, "/bin/sh", "-c", command
+            ],
+            cwd=self.pwd,
+            stdout=LogRedirect.stdout.log,
+            stderr=LogRedirect.stderr.log)
 
     def write_file(
             self,
@@ -39,21 +44,30 @@ class DockerWorkspace(Workspace):
     def copy_to_agent(self,
                       from_path: str,
                       to_path: str):
-        subprocess.check_call([
-            "docker", "cp", from_path, f"{self.container_id}:{to_path}"
-        ])
+        subprocess.check_call(
+            [
+                "docker", "cp", from_path, f"{self.container_id}:{to_path}"
+            ],
+            stdout=LogRedirect.stdout.log,
+            stderr=LogRedirect.stderr.log)
 
     def copy_from_agent(self,
                         from_path: str,
                         to_path: str):
-        subprocess.check_call([
-            "docker", "cp", f"{self.container_id}:{from_path}", to_path
-        ])
+        subprocess.check_call(
+            [
+                "docker", "cp", f"{self.container_id}:{from_path}", to_path
+            ],
+            stdout=LogRedirect.stdout.log,
+            stderr=LogRedirect.stderr.log)
 
     def _destroy(self):
-        subprocess.check_call([
-            "docker", "rm", "-f", self.container_id
-        ])
+        subprocess.check_call(
+            [
+                "docker", "rm", "-f", self.container_id
+            ],
+            stdout=LogRedirect.stdout.log,
+            stderr=LogRedirect.stderr.log)
 
 
 @contextmanager

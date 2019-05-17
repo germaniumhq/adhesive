@@ -16,6 +16,7 @@ def ensure_folder(item: Union['Workspace', 'StreamLogger']) -> str:
 
 
 def get_folder(item: Union['Workspace', 'StreamLogger']) -> str:
+    # FIXME: unify configuration?
     adhesive_temp_folder = os.environ.get("ADHESIVE_TEMP_FOLDER", "/tmp/adhesive")
 
     if isinstance(item, Workspace):

@@ -5,6 +5,10 @@ from contextlib import contextmanager
 from adhesive.model.ActiveEvent import ActiveEvent
 
 
+stdout = sys.stdout
+stderr = sys.stderr
+
+
 class StreamLogger:
     def __init__(self,
                  event: ActiveEvent,
@@ -18,7 +22,10 @@ class StreamLogger:
 
         self.log = open(
             os.path.join(folder, name),
-            "wt")
+            "at")
+
+    def flush(self):
+        pass
 
     def write(self, message):
         self.log.write(message)
@@ -42,7 +49,13 @@ class FileLogger:
 
 @contextmanager
 def redirect_stdout(event: ActiveEvent) -> None:
+    global stdout
+    global stderr
+
     log = None
+
+    old_stdout = stdout
+    old_stderr = stderr
 
     try:
         stdout = StreamLogger(event, "stdout")
@@ -55,6 +68,9 @@ def redirect_stdout(event: ActiveEvent) -> None:
 
         yield None
     finally:
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
         if log:
             log.close()
 
