@@ -92,7 +92,7 @@ def gbs_test_lin64(context) -> None:
         gbs_prefix=f"/_gbs/lin64/")
 
     with docker.inside(context.workspace, "gbs_test") as w:
-        w.run("python -m unittest")
+        w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test python -m unittest")
 
 
 @adhesive.task("GBS: win32")

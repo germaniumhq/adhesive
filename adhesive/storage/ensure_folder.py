@@ -16,10 +16,11 @@ def ensure_folder(item: Union['Workspace', 'StreamLogger']) -> str:
 
 
 def get_folder(item: Union['Workspace', 'StreamLogger']) -> str:
-    # FIXME: make the storage folder configurable.
+    adhesive_temp_folder = os.environ.get("ADHESIVE_TEMP_FOLDER", "/tmp/adhesive")
+
     if isinstance(item, Workspace):
         return os.path.join(
-            "/tmp/adhesive/",
+            adhesive_temp_folder,
             item.execution.id,
             "workspaces",
             item.id)
@@ -27,7 +28,7 @@ def get_folder(item: Union['Workspace', 'StreamLogger']) -> str:
     if isinstance(item, StreamLogger):
         # FIXME: loop/parent loop check?
         return os.path.join(
-            "/tmp/adhesive/",
+            adhesive_temp_folder,
             item.event.context.execution.id,
             "logs",
             item.event.task.id,
@@ -36,5 +37,3 @@ def get_folder(item: Union['Workspace', 'StreamLogger']) -> str:
 
 from adhesive.logging.LogRedirect import StreamLogger
 from adhesive.workspace.Workspace import Workspace
-
-
