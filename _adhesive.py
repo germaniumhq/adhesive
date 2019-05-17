@@ -49,13 +49,16 @@ tools = {
     """)
 }
 
+
 @adhesive.task("Read Parameters")
 def read_parameters(context) -> None:
     context.data.run_mypy = False
 
+
 @adhesive.task("Checkout Code")
 def checkout_code(context) -> None:
     scm.checkout(context.workspace)
+
 
 @adhesive.task(r"^Ensure Tooling:\s+(.+)$")
 def ensure_tooling(context, tool_name) -> None:
@@ -65,17 +68,20 @@ def ensure_tooling(context, tool_name) -> None:
         w.write_file("Dockerfile", tools[tool_name])
         w.run(f"docker build -t germaniumhq/tools-{tool_name}:latest .")
 
+
 @adhesive.task("^Run tool: (.*?)$")
 def run_tool(context, tool_name: str) -> None:
     with docker.inside(context.workspace,
                        f"germaniumhq/tools-{tool_name}") as w:
         w.run("mypy .")
 
+
 @adhesive.task("GBS: lin64")
 def gbs_build_lin64(context) -> None:
     gbs.build(workspace=context.workspace,
               platform="python:3.7",
               gbs_prefix=f"/_gbs/lin64/")
+
 
 @adhesive.task("GBS Test: lin64")
 def gbs_test_lin64(context) -> None:
@@ -87,6 +93,7 @@ def gbs_test_lin64(context) -> None:
 
     with docker.inside(context.workspace, "gbs_test") as w:
         w.run("python -m unittest")
+
 
 @adhesive.task("GBS: win32")
 def gbs_build_win32(context) -> None:
@@ -102,6 +109,7 @@ def publish_to_pypi(context, registry):
     #    with w.with_file_credential("PYPIRC_RELEASE_FILE", "/home/germanium/.pip/pip.conf"):
     #        w.run(f"python ... publish {registry}")
     pass
+
 
 @adhesive.usertask('Publish to PyPI\?')
 def publish_to_pypi_confirm(context, ui):

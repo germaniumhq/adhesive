@@ -7,9 +7,14 @@ from .Workspace import Workspace
 
 class DockerWorkspace(Workspace):
     def __init__(self,
-                 image_name: str,
-                 pwd: str) -> None:
-        super(DockerWorkspace, self).__init__(pwd)
+                 workspace: Workspace,
+                 image_name: str) -> None:
+        super(DockerWorkspace, self).__init__(
+            execution=workspace.execution,
+            pwd=workspace.pwd)
+
+        pwd = workspace.pwd
+
         self.container_id = subprocess.check_output([
             "docker", "run", "-t", "-v", f"{pwd}:{pwd}", "-d", "--entrypoint", "cat", image_name
         ]).decode('utf-8').strip()
@@ -57,7 +62,8 @@ def inside(workspace: Workspace,
     w = None
 
     try:
-        w = DockerWorkspace(image_name, pwd=workspace.pwd)
+        w = DockerWorkspace(workspace=workspace,
+                            image_name=image_name)
         yield w
     finally:
         if w is not None:

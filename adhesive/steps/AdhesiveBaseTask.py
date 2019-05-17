@@ -13,6 +13,7 @@ class AdhesiveBaseTask:
                  *expressions: str) -> None:
         self.re_expressions = list(map(re.compile, expressions))
         self.code = code
+        self.expressions = expressions
 
     def matches(self,
                 task: BaseTask,
