@@ -9,6 +9,10 @@ stdout = sys.stdout
 stderr = sys.stderr
 
 
+_real_stdout = sys.stdout
+_real_stderr = sys.stdout
+
+
 class StreamLogger:
     def __init__(self,
                  event: ActiveEvent,
@@ -71,8 +75,7 @@ def redirect_stdout(event: ActiveEvent) -> None:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
 
-        if log:
-            log.close()
+        log.close()
 
 
 from adhesive.storage.ensure_folder import ensure_folder

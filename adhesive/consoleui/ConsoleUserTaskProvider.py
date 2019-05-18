@@ -2,12 +2,11 @@ from typing import Optional, List, Dict, Any, cast, Tuple, Union, Iterable
 
 import npyscreen as npyscreen
 
-from adhesive.model.UiBuilderApi import UiBuilderApi
-from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.model.UiBuilderApi import UiBuilderApi
 from adhesive.model.UserTaskProvider import UserTaskProvider
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
-
+from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.steps.ExecutionData import ExecutionData
 
 
@@ -20,8 +19,7 @@ class UIBuilder(UiBuilderApi):
         self.labels: Dict[str, List[str]] = dict()
         self.values: Dict[str, List[str]] = dict()
 
-        self.form = npyscreen.Form(
-            name=event.task.name)
+        self.ncurses_calls = []
 
     @property
     def data(self) -> ExecutionData:
@@ -57,10 +55,13 @@ class UIBuilder(UiBuilderApi):
         if not title:
             title = name
 
-        self.ui_controls[name] = self.form.add_widget(
-            npyscreen.TitleText,
-            name=title,
-            value=value)
+        def ncurses_input_text_call():
+            self.ui_controls[name] = self.form.add_widget(
+                npyscreen.TitleText,
+                name=title,
+                value=value)
+
+        self.ncurses_calls.append(ncurses_input_text_call)
 
     def add_input_password(self,
                        name: str,
@@ -72,10 +73,13 @@ class UIBuilder(UiBuilderApi):
         if not title:
             title = name
 
-        self.ui_controls[name] = self.form.add_widget(
-            npyscreen.TitlePassword,
-            name=title,
-            value=value)
+        def ncurses_input_password_call():
+            self.ui_controls[name] = self.form.add_widget(
+                npyscreen.TitlePassword,
+                name=title,
+                value=value)
+
+        self.ncurses_calls.append(ncurses_input_password_call)
 
     def add_combobox(
             self,
@@ -94,11 +98,14 @@ class UIBuilder(UiBuilderApi):
 
         _value = self.values[name].index(UIBuilder._get_value(value)) if value else -1
 
-        self.ui_controls[name] = self.form.add_widget(
-            npyscreen.TitleCombo,
-            name=title,
-            value=_value,
-            values=self.labels[name])
+        def ncurses_add_combobox_call():
+            self.ui_controls[name] = self.form.add_widget(
+                npyscreen.TitleCombo,
+                name=title,
+                value=_value,
+                values=self.labels[name])
+
+        self.ncurses_calls.append(ncurses_add_combobox_call)
 
     def add_checkbox_group(
             self,
@@ -118,13 +125,16 @@ class UIBuilder(UiBuilderApi):
         self.values[name] = UIBuilder._get_values(values)
         self.labels[name] = UIBuilder._get_labels(values)
 
-        self.ui_controls[name] = self.form.add_widget(
-            npyscreen.TitleMultiSelect,
-            name=title,
-            value=[self.values[name].index(UIBuilder._get_value(v)) for v in value],
-            max_height=max(len(values) + 1, 2),
-            scroll_exit=True,
-            values=self.labels[name])
+        def ncurses_add_checbox_group_call():
+            self.ui_controls[name] = self.form.add_widget(
+                npyscreen.TitleMultiSelect,
+                name=title,
+                value=[self.values[name].index(UIBuilder._get_value(v)) for v in value],
+                max_height=max(len(values) + 1, 2),
+                scroll_exit=True,
+                values=self.labels[name])
+
+        self.ncurses_calls.append(ncurses_add_checbox_group_call)
 
     def add_radio_group(self,
                         name: str,
@@ -142,13 +152,16 @@ class UIBuilder(UiBuilderApi):
 
         _value = self.values[name].index(UIBuilder._get_value(value)) if value else -1
 
-        self.ui_controls[name] = self.form.add_widget(
-            npyscreen.TitleSelectOne,
-            name=title,
-            max_height=max(len(values), 2),
-            scroll_exit=True,
-            value=_value,
-            values=self.labels[name])
+        def ncurses_add_radio_group_call():
+            self.ui_controls[name] = self.form.add_widget(
+                npyscreen.TitleSelectOne,
+                name=title,
+                max_height=max(len(values), 2),
+                scroll_exit=True,
+                value=_value,
+                values=self.labels[name])
+
+        self.ncurses_calls.append(ncurses_add_radio_group_call)
 
     def add_default_button(self,
                            name: str,
@@ -196,12 +209,21 @@ class ConsoleUserTaskProvider(UserTaskProvider):
     def register_event(self,
                        executor: WorkflowExecutor,
                        event: ActiveEvent) -> None:
+
+        ui = UIBuilder(event)
+
+        adhesive_task = cast(AdhesiveUserTask, executor.tasks_impl[event.task.id])
+        context = adhesive_task.invoke_user_task(event, ui)
+
+        # redirecting logs, and initializing ncurses is prolly a bad idea
+        # the code that generates the UI shouldn't be run in ncurses
         def run_on_curses(x):
             try:
-                ui = UIBuilder(event)
+                # build the UI components on ncurses:
+                ui.form = npyscreen.Form(name=event.task.name)
 
-                adhesive_task = cast(AdhesiveUserTask, executor.tasks_impl[event.task.id])
-                context = adhesive_task.invoke_user_task(event, ui)
+                for ncurses_call in ui.ncurses_calls:
+                    ncurses_call()
 
                 # call the actual UI
                 ui.form.edit()

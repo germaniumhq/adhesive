@@ -29,11 +29,11 @@ class AdhesiveUserTask(AdhesiveBaseTask):
             self,
             event: ActiveEvent,
             ui: Any) -> ExecutionToken:
-        with redirect_stdout(event):
-            context = event.context
+        #with redirect_stdout(event):
+        context = event.context
 
-            params = self.matches(context.task, context.task_name)
+        params = self.matches(context.task, context.task_name)
 
-            self.code(context, ui, *params)  # type: ignore
+        self.code(context, ui, *params)  # type: ignore
 
-            return context
+        return context
