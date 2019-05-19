@@ -2,10 +2,10 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 from distutils.dir_util import copy_tree
 from typing import Optional
 
-from adhesive.logging import LogRedirect
 from adhesive.steps.Execution import Execution
 from adhesive.workspace.Workspace import Workspace
 
@@ -37,8 +37,8 @@ class LocalLinuxWorkspace(Workspace):
                 "/bin/sh", "-c", command
             ],
             cwd=self.pwd,
-            stdout=LogRedirect.stdout.log,
-            stderr=LogRedirect.stderr.log)
+            stdout=sys.stdout,
+            stderr=sys.stderr)
 
     def write_file(
             self,

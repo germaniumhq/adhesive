@@ -1,4 +1,5 @@
 import subprocess
+import sys
 from contextlib import contextmanager
 from typing import Optional, Union, Iterable
 
@@ -26,8 +27,8 @@ class DockerWorkspace(Workspace):
                 "docker", "exec", "-w", self.pwd, self.container_id, "/bin/sh", "-c", command
             ],
             cwd=self.pwd,
-            stdout=LogRedirect.stdout.log,
-            stderr=LogRedirect.stderr.log)
+            stdout=sys.stdout,
+            stderr=sys.stderr)
 
     def write_file(
             self,
@@ -48,8 +49,8 @@ class DockerWorkspace(Workspace):
             [
                 "docker", "cp", from_path, f"{self.container_id}:{to_path}"
             ],
-            stdout=LogRedirect.stdout.log,
-            stderr=LogRedirect.stderr.log)
+            stdout=sys.stdout,
+            stderr=sys.stderr)
 
     def copy_from_agent(self,
                         from_path: str,
@@ -58,16 +59,16 @@ class DockerWorkspace(Workspace):
             [
                 "docker", "cp", f"{self.container_id}:{from_path}", to_path
             ],
-            stdout=LogRedirect.stdout.log,
-            stderr=LogRedirect.stderr.log)
+            stdout=sys.stdout,
+            stderr=sys.stderr)
 
     def _destroy(self):
         subprocess.check_call(
             [
                 "docker", "rm", "-f", self.container_id
             ],
-            stdout=LogRedirect.stdout.log,
-            stderr=LogRedirect.stderr.log)
+            stdout=sys.stdout,
+            stderr=sys.stderr)
 
 
 @contextmanager

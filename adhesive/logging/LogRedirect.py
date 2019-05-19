@@ -1,27 +1,17 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import Optional, Union
+from typing import Union, Any
 
 from adhesive.model.ActiveEvent import ActiveEvent
-
-stdout = sys.stdout
-stderr = sys.stderr
-
-
-_real_stdout = sys.stdout
-_real_stderr = sys.stdout
 
 
 class StreamLogger:
     def __init__(self,
                  name: str,
-                 folder: Optional[str]=None) -> None:
+                 folder: str) -> None:
         if not folder:
             raise Exception(f"No folder specified for output: {folder}")
-
-        if not folder:
-            folder = ensure_folder(self)
 
         self.log = open(
             os.path.join(folder, name),
@@ -35,12 +25,17 @@ class StreamLogger:
         folder = ensure_folder(event)
         return StreamLogger(name, folder)
 
+    @property
+    def fileno(self):
+        return self.log.fileno
+
     def flush(self):
         pass
 
     def write(self, message):
         if self._closed:
             raise Exception("already closed")
+
         self.log.write(message)
         self.log.flush()
 
@@ -49,43 +44,25 @@ class StreamLogger:
         self._closed = True
 
 
-class FileLogger:
-    def __init__(self,
-                 stdout: StreamLogger,
-                 stderr: StreamLogger) -> None:
-        self.stdout = stdout
-        self.stderr = stderr
-
-    def close(self) -> None:
-        self.stdout.close()
-        self.stderr.close()
-
-
 @contextmanager
-def redirect_stdout(event: Union[ActiveEvent, str]) -> None:
-    global stdout
-    global stderr
-
-    log = None
-
-    old_stdout = stdout
-    old_stderr = stderr
+def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
 
     try:
-        stdout = StreamLogger.from_event(event, "stdout")
-        stderr = StreamLogger.from_event(event, "stderr")
+        new_stdout = StreamLogger.from_event(event, "stdout")
+        new_stderr = StreamLogger.from_event(event, "stderr")
 
-        log = FileLogger(stdout, stderr)
-
-        sys.stdout = log.stdout
-        sys.stderr = log.stderr
+        sys.stdout = new_stdout
+        sys.stderr = new_stderr
 
         yield None
     finally:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
 
-        log.close()
+        new_stdout.close()
+        new_stderr.close()
 
 
 from adhesive.storage.ensure_folder import ensure_folder
