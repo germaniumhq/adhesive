@@ -43,5 +43,6 @@ class TestWorkflowExecutorSubProcess(unittest.TestCase):
         }, data.steps)
         self.assertFalse(workflow_executor.events.keys())
 
+
 if __name__ == '__main__':
     unittest.main()

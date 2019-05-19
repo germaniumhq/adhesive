@@ -1,9 +1,9 @@
 import os
 import sys
 from contextlib import contextmanager
+from typing import Optional, Union
 
 from adhesive.model.ActiveEvent import ActiveEvent
-
 
 stdout = sys.stdout
 stderr = sys.stderr
@@ -15,28 +15,38 @@ _real_stderr = sys.stdout
 
 class StreamLogger:
     def __init__(self,
-                 event: ActiveEvent,
-                 name: str) -> None:
-        self.event = event
+                 name: str,
+                 folder: Optional[str]=None) -> None:
+        if not folder:
+            raise Exception(f"No folder specified for output: {folder}")
 
-        if not isinstance(event, ActiveEvent):
-            raise Exception(f"Not an event: {event}")
-
-        folder = ensure_folder(self)
+        if not folder:
+            folder = ensure_folder(self)
 
         self.log = open(
             os.path.join(folder, name),
             "at")
 
+        self._closed = False
+
+    @staticmethod
+    def from_event(event: Union[ActiveEvent, str],
+                   name: str) -> 'StreamLogger':
+        folder = ensure_folder(event)
+        return StreamLogger(name, folder)
+
     def flush(self):
         pass
 
     def write(self, message):
+        if self._closed:
+            raise Exception("already closed")
         self.log.write(message)
         self.log.flush()
 
     def close(self) -> None:
         self.log.close()
+        self._closed = True
 
 
 class FileLogger:
@@ -52,7 +62,7 @@ class FileLogger:
 
 
 @contextmanager
-def redirect_stdout(event: ActiveEvent) -> None:
+def redirect_stdout(event: Union[ActiveEvent, str]) -> None:
     global stdout
     global stderr
 
@@ -62,8 +72,8 @@ def redirect_stdout(event: ActiveEvent) -> None:
     old_stderr = stderr
 
     try:
-        stdout = StreamLogger(event, "stdout")
-        stderr = StreamLogger(event, "stderr")
+        stdout = StreamLogger.from_event(event, "stdout")
+        stderr = StreamLogger.from_event(event, "stderr")
 
         log = FileLogger(stdout, stderr)
 

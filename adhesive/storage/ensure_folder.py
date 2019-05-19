@@ -2,7 +2,7 @@ import os
 from typing import Union
 
 
-def ensure_folder(item: Union['Workspace', 'StreamLogger']) -> str:
+def ensure_folder(item: Union['Workspace', 'ActiveEvent', str]) -> str:
     """
     Ensures the folder for the given item exists.
 
@@ -15,7 +15,7 @@ def ensure_folder(item: Union['Workspace', 'StreamLogger']) -> str:
     return full_path
 
 
-def get_folder(item: Union['Workspace', 'StreamLogger']) -> str:
+def get_folder(item: Union['Workspace', 'ActiveEvent', str]) -> str:
     # FIXME: unify configuration?
     adhesive_temp_folder = os.environ.get("ADHESIVE_TEMP_FOLDER", "/tmp/adhesive")
 
@@ -26,15 +26,20 @@ def get_folder(item: Union['Workspace', 'StreamLogger']) -> str:
             "workspaces",
             item.id)
 
-    if isinstance(item, StreamLogger):
+    if isinstance(item, ActiveEvent):
         # FIXME: loop/parent loop check?
         return os.path.join(
             adhesive_temp_folder,
-            item.event.context.execution.id,
+            item.context.execution.id,
             "logs",
-            item.event.task.id,
-            item.event.id)
+            item.task.id,
+            item.id)
+
+    if isinstance(item, str):
+        return os.path.join(adhesive_temp_folder, item)
+
+    raise Exception(f"Unable to get_folder for {item}.")
 
 
-from adhesive.logging.LogRedirect import StreamLogger
+from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.workspace.Workspace import Workspace

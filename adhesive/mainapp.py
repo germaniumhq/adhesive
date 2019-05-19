@@ -7,3 +7,7 @@ def main():
         content = f.read()
 
     exec(content, _globals, _locals)
+
+
+if __name__ == "__main__":
+    main()

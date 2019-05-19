@@ -353,7 +353,10 @@ class WorkflowExecutor:
             return None
 
         def run_task(_event) -> None:
-            print(yellow("Running ") + yellow(event.context.task_name, bold=True))
+            try:
+                print(yellow("Running ") + yellow(event.context.task_name, bold=True))
+            except Exception as e:
+                raise Exception(f"Failure on {event.context.task_name}", e)
 
             # If the event is not yet started as a loop, we need to do that. We might have a wrong
             # loop context, if we're running in a nested loop.
