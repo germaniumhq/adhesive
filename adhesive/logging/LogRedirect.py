@@ -30,7 +30,7 @@ class StreamLogger:
         return self.log.fileno
 
     def flush(self):
-        pass
+        self.log.flush()
 
     def write(self, message):
         if self._closed:

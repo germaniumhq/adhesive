@@ -122,6 +122,11 @@ class UIBuilder(UiBuilderApi):
         if not title:
             title = name
 
+        if value is None:
+            value = []
+
+        title_overflows = 0 if len(title) < 14 else 1
+
         self.values[name] = UIBuilder._get_values(values)
         self.labels[name] = UIBuilder._get_labels(values)
 
@@ -130,7 +135,7 @@ class UIBuilder(UiBuilderApi):
                 npyscreen.TitleMultiSelect,
                 name=title,
                 value=[self.values[name].index(UIBuilder._get_value(v)) for v in value],
-                max_height=max(len(values) + 1, 2),
+                max_height=max(len(values) + 1, 2) + title_overflows,
                 scroll_exit=True,
                 values=self.labels[name])
 
@@ -147,16 +152,18 @@ class UIBuilder(UiBuilderApi):
         if not title:
             title = name
 
+        title_overflows = 0 if len(title) < 14 else 1
+
         self.values[name] = UIBuilder._get_values(values)
         self.labels[name] = UIBuilder._get_labels(values)
 
-        _value = self.values[name].index(UIBuilder._get_value(value)) if value else -1
+        _value = self.values[name].index(UIBuilder._get_value(value)) if value is not None else -1
 
         def ncurses_add_radio_group_call():
             self.ui_controls[name] = self.form.add_widget(
                 npyscreen.TitleSelectOne,
                 name=title,
-                max_height=max(len(values), 2),
+                max_height=max(len(values), 2) + title_overflows,
                 scroll_exit=True,
                 value=_value,
                 values=self.labels[name])

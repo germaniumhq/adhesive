@@ -52,6 +52,7 @@ tools = {
 @adhesive.task("Read Parameters")
 def read_parameters(context) -> None:
     context.data.run_mypy = False
+    context.data.test_integration = True
 
 
 @adhesive.task("Checkout Code")
@@ -92,6 +93,18 @@ def gbs_test_lin64(context) -> None:
 
     with docker.inside(context.workspace, "gbs_test") as w:
         w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test python -m unittest")
+
+
+@adhesive.task("GBS Integration Test: lin64")
+def gbs_integration_test_lin64(context) -> None:
+    image_name = gbs.test(
+        workspace=context.workspace,
+        platform="python:3.7",
+        tag="gbs_test",
+        gbs_prefix=f"/_gbs/lin64/")
+
+    with docker.inside(context.workspace, "gbs_test") as w:
+        w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test behave -t ~@manualtest")
 
 
 @adhesive.task("GBS: win32")
