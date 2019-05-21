@@ -1,9 +1,11 @@
 import logging
+import os
 import sys
+import traceback
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple
 
-from termcolor_util import green, red, yellow
+from termcolor_util import green, red, yellow, white
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
@@ -20,6 +22,7 @@ from adhesive.steps.ExecutionToken import ExecutionToken
 from adhesive.steps.ExecutionData import ExecutionData
 from adhesive.steps.WorkflowLoop import WorkflowLoop, parent_loop_id, loop_id
 from adhesive.steps.call_script_task import call_script_task
+from adhesive.storage.ensure_folder import get_folder
 from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 
 T = TypeVar('T')
@@ -130,7 +133,21 @@ class WorkflowExecutor:
         root_event = self.clone_event(fake_event, workflow)
 
         def raise_exception(_ev):
-            raise _ev.data
+            log_path = get_folder(_ev.data['failed_event'])
+            print(log_path)
+
+            with open(os.path.join(log_path, "stdout")) as f:
+                print(white("STDOUT:", bold=True))
+                print(white(f.read()))
+
+            with open(os.path.join(log_path, "stderr")) as f:
+                print(red("STDERR:", bold=True))
+                print(red(f.read()), file=sys.stderr)
+
+            print(red("Exception:", bold=True))
+            print(red(_ev.data['error']), file=sys.stderr)
+
+            sys.exit(1)
 
         root_event.state.after_enter(ActiveEventState.ERROR, raise_exception)
 
@@ -167,7 +184,10 @@ class WorkflowExecutor:
                     context = future.result()
                     self.events[event_id].state.route(context)
                 except Exception as e:
-                    self.events[event_id].state.error(e)
+                    self.events[event_id].state.error({
+                        "error": traceback.format_exc(),
+                        "failed_event": self.events[event_id]
+                    })
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
