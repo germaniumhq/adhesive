@@ -22,7 +22,7 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
         data = _async(workflow_executor.execute())
 
         assert_equal_steps({
-            "sh: echo hello world": 1,
+            "sh: echo hello world && echo bad world >&2 && echo good world": 1,
             "Store current execution id": 1,
         }, data.steps)
         self.assertFalse(workflow_executor.events)
@@ -37,4 +37,17 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
             "stdout"))
 
         with open(log_path[0], "rt") as f:
-            self.assertEqual(f.read(), "sh: echo hello world\nhello world\n")
+            self.assertEqual(f.read(), "sh: echo hello world && "
+                                       "echo bad world >&2 && "
+                                       "echo good world\nhello world\ngood world\n")
+
+        log_path = glob.glob(os.path.join(
+            adhesive_temp_folder,
+            data.execution_id,
+            "logs",
+            "_4",
+            "*",
+            "stderr"))
+
+        with open(log_path[0], "rt") as f:
+            self.assertEqual(f.read(), "bad world\n")
