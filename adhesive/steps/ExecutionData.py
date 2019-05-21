@@ -7,11 +7,11 @@ def merge_dict(dict1: Dict, dict2: Dict) -> None:
             dict1[k2] = v2
             continue
 
-        v1 = dict1[k2]
-
-        if isinstance(v1, list) and isinstance(v2, list):
-            v1.extend(v2)
+        if v2 is None:
+            del dict1[k2]
             continue
+
+        v1 = dict1[k2]
 
         if isinstance(v1, set) and isinstance(v2, set):
             v1.update(v2)
@@ -21,11 +21,7 @@ def merge_dict(dict1: Dict, dict2: Dict) -> None:
             merge_dict(v1, v2)
             continue
 
-        if type(v1) == type(v2):
-            dict1[k2] = v2
-            continue
-
-        raise Exception(f"Unable to merge '{k2}' with different types.")
+        dict1[k2] = v2
 
 
 class ExecutionData:
