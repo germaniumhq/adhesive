@@ -64,16 +64,16 @@ def test(workspace: Workspace,
             cd /src && \
             /src{gbs_prefix}_gbs/prepare-test1/prepare-test1.sh
 
+        # sources are copied only after the test stage
+        COPY --chown=germanium:germanium . /src
+
         # test2
-        COPY --chown=germanium:germanium {gbs_prefix}_gbs/prepare-test2 /src{gbs_prefix}_gbs/prepare-test2
         RUN echo "################################################################################" &&\
             echo "# PREPARE TEST 2" && \
             echo "################################################################################" &&\
             cd /src && \
             /src{gbs_prefix}_gbs/prepare-test2/prepare-test2.sh
 
-        # sources are copied only after the test stage
-        COPY --chown=germanium:germanium . /src
         """)
 
     build_docker_image(workspace, template, tag)

@@ -92,8 +92,7 @@ def gbs_test_lin64(context) -> None:
         gbs_prefix=f"/_gbs/lin64/")
 
     with docker.inside(context.workspace, "gbs_test") as w:
-        w.run("PYTHONPATH=. "
-              "ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
+        w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
               "python -m unittest")
 
 
@@ -107,8 +106,7 @@ def gbs_integration_test_lin64(context) -> None:
 
     with docker.inside(context.workspace, "gbs_test") as w:
         w.run("python --version")
-        w.run("PYTHONPATH=. "
-              "ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
+        w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
               "behave -t ~@manualtest")
 
 
