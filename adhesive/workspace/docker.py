@@ -3,7 +3,6 @@ import sys
 from contextlib import contextmanager
 from typing import Optional, Union, Iterable
 
-from adhesive.logging import LogRedirect
 from .Workspace import Workspace
 
 
@@ -24,7 +23,11 @@ class DockerWorkspace(Workspace):
     def run(self, command: str) -> None:
         subprocess.check_call(
             [
-                "docker", "exec", "-w", self.pwd, self.container_id, "/bin/sh", "-c", command
+                "docker", "exec",
+                          "-w", self.pwd,
+                          self.container_id,
+                          "/bin/sh", "-c",
+                          command
             ],
             cwd=self.pwd,
             stdout=sys.stdout,

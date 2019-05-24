@@ -1,1 +1,2 @@
-pip install behave
+python --version
+python -m pip install behave

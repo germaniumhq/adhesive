@@ -15,7 +15,7 @@ def run_the_workflow_with_a_single_checkbox(contxt):
 @step("I run adhesive on '(.*?)'")
 def run_an_adhesive_workflow(context, folder):
     pipes = subprocess.Popen(
-        ["python", f"/features/{folder}/_adhesive.py"],
+        ["python", f"features/{folder}/_adhesive.py"],
         cwd=f"{os.getcwd()}",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
