@@ -60,8 +60,19 @@ running, proceeding forward with the build.
 
 ## Configuration
 
-### Environment Variables
+Adhesive supports configuration via its config files, or environment variables.
+The values are read in the following order:
 
-`ADHESIVE_TEMP_FOLDER` - Implicitly points to `/tmp/adhesive`. Is where all the
-builds files will be stored.
+1. environment variables: `ADHESIVE_XYZ`, then
+2. values that are in the project config yml file: `.adhesive/config.yml`, then
+3. values configured in the global config yml file:
+   `$HOME/.adhesive/config.yml`.
+
+Currently the following values are defined for configuration:
+
+### `temp_folder`
+
+default value `/tmp/adhesive`, environment var: `ADHESIVE_TEMP_FOLDER`.
+
+Is where all the build files will be stored.
 
