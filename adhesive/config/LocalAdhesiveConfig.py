@@ -26,6 +26,8 @@ class LocalAdhesiveConfig(AdhesiveConfig):
         env_name = f"ADHESIVE_{item.upper()}"
 
         if env_name in self._environment:
+            if env_name.endswith("_LIST"):
+                return self._environment[env_name].split(os.path.pathsep)
             return self._environment[env_name]
 
         if item in self._local_config:
