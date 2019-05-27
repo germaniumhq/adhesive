@@ -3,7 +3,7 @@ import time
 import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
-from adhesive.xml.bpmn import read_bpmn_file
+from adhesive.process_read.bpmn import read_bpmn_file
 
 from .test_tasks import adhesive, _async
 

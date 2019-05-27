@@ -15,8 +15,8 @@ def run_the_workflow_with_a_single_checkbox(contxt):
 @step("I run adhesive on '(.*?)'")
 def run_an_adhesive_workflow(context, folder):
     pipes = subprocess.Popen(
-        ["python", f"features/{folder}/_adhesive.py"],
-        cwd=f"{os.getcwd()}",
+        ["adhesive"],
+        cwd=f"{os.getcwd()}/features/{folder}",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
@@ -30,8 +30,15 @@ def run_an_adhesive_workflow(context, folder):
 
 
 @step("the adhesive process has failed")
-def run_the_workflow_with_a_single_checkbox(context):
+def the_adhesive_process_has_failed(context):
     assert context.process_return_code != 0
+
+
+@step("the adhesive process has passed")
+def the_adhesive_process_has_passed(context):
+    print("STDOUT", context.process_stdout)
+    print("STDERR", context.process_stderr)
+    assert context.process_return_code == 0
 
 
 @step("there is in the (.*?) the text '(.*?)'")

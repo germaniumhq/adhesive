@@ -1,7 +1,7 @@
 from typing import cast
 
 from adhesive.graph.ScriptTask import ScriptTask
-from adhesive.logging.LogRedirect import redirect_stdout
+from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.steps.ExecutionToken import ExecutionToken
 

@@ -10,7 +10,7 @@ from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
-from adhesive.xml.bpmn import read_bpmn_file
+from adhesive.process_read.bpmn import read_bpmn_file
 
 
 class TestReadingBpmn(unittest.TestCase):

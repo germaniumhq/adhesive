@@ -1,7 +1,7 @@
 import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
-from adhesive.xml.bpmn import read_bpmn_file
+from adhesive.process_read.bpmn import read_bpmn_file
 
 from test.adhesive.steps.test_tasks import adhesive, _async
 from test.adhesive.steps.check_equals import assert_equal_steps

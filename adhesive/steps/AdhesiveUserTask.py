@@ -2,7 +2,7 @@ from typing import Callable, Any, List, Optional
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.UserTask import UserTask
-from adhesive.logging.LogRedirect import redirect_stdout
+from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from adhesive.steps.ExecutionToken import ExecutionToken

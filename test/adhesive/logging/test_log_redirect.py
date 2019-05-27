@@ -2,7 +2,7 @@ import sys
 import unittest
 import uuid
 
-from adhesive.logging.LogRedirect import redirect_stdout
+from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.storage.ensure_folder import ensure_folder
 
 
