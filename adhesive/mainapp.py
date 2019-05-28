@@ -1,5 +1,6 @@
 import adhesive
 from adhesive.config import LocalConfigReader
+import sys
 
 _globals = globals()
 _locals = locals()
@@ -8,7 +9,11 @@ _locals = locals()
 adhesive.config.current =\
     LocalConfigReader.read_configuration()
 
-def main():
+for plugin_path in adhesive.config.current.plugins:
+    sys.path.append(plugin_path)
+
+
+def __main():
     with open('_adhesive.py', 'r', encoding='utf-8') as f:
         content = f.read()
 
@@ -16,4 +21,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    __main()

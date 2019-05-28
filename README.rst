@@ -2,8 +2,8 @@ adhesive
 ========
 
 A CI/CD system build around BPMN and Python. Basically a BPMN runner
-with pyhton step implementations targeted for builds. Can run in the
-console.
+with pyhton step implementations targeted for builds. Built to run in
+the console.
 
 Installation
 ------------
@@ -65,8 +65,38 @@ tasks will continue running, proceeding forward with the build.
 Configuration
 -------------
 
-Environment Variables
-~~~~~~~~~~~~~~~~~~~~~
+Adhesive supports configuration via its config files, or environment
+variables. The values are read in the following order:
 
-``ADHESIVE_TEMP_FOLDER`` - Implicitly points to ``/tmp/adhesive``. Is
-where all the builds files will be stored.
+1. environment variables: ``ADHESIVE_XYZ``, then
+2. values that are in the project config yml file:
+   ``.adhesive/config.yml``, then
+3. values configured in the global config yml file:
+   ``$HOME/.adhesive/config.yml``.
+
+Currently the following values are defined for configuration:
+
+``temp_folder``
+~~~~~~~~~~~~~~~
+
+default value ``/tmp/adhesive``, environment var:
+``ADHESIVE_TEMP_FOLDER``.
+
+Is where all the build files will be stored.
+
+``plugins``
+~~~~~~~~~~~
+
+default value ``[]``, environment var: ``ADHESIVE_PLUGINS_LIST``.
+
+This contains a list of folders, that will be added to the ``sys.path``.
+So to create a reusable plugin that will be reused by multiple builds,
+you need to simply create a folder with python files, then point to it
+in the ``~/.adhesive/config.yml``:
+
+.. code:: yml
+
+    plugins:
+    - /path/to/folder
+
+Then in the python path you can simply do regular imports.

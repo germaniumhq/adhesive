@@ -16,7 +16,8 @@ class LocalAdhesiveConfig(AdhesiveConfig):
 
         # FIXME: detect if possible where's the /tmp folder
         self._defaults = {
-            "temp_folder": "/tmp"
+            "temp_folder": "/tmp",
+            "plugins": [],
         }
         self._local_config = local_config if local_config is not None else dict()
         self._user_config = user_config if user_config is not None else dict()
