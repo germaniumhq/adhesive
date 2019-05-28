@@ -122,6 +122,10 @@ def gbs_build_win32(context) -> None:
 
 @adhesive.task('^PyPI publish to (.+?)$')
 def publish_to_pypi(context, registry):
+    with docker.inside(context.workspace,
+                       f"germaniumhq/tools-version-manager") as w:
+        w.run("version-manager")
+
     with docker.inside(context.workspace, "gbs_build") as w:
         with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pip/pip.conf"):
             w.run(f"python setup.py bdist_wheel upload -r {registry}")

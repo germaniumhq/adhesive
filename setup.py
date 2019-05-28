@@ -8,7 +8,7 @@ packages = find_packages()
 
 setup(
     name='adhesive',
-    version='0.1.feature_1-redrect-logging',
+    version='0.2.14',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -24,7 +24,8 @@ setup(
         "npyscreen==4.10.5",
         "colorama==0.4.1",
         "termcolor==1.1.0",
-        "termcolor_util==1.0.1"],
+        "termcolor_util==1.0.1",
+        "PyYAML >=5.1, <5.2"],
     packages=packages,
     package_data={
         '': ['*.txt', '*.rst']
