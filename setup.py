@@ -16,7 +16,7 @@ setup(
     license='BSD',
     entry_points={
         "console_scripts": [
-            "adhesive = adhesive.mainapp:main"
+            "adhesive = adhesive.mainapp:__main"
         ]
     },
     install_requires=[
