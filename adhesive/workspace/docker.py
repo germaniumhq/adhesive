@@ -21,7 +21,13 @@ class DockerWorkspace(Workspace):
         pwd = workspace.pwd
 
         self.container_id = subprocess.check_output([
-            "docker", "run", "-t", "-v", f"{pwd}:{pwd}", "-d", "--entrypoint", "cat", image_name
+            "docker", "run",
+            "-t",
+            "-v", f"{pwd}:{pwd}",
+            "-d",
+            "--entrypoint", "cat",
+            "-u", "1000:1000",  # FIXME
+            image_name
         ]).decode('utf-8').strip()
 
     def run(self, command: str) -> None:

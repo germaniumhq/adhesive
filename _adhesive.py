@@ -81,6 +81,7 @@ def run_tool(context, tool_name: str) -> None:
 def gbs_build_lin64(context) -> None:
     gbs.build(workspace=context.workspace,
               platform="python:3.7",
+              tag="gbs_build",
               gbs_prefix=f"/_gbs/lin64/")
 
 
@@ -121,8 +122,8 @@ def gbs_build_win32(context) -> None:
 
 @adhesive.task('^PyPI publish to (.+?)$')
 def publish_to_pypi(context, registry):
-    with docker.inside(context.workspace, "") as w:
-        with secret(w, "PYPIRC_RELEASE_FILE", "/home/germanium/.pip/pip.conf"):
+    with docker.inside(context.workspace, "gbs_build") as w:
+        with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pip/pip.conf"):
             w.run(f"python setup.py sdist upload -r {registry}")
 
 

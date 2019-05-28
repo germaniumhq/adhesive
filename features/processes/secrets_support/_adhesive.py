@@ -7,8 +7,8 @@ from adhesive.steps.ExecutionToken import ExecutionToken
 def test_secret_on_local_workspace(context: ExecutionToken):
     with secret(context.workspace,
                 "SECRET_FILE",
-                "/tmp/secret.file"):
-        context.workspace.run("cat /tmp/secret.file")
+                "/tmp/super-secret/secret.file"):
+        context.workspace.run("cat /tmp/super-secret/secret.file")
 
 
 adhesive.build()

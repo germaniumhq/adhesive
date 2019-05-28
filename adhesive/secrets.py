@@ -1,9 +1,12 @@
 import contextlib
 import os
+import re
 from typing import Union
 
 from adhesive.workspace.Workspace import Workspace
 from adhesive import config
+
+PARENT_PATH_RE = re.compile(r'^(.+)[\\/].+?$')
 
 
 @contextlib.contextmanager
@@ -11,6 +14,11 @@ def secret(workspace: Workspace,
            secret_name: str,
            target_location: str) -> str:
     try:
+        m = PARENT_PATH_RE.match(target_location)
+
+        if m:
+            workspace.mkdir(m.group(1))
+
         workspace.write_file(target_location, get_secret(secret_name))
         yield target_location
     finally:
