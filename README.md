@@ -70,13 +70,13 @@ The values are read in the following order:
 
 Currently the following values are defined for configuration:
 
-### `temp_folder`
+### temp_folder
 
 default value `/tmp/adhesive`, environment var: `ADHESIVE_TEMP_FOLDER`.
 
 Is where all the build files will be stored.
 
-### `plugins`
+### plugins
 
 default value `[]`, environment var: `ADHESIVE_PLUGINS_LIST`.
 
@@ -85,7 +85,7 @@ create a reusable plugin that will be reused by multiple builds, you need to
 simply create a folder with python files, then point to it in the
 `~/.adhesive/config.yml`:
 
-```yml
+```yaml
 plugins:
 - /path/to/folder
 ```
