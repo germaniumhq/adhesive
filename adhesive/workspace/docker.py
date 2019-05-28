@@ -1,10 +1,9 @@
 import os
-import shutil
+import shlex
 import subprocess
 import sys
 from contextlib import contextmanager
 from typing import Optional, Union, Iterable
-import shlex
 from uuid import uuid4
 
 from adhesive.storage.ensure_folder import ensure_folder
