@@ -8,7 +8,7 @@ packages = find_packages()
 
 setup(
     name='adhesive',
-    version='0.2.14',
+    version='0.2.15',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',

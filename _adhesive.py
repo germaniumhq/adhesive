@@ -71,10 +71,12 @@ def ensure_tooling(context, tool_name) -> None:
 
 
 @adhesive.task("^Run tool: (.*?)$")
-def run_tool(context, tool_name: str) -> None:
+def run_tool(context, command: str) -> None:
+    tool_name = command.split(" ")[0]
+
     with docker.inside(context.workspace,
                        f"germaniumhq/tools-{tool_name}") as w:
-        w.run("mypy .")
+        w.run(command)
 
 
 @adhesive.task("GBS: lin64")
@@ -120,17 +122,6 @@ def gbs_build_win32(context) -> None:
     #          gbs_prefix=f"/_gbs/win32/")
 
 
-@adhesive.task('^PyPI publish to (.+?)$')
-def publish_to_pypi(context, registry):
-    with docker.inside(context.workspace,
-                       f"germaniumhq/tools-version-manager") as w:
-        w.run("version-manager")
-
-    with docker.inside(context.workspace, "gbs_build") as w:
-        with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pip/pip.conf"):
-            w.run(f"python setup.py bdist_wheel upload -r {registry}")
-
-
 @adhesive.usertask('Publish to PyPI\?')
 def publish_to_pypi_confirm(context, ui):
     ui.add_checkbox_group(
@@ -143,6 +134,13 @@ def publish_to_pypi_confirm(context, ui):
         ),
         value=("nexus","pypitest", "pypi")
     )
+
+
+@adhesive.task('^PyPI publish to (.+?)$')
+def publish_to_pypi(context, registry):
+    with docker.inside(context.workspace, "gbs_build") as w:
+        with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pypirc"):
+            w.run(f"python setup.py bdist_wheel upload -r {registry}")
 
 
 adhesive.bpmn_build("adhesive-self.bpmn")
