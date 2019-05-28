@@ -124,7 +124,7 @@ def gbs_build_win32(context) -> None:
 def publish_to_pypi(context, registry):
     with docker.inside(context.workspace, "gbs_build") as w:
         with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pip/pip.conf"):
-            w.run(f"python setup.py sdist upload -r {registry}")
+            w.run(f"python setup.py bdist_wheel upload -r {registry}")
 
 
 @adhesive.usertask('Publish to PyPI\?')
