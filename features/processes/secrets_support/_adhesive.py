@@ -12,11 +12,11 @@ def test_secret_on_local_workspace(context: ExecutionToken):
         context.workspace.run("cat /tmp/secret.file")
 
 
-# @adhesive.task("Test Secret On Docker Workspace")
-# def test_secret_on_docker_workspace(context):
-#     with docker.inside(context.workspace, "ubuntu:18.04") as w:
-#         with secret(w, "SECRET_FILE", "/tmp/secret.file"):
-#             context.workspace.run("cat /tmp/secret.file")
+@adhesive.task("Test Secret On Docker Workspace")
+def test_secret_on_docker_workspace(context):
+    with docker.inside(context.workspace, "ubuntu:18.04") as w:
+        with secret(w, "SECRET_FILE", "/tmp/secret.file"):
+            w.run("cat /tmp/secret.file")
 
 
 adhesive.build()

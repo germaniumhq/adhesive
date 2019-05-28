@@ -1,8 +1,13 @@
+import os
+import shutil
 import subprocess
 import sys
 from contextlib import contextmanager
 from typing import Optional, Union, Iterable
+import shlex
+from uuid import uuid4
 
+from adhesive.storage.ensure_folder import ensure_folder
 from .Workspace import Workspace
 
 
@@ -37,13 +42,38 @@ class DockerWorkspace(Workspace):
             self,
             file_name: str,
             content: str) -> None:
-        raise Exception("not implemented")
+        """
+        Write a file on the remote docker instance. Since we can't
+        really just write files, we create a temp file, then we
+        copy it remotely.
+        :param file_name:
+        :param content:
+        :return:
+        """
+        try:
+            tmp_folder = ensure_folder("tmp")
+            tmp_file = os.path.join(tmp_folder, str(uuid4()))
+            with open(tmp_file, "wt") as f:
+                f.write(content)
+            self.copy_to_agent(tmp_file, file_name)
+        finally:
+            os.remove(tmp_file)
 
     def rm(self, path: Optional[str]=None) -> None:
-        raise Exception("not implemented")
+        """
+        Remove a path from the container. We're calling `rm` to do
+        the actual operation.
+        :param path:
+        :return:
+        """
+        if not path:
+            raise Exception("You need to pass a subpath for deletion")
 
-    def mkdir(self, path: str=None) -> None:
-        raise Exception("not implemented")
+        self.run(f"rm -fr {shlex.quote(path)}")
+
+    def mkdir(self, path: str = None) -> None:
+        full_path = os.path.join(self.pwd, path)
+        self.run(f"mkdir -p {shlex.quote(full_path)}")
 
     def copy_to_agent(self,
                       from_path: str,

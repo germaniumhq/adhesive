@@ -1,5 +1,6 @@
 import contextlib
 import os
+from typing import Union
 
 from adhesive.workspace.Workspace import Workspace
 from adhesive import config
@@ -16,11 +17,11 @@ def secret(workspace: Workspace,
         workspace.rm(target_location)
 
 
-def get_secret(secret_name: str) -> str:
+def get_secret(secret_name: str) -> Union[str, bytes]:
     for location in config.current.secret_locations():
         full_path = os.path.join(location, secret_name)
         if os.path.isfile(full_path):
-            with open(full_path, "rt") as f:
+            with open(full_path, "r") as f:
                 return f.read()
 
     raise Exception(f"Unable to find secret {secret_name} in "
