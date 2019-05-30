@@ -374,7 +374,7 @@ class WorkflowExecutor:
 
         def run_task(_event) -> None:
             try:
-                print(yellow("Running ") + yellow(event.context.task_name, bold=True))
+                print(yellow("Run  ") + yellow(event.context.task_name, bold=True))
             except Exception as e:
                 raise Exception(f"Failure on {event.context.task_name}", e)
 
@@ -420,9 +420,14 @@ class WorkflowExecutor:
 
             return event.state.route(event.context)
 
-        def error_task(_event) -> None:
-            print(red("Failed ") + red(event.context.task_name, bold=True))
+        def log_running_done(_event):
+            if _event.target_state == ActiveEventState.ERROR:
+                print(red("Failed ") + red(event.context.task_name, bold=True))
+                return
 
+            print(green("Done ") + green(event.context.task_name, bold=True))
+
+        def error_task(_event) -> None:
             # if we have a boundary error task, we use that one for processing.
             if event.task.error_task:
                 self.clone_event(event, event.task.error_task)
@@ -514,8 +519,6 @@ class WorkflowExecutor:
             event.state.done()
 
         def done_task(_event) -> None:
-            print(green("Done ") + green(event.context.task_name, bold=True))
-
             # if the task is done, but the future is still registered, we need to
             # remove the future.
             if event.future in self.futures:
@@ -526,6 +529,7 @@ class WorkflowExecutor:
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
         event.state.after_enter(ActiveEventState.WAITING, wait_task)
         event.state.after_enter(ActiveEventState.RUNNING, run_task)
+        event.state.after_leave(ActiveEventState.RUNNING, log_running_done)
         event.state.after_enter(ActiveEventState.ERROR, error_task)
         event.state.after_enter(ActiveEventState.ROUTING, route_task)
         event.state.after_enter(ActiveEventState.DONE_CHECK, done_check)
