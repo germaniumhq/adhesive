@@ -4,7 +4,7 @@ import shutil
 import subprocess
 import sys
 from distutils.dir_util import copy_tree
-from typing import Optional
+from typing import Optional, Union
 
 from adhesive.steps.Execution import Execution
 from adhesive.workspace.Workspace import Workspace
@@ -31,7 +31,18 @@ class LocalLinuxWorkspace(Workspace):
         if not pwd:
             self.pwd = ensure_folder(self)
 
-    def run(self, command: str) -> None:
+    def run(self,
+            command: str,
+            capture_stdout: bool = False) -> Union[str, None]:
+        if capture_stdout:
+            return subprocess.check_output(
+                [
+                    "/bin/sh", "-c", command
+                ],
+                cwd=self.pwd,
+                stderr=sys.stderr,
+            ).decode('utf-8')
+
         subprocess.check_call(
             [
                 "/bin/sh", "-c", command

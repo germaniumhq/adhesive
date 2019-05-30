@@ -2,7 +2,7 @@ import os
 import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, Union
 
 from adhesive.steps.Execution import Execution
 
@@ -29,10 +29,13 @@ class Workspace(ABC):
         pass
 
     @abstractmethod
-    def run(self, command: str) -> None:
+    def run(self,
+            command: str,
+            capture_stdout: bool = False) -> Union[str, None]:
         """
         Run a new command in the current workspace.
 
+        :param capture_stdout:
         :param command:
         :return:
         """

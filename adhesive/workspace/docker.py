@@ -30,7 +30,21 @@ class DockerWorkspace(Workspace):
             image_name
         ]).decode('utf-8').strip()
 
-    def run(self, command: str) -> None:
+    def run(self,
+            command: str,
+            capture_stdout: bool = False) -> Union[str, None]:
+        if capture_stdout:
+            return subprocess.check_output(
+                [
+                    "docker", "exec",
+                    "-w", self.pwd,
+                    self.container_id,
+                    "/bin/sh", "-c",
+                    command
+                ],
+                cwd=self.pwd,
+                stderr=sys.stderr).decode('utf-8')
+
         subprocess.check_call(
             [
                 "docker", "exec",
