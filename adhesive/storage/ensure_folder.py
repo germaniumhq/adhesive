@@ -26,11 +26,12 @@ def get_folder(item: Union['Workspace', 'ActiveEvent', str]) -> str:
             item.id)
 
     if isinstance(item, ActiveEvent):
-        # FIXME: loop/parent loop check?
+        # FIXME: implement test when programmatic workflow builder is available
         return os.path.join(
             config.current.temp_folder,
             item.context.execution.id,
             "logs",
+            _get_loop(item),
             item.task.id,
             item.id)
 
@@ -38,6 +39,17 @@ def get_folder(item: Union['Workspace', 'ActiveEvent', str]) -> str:
         return os.path.join(config.current.temp_folder, item)
 
     raise Exception(f"Unable to get_folder for {item}.")
+
+
+def _get_loop(event: 'ActiveEvent') -> str:
+    loop = event.context.loop
+    result = ""
+
+    while loop:
+        result += f"_loop_{loop.index}/"
+        loop = loop.parent_loop
+
+    return result
 
 
 from adhesive.model.ActiveEvent import ActiveEvent
