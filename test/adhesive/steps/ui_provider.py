@@ -53,9 +53,6 @@ class UIBuilder(UiBuilderApi):
 
 
 class TestUserTaskProvider(UserTaskProvider):
-    def __init__(self):
-        super(TestUserTaskProvider, self).__init__()
-
     def register_event(self,
                        executor: WorkflowExecutor,
                        event: ActiveEvent) -> None:

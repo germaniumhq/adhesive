@@ -4,6 +4,7 @@ import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
+import adhesive.config as config
 from test.adhesive.steps.check_equals import assert_equal_steps
 from test.adhesive.steps.test_tasks import adhesive, _async
 
@@ -27,14 +28,10 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
         }, data.steps)
         self.assertFalse(workflow_executor.events)
 
-        adhesive_temp_folder = os.environ.get("ADHESIVE_TEMP_FOLDER", "/tmp/adhesive")
-        log_path = glob.glob(os.path.join(
-            adhesive_temp_folder,
-            data.execution_id,
-            "logs",
-            "_4",
-            "*",
-            "stdout"))
+        adhesive_temp_folder = config.current.temp_folder
+        path_to_glob = os.path.join(adhesive_temp_folder, data.execution_id, "logs", "_4", "*", "stdout")
+
+        log_path = glob.glob(path_to_glob)
 
         with open(log_path[0], "rt") as f:
             self.assertEqual(f.read(), "sh: echo hello world && "

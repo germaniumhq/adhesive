@@ -17,7 +17,7 @@ class TestConfigLoading(unittest.TestCase):
         self.assertEqual("local", config.local)
         self.assertEqual("user", config.user)
         self.assertEqual("environment", config.environment)
-        self.assertEqual("/tmp", config.temp_folder)
+        self.assertEqual("/tmp/adhesive", config.temp_folder)
         self.assertEqual([
             "environment_environment_list_a",
             "environment_environment_list_b",
