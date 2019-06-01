@@ -20,15 +20,15 @@ class DockerWorkspace(Workspace):
 
         pwd = workspace.pwd
 
-        self.container_id = subprocess.check_output([
-            "docker", "run",
-            "-t",
-            "-v", f"{pwd}:{pwd}",
-            "-d",
-            "--entrypoint", "cat",
-            "-u", "1000:1000",  # FIXME
-            image_name
-        ]).decode('utf-8').strip()
+        self.container_id = workspace.run(
+            f"docker run -t "
+            f"-v {pwd}:{pwd} "
+            f"-d "
+            f"--entrypoint cat "
+            f"-u 1000:1000 "  # FIXME, use actual uid/gids of user
+            f"{shlex.quote(image_name)}",
+            capture_stdout=True
+        ).strip()
 
     def run(self,
             command: str,
@@ -139,7 +139,7 @@ def inside(workspace: Workspace,
 
 @contextmanager
 def build(workspace: Workspace,
-          tags: Union[str, Iterable[str]]):
+          tags: Union[str, Iterable[str]]) -> str:
 
     # we always consider a list of tags
     if isinstance(tags, str):
@@ -148,8 +148,8 @@ def build(workspace: Workspace,
     command = "docker build "
 
     for tag in tags:
-        command += f"-t {tag} "
+        command += f"-t {tag} -q"
 
     command += "."
 
-    workspace.run(command)
+    return workspace.run(command)

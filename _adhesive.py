@@ -81,9 +81,9 @@ def run_tool(context, command: str) -> None:
 
 @adhesive.task("GBS: lin64")
 def gbs_build_lin64(context) -> None:
-    gbs.build(workspace=context.workspace,
+    context.data.gbs_build_image_name = \
+        gbs.build(workspace=context.workspace,
               platform="python:3.7",
-              tag="gbs_build",
               gbs_prefix=f"/_gbs/lin64/")
 
 
@@ -92,10 +92,9 @@ def gbs_test_lin64(context) -> None:
     image_name = gbs.test(
         workspace=context.workspace,
         platform="python:3.7",
-        tag="gbs_test",
         gbs_prefix=f"/_gbs/lin64/")
 
-    with docker.inside(context.workspace, "gbs_test") as w:
+    with docker.inside(context.workspace, image_name) as w:
         w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
               "python -m pytest -n 4")
 
@@ -105,10 +104,9 @@ def gbs_integration_test_lin64(context) -> None:
     image_name = gbs.test(
         workspace=context.workspace,
         platform="python:3.7",
-        tag="gbs_test",
         gbs_prefix=f"/_gbs/lin64/")
 
-    with docker.inside(context.workspace, "gbs_test") as w:
+    with docker.inside(context.workspace, image_name) as w:
         w.run("python --version")
         w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
               "behave -t ~@manualtest")
@@ -138,7 +136,7 @@ def publish_to_pypi_confirm(context, ui):
 
 @adhesive.task('^PyPI publish to (.+?)$')
 def publish_to_pypi(context, registry):
-    with docker.inside(context.workspace, "gbs_build") as w:
+    with docker.inside(context.workspace, context.data.gbs_build_image_name) as w:
         with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pypirc"):
             w.run(f"python setup.py bdist_wheel upload -r {registry}")
 

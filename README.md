@@ -92,3 +92,21 @@ plugins:
 
 Then in the python path you can simply do regular imports.
 
+## Hacking Adhesive
+
+Adhesive builds with itself. In order to do that, you
+need to checkout the
+[https://github.com/germaniumhq/adhesive-lib](adhesive-lib)
+shared plugin, and configure your local config to use
+it:
+
+```yaml
+plugins:
+- /path/to/adhesive-lib
+```
+
+Then simply run the build:
+
+```sh
+adhesive
+```
