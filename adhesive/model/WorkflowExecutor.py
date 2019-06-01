@@ -109,7 +109,8 @@ class WorkflowExecutor:
 
         self.config = WorkflowExecutorConfig(wait_tasks=wait_tasks)
 
-    async def execute(self) -> ExecutionData:
+    async def execute(self,
+                      initial_data=None) -> ExecutionData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
@@ -123,7 +124,8 @@ class WorkflowExecutor:
         workflow_context = ExecutionToken(
             task=workflow,
             execution=new_execution,
-            data=None,  # FIXME: create the workspace with a factory
+            data=initial_data,
+            # FIXME: create the workspace with a factory
             workspace=LocalLinuxWorkspace(execution=new_execution, pwd=None, id="default")
         )
 

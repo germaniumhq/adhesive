@@ -48,7 +48,7 @@ def bpmn_build(file_name: str,
 
 
 def _build(ut_provider: Optional['UserTaskProvider'] = None,
-           wait_tasks: bool=True):
+           wait_tasks: bool = True):
 
     if ut_provider is None:
         ut_provider = ConsoleUserTaskProvider()
