@@ -8,6 +8,7 @@ from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.process_read.bpmn import read_bpmn_file
 from adhesive.process_read.tasks import generate_from_tasks
+from adhesive.process_read.programmatic import process_start
 
 T = TypeVar('T')
 process = AdhesiveProcess('_root')
