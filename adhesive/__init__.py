@@ -8,7 +8,7 @@ from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.process_read.bpmn import read_bpmn_file
 from adhesive.process_read.tasks import generate_from_tasks
-from adhesive.process_read.programmatic import process_start
+from adhesive.process_read.programmatic import generate_from_calls
 
 T = TypeVar('T')
 process = AdhesiveProcess('_root')
@@ -38,6 +38,13 @@ def build(ut_provider: Optional['UserTaskProvider'] = None,
                   wait_tasks=wait_tasks)
 
 
+def process_start():
+    builder = generate_from_calls(_build)
+    process.workflow = builder.workflow
+
+    return builder
+
+
 def bpmn_build(file_name: str,
                ut_provider: Optional['UserTaskProvider'] = None,
                wait_tasks: bool=True):
@@ -49,7 +56,8 @@ def bpmn_build(file_name: str,
 
 
 def _build(ut_provider: Optional['UserTaskProvider'] = None,
-           wait_tasks: bool = True):
+           wait_tasks: bool = True,
+           initial_data=None):
 
     if ut_provider is None:
         ut_provider = ConsoleUserTaskProvider()
@@ -57,7 +65,7 @@ def _build(ut_provider: Optional['UserTaskProvider'] = None,
     fn = WorkflowExecutor(
         process,
         ut_provider=ut_provider,
-        wait_tasks=wait_tasks).execute()
+        wait_tasks=wait_tasks).execute(initial_data)
 
     return asyncio.get_event_loop().run_until_complete(fn)
 

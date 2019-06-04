@@ -14,13 +14,13 @@ data = adhesive.process_start()\
     .branch_start()\
         .sub_process_start() \
             .task("Run in parallel",
-                  loop="{data.items}") \
+                  loop="context.data.items") \
         .sub_process_end()\
     .branch_end() \
     .branch_start() \
         .sub_process_start() \
             .task("Run in parallel",
-                  loop="{data.items}") \
+                  loop="context.data.items") \
         .sub_process_end() \
     .branch_end() \
     .process_end()\
