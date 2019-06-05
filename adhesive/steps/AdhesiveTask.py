@@ -14,8 +14,21 @@ class AdhesiveTask(AdhesiveBaseTask):
     """
     def __init__(self,
                  code: Callable,
-                 *expressions: str) -> None:
+                 *expressions: str,
+                 loop: Optional[str] = None,
+                 when: Optional[str] = None) -> None:
+        """
+        Create a new adhesive task. The `loop` and `when` are only
+        available when doing a programmatic API.
+        :param code:
+        :param expressions:
+        :param loop:
+        :param when:
+        """
         super(AdhesiveTask, self).__init__(code, *expressions)
+
+        self.loop = loop
+        self.when = when
 
     def matches(self,
                 task: BaseTask,

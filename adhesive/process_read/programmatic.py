@@ -1,4 +1,3 @@
-import uuid
 from typing import Optional, List, Callable
 
 from adhesive.graph.BaseTask import BaseTask
@@ -10,6 +9,9 @@ from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Workflow import Workflow
+
+
+current_id = 0
 
 
 class BranchDefinition:
@@ -58,13 +60,13 @@ class BranchEndBuilder:
         :param loop:
         :return:
         """
-        new_task = Task(str(uuid.uuid4()), name)
+        new_task = Task(next_id(), name)
         return self._wire_task_list(new_task, when=when, loop=loop)
 
     def process_end(self,
              when: Optional[str] = None,
              loop: Optional[str] = None) -> 'WorkflowBuilder':
-        new_task = EndEvent(str(uuid.uuid4()), name="<end-event>")
+        new_task = EndEvent(next_id(), name="<end-event>")
         return self._wire_task_list(new_task, when=when, loop=loop)
 
     def _wire_task_list(self,
@@ -87,8 +89,8 @@ class WorkflowBuilder:
                  name: Optional[str] = None):
         self.parent_builder = parent_builder
 
-        self.workflow = desired_type(str(uuid.uuid4()), name="<process>" if name is None else name)
-        self.current_task = StartEvent(str(uuid.uuid4()), "<start>")
+        self.workflow = desired_type(next_id(), name="<process>" if name is None else name)
+        self.current_task = StartEvent(next_id(), "<start>")
         self.workflow.add_start_event(self.current_task)
 
         self.nested_branches: List[BranchGroup] = list()
@@ -124,11 +126,11 @@ class WorkflowBuilder:
         :param loop:
         :return:
         """
-        new_task = Task(str(uuid.uuid4()), name)
+        new_task = Task(next_id(), name)
         return self._wire_task(new_task, loop=loop, when=when)
 
     def process_end(self) -> 'WorkflowBuilder':
-        new_task = EndEvent(str(uuid.uuid4()), name="<end-event>")
+        new_task = EndEvent(next_id(), name="<end-event>")
         return self._wire_task(new_task)
 
     def sub_process_start(self,
@@ -172,7 +174,7 @@ class WorkflowBuilder:
                   name: str,
                   when: Optional[str] = None,
                   loop: Optional[str] = None):
-        new_task = UserTask(str(uuid.uuid4()), name)
+        new_task = UserTask(next_id(), name)
         self._wire_task(new_task, when=when, loop=loop)
 
         return self
@@ -207,7 +209,7 @@ class WorkflowBuilder:
             self.nested_branches[-1].branches[-1].last_task = new_task
 
         new_edge = Edge(
-            str(uuid.uuid4()),
+            next_id(),
             self.current_task.id,
             new_task.id,
             when)
@@ -241,7 +243,7 @@ class WorkflowBuilder:
 
         for previous_task in previous_tasks:
             new_edge = Edge(
-                str(uuid.uuid4()),
+                next_id(),
                 previous_task.id,
                 new_task.id,
                 when)
@@ -249,6 +251,13 @@ class WorkflowBuilder:
             self.workflow.add_edge(new_edge)
 
         return self
+
+
+def next_id():
+    global current_id
+
+    current_id += 1
+    return f"_{current_id}"
 
 
 def generate_from_calls(_build) -> WorkflowBuilder:

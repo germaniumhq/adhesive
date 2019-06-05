@@ -1,51 +1,28 @@
 from adhesive import AdhesiveTask, AdhesiveUserTask
-from adhesive.graph.Edge import Edge
-from adhesive.graph.EndEvent import EndEvent
-from adhesive.graph.StartEvent import StartEvent
-from adhesive.graph.Task import Task
-from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Workflow import Workflow
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
-
-
-current_id = 0
-
-
-def next_id():
-    global current_id
-
-    current_id += 1
-    return f"_{current_id}"
+from adhesive.process_read.programmatic import generate_from_calls
 
 
 def generate_from_tasks(process: AdhesiveProcess) -> Workflow:
-    workflow = Workflow(next_id())
-
     if not process.steps:
         raise Exception("No task was defined. You need to create "
                         "tasks with @adhesive.task or @adhesive.usertask .")
 
-    last_task = StartEvent(next_id(), "start event")
-    workflow.add_start_event(last_task)
+    builder = generate_from_calls(None)
 
     for step in process.steps:
         if isinstance(step, AdhesiveTask):
-            task = Task(next_id(), step.expressions[0])
-            workflow.add_task(task)
+            builder.task(step.expressions[0],
+                         when=step.when,
+                         loop=step.loop)
         elif isinstance(step, AdhesiveUserTask):
-            task = UserTask(next_id(), step.expressions[0])
-            workflow.add_task(task)
+            builder.user_task(step.expressions[0],
+                              when=step.when,
+                              loop=step.loop)
         else:
             raise Exception(f"Unsupported task {step}")
 
-        edge = Edge(next_id(), last_task.id, task.id)
-        workflow.add_edge(edge)
-        last_task = task
+    builder.process_end()
 
-    task = EndEvent(next_id(), "end event")
-    workflow.add_end_event(task)
-
-    edge = Edge(next_id(), last_task.id, task.id)
-    workflow.add_edge(edge)
-
-    return workflow
+    return builder.workflow
