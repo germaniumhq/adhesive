@@ -40,7 +40,7 @@ class WorkflowLoop:
 
     @staticmethod
     def create_loop(event: 'ActiveEvent',
-                    clone_event: Callable[['ActiveEvent', 'BaseTask'], 'ActiveEvent']) -> None:
+                    clone_event: Callable[['ActiveEvent', 'BaseTask'], 'ActiveEvent']) -> int:
         expression = event.task.loop.loop_expression
 
         result = eval(expression, {}, {
@@ -50,7 +50,7 @@ class WorkflowLoop:
         })
 
         if not result:
-            return
+            return 0
 
         index = 0
         for item in result:
@@ -73,6 +73,8 @@ class WorkflowLoop:
             new_event.context.update_title()
 
             index += 1
+
+        return index
 
 
 def parent_loop_id(e: 'ActiveEvent') -> Optional[str]:

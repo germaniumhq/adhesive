@@ -384,8 +384,11 @@ class WorkflowExecutor:
             # loop context, if we're running in a nested loop.
             if event.task.loop and (not event.context.loop or event.context.loop.task != event.task):
                 # we start a loop by firing the loop events, and consume this event.
-                WorkflowLoop.create_loop(event, self.clone_event)
-                event.state.done_check(None)
+                events_created = WorkflowLoop.create_loop(event, self.clone_event)
+                if events_created == 0:
+                    event.state.route(event.context)
+                else:
+                    event.state.done_check(None)
 
                 return
 
