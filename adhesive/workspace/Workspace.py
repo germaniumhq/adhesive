@@ -117,3 +117,12 @@ class Workspace(ABC):
             yield folder
         finally:
             self.pwd = current_folder
+
+    @abstractmethod
+    def clone(self) -> 'Workspace':
+        """
+        Clone the current workspace, so parallel tasks can do
+        things such as chdir, or temp_folder.
+        :return:
+        """
+        pass

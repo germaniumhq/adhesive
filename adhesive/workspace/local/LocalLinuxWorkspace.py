@@ -95,5 +95,12 @@ class LocalLinuxWorkspace(Workspace):
         LOG.debug("copy {} to {}", from_path, to_path)
         shutil.copytree(from_path, to_path)
 
+    def clone(self) -> 'LocalLinuxWorkspace':
+        return LocalLinuxWorkspace(
+            execution=self.execution,
+            pwd=self.pwd,
+            id=self.id,
+        )
+
 
 from adhesive.storage.ensure_folder import ensure_folder

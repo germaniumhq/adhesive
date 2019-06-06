@@ -48,7 +48,7 @@ class ExecutionToken:
             task,
             self.execution,
             self.data.as_dict(),
-            self.workspace,  # FIXME: this should be a clone
+            self.workspace.clone(),
         )
 
         return result

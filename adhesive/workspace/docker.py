@@ -14,10 +14,15 @@ class DockerWorkspace(Workspace):
     def __init__(self,
                  workspace: Workspace,
                  image_name: str,
-                 extra_docker_params: str = "") -> None:
+                 extra_docker_params: str = "",
+                 container_id: Optional[str] = None) -> None:
         super(DockerWorkspace, self).__init__(
             execution=workspace.execution,
             pwd=workspace.pwd)
+
+        if container_id is not None:
+            self.container_id = container_id
+            return
 
         pwd = workspace.pwd
         uid = os.getuid()
@@ -126,6 +131,12 @@ class DockerWorkspace(Workspace):
             ],
             stdout=sys.stdout,
             stderr=sys.stderr)
+
+    def clone(self) -> 'DockerWorkspace':
+        return DockerWorkspace(
+            workspace=self,
+            image_name=self.image
+        )
 
     def _destroy(self):
         subprocess.check_call(
