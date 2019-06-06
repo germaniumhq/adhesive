@@ -13,19 +13,32 @@ from .Workspace import Workspace
 class DockerWorkspace(Workspace):
     def __init__(self,
                  workspace: Workspace,
-                 image_name: str) -> None:
+                 image_name: str,
+                 extra_docker_params: str = "") -> None:
         super(DockerWorkspace, self).__init__(
             execution=workspace.execution,
             pwd=workspace.pwd)
 
         pwd = workspace.pwd
+        uid = os.getuid()
+        gid = os.getgid()
+        groups = os.getgroups()
+
+        if groups:
+            groups_str = ""
+            for group in groups:
+                groups_str += f"--group-add {group} "
+        else:
+            groups_str = ""
 
         self.container_id = workspace.run(
             f"docker run -t "
             f"-v {pwd}:{pwd} "
             f"-d "
             f"--entrypoint cat "
-            f"-u 1000:1000 "  # FIXME, use actual uid/gids of user
+            f"-u {uid}:{gid} "
+            f"{groups_str} "
+            f"{extra_docker_params} "
             f"{shlex.quote(image_name)}",
             capture_stdout=True
         ).strip()
@@ -125,12 +138,14 @@ class DockerWorkspace(Workspace):
 
 @contextmanager
 def inside(workspace: Workspace,
-           image_name: str):
+           image_name: str,
+           extra_docker_params: str = ""):
     w = None
 
     try:
         w = DockerWorkspace(workspace=workspace,
-                            image_name=image_name)
+                            image_name=image_name,
+                            extra_docker_params=extra_docker_params)
         yield w
     finally:
         if w is not None:
@@ -148,7 +163,7 @@ def build(workspace: Workspace,
     command = "docker build "
 
     for tag in tags:
-        command += f"-t {tag} -q"
+        command += f"-t {tag} -q "
 
     command += "."
 

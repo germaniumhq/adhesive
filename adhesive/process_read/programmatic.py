@@ -63,6 +63,43 @@ class BranchEndBuilder:
         new_task = Task(next_id(), name)
         return self._wire_task_list(new_task, when=when, loop=loop)
 
+    def user_task(self,
+                  name: str,
+                  when: Optional[str] = None,
+                  loop: Optional[str] = None) -> 'WorkflowBuilder':
+        """
+        The branching is done now, we need to close a branch level.
+        :param name:
+        :param when:
+        :param loop:
+        :return:
+        """
+        new_task = UserTask(next_id(), name)
+        return self._wire_task_list(new_task, when=when, loop=loop)
+
+    def sub_process_start(self,
+                  name: str,
+                  when: Optional[str] = None,
+                  loop: Optional[str] = None) -> 'WorkflowBuilder':
+        """
+        We start a sub process.
+        :param name:
+        :param when:
+        :param loop:
+        :return:
+        """
+        sub_process_builder = WorkflowBuilder(
+            parent_builder=self.workflow_builder,
+            desired_type=SubProcess,
+            name=name,
+        )
+
+        self._wire_task_list(sub_process_builder.workflow,
+                        loop=loop,
+                        when=when)
+
+        return sub_process_builder
+
     def process_end(self,
              when: Optional[str] = None,
              loop: Optional[str] = None) -> 'WorkflowBuilder':
