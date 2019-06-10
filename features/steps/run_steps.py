@@ -14,6 +14,12 @@ def run_the_workflow_with_a_single_checkbox(contxt):
                           cwd=f"{os.getcwd()}/features/processes/single_checkbox")
 
 
+@step("I run adhesive without UI redirection on '(.*?)'")
+def run_without_ui_redirection(contxt, folder):
+    subprocess.check_call(["python", "-m", "adhesive.mainapp"],
+                          cwd=f"{os.getcwd()}/features/{folder}")
+
+
 @step("I run adhesive on '(.*?)'")
 def run_an_adhesive_workflow(context, folder):
     pipes = subprocess.Popen(
