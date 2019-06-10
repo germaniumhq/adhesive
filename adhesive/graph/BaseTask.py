@@ -16,6 +16,7 @@ class BaseTask:
         self.name = name
         self.error_task: Optional['ErrorBoundaryEvent'] = None
         self.loop: Optional[Loop] = None
+        self.workflow_id: Optional[str] = None
 
     def __str__(self) -> str:
         return f"Task({self.id}): {self.name}"

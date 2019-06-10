@@ -88,7 +88,7 @@ class DockerWorkspace(Workspace):
         :return:
         """
         try:
-            tmp_folder = ensure_folder("tmp")
+            tmp_folder = ensure_folder(self)
             tmp_file = os.path.join(tmp_folder, str(uuid4()))
             with open(tmp_file, "wt") as f:
                 f.write(content)

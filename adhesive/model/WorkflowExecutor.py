@@ -5,8 +5,7 @@ import traceback
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple
 
-from termcolor_util import green, red, yellow, white
-
+from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
@@ -487,6 +486,9 @@ class WorkflowExecutor:
                 if self_event.state.state in DONE_STATES:
                     continue
 
+                if self_event.task.workflow_id != workflow.id:
+                    continue
+
                 event_count[self_event.task] = event_count.get(self_event.task, 0) + 1
 
                 if self_event.state.state == ActiveEventState.WAITING:
@@ -494,6 +496,9 @@ class WorkflowExecutor:
 
             for waiting_event in waiting_events:
                 if event_count[waiting_event.task] > 1:
+                    continue
+
+                if waiting_event.task.workflow_id != workflow.id:
                     continue
 
                 potential_predecessors = list(map(

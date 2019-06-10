@@ -16,6 +16,7 @@ class LocalAdhesiveConfig(AdhesiveConfig):
 
         # FIXME: detect if possible where's the /tmp folder
         self._defaults = {
+            "color": True,
             "temp_folder": "/tmp/adhesive",
             "plugins": [],
         }

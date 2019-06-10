@@ -1,9 +1,11 @@
 import os
 import subprocess
+import unittest
 
 from behave import step, use_step_matcher
 
 use_step_matcher("re")
+test = unittest.TestCase()
 
 
 @step("I run adhesive on a workflow with a UT with a single checkbox")
@@ -56,3 +58,13 @@ def check_the_text_in_stdouterr(context, where, searched_text):
 @step("the user task renders just fine")
 def noop(context):
     pass
+
+
+@step("the '(.*?)' is executed only once")
+def task_executed_after_two_tasks(context,
+                                  waiting_task: str) -> None:
+    test.assertEqual(
+        1,
+        context.process_stdout.count(f'Run  {waiting_task}')
+    )
+

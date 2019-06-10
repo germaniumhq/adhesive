@@ -46,9 +46,10 @@ class Workflow(BaseTask):
         self._tasks[task.id] = task
         self._graph.add_node(task.id)
 
+        task.workflow_id = self.id
+
     def add_boundary_event(self, boundary_event: BoundaryEvent) -> None:
-        self._tasks[boundary_event.id] = boundary_event
-        self._graph.add_node(boundary_event.id)
+        self.add_task(boundary_event)
         self._graph.add_edge(
             boundary_event.attached_task_id,
             boundary_event.id,
@@ -67,13 +68,11 @@ class Workflow(BaseTask):
 
     def add_start_event(self, event: StartEvent) -> None:
         self._start_events[event.id] = event
-        self._tasks[event.id] = event
-        self._graph.add_node(event.id)
+        self.add_task(event)
 
     def add_end_event(self, event: EndEvent) -> None:
         self._end_events[event.id] = event
-        self._tasks[event.id] = event
-        self._graph.add_node(event.id)
+        self.add_task(event)
 
     def get_outgoing_edges(self, task_id: str) -> List[Edge]:
         """ Get the outgoing edges. """
@@ -111,7 +110,7 @@ class Workflow(BaseTask):
                         potential_predecessor.id,
                         task.id):
                     return True
-            except Exception:
+            except Exception as e:
                 pass
 
         return False
