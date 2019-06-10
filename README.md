@@ -92,6 +92,13 @@ plugins:
 
 Then in the python path you can simply do regular imports.
 
+### color
+
+default value `True`, environment var: `ADHESIVE_COLOR`.
+
+Marks if the logging should use ANSI colors in the terminal. Implicitly this is
+`true`, but if log parsing is needed, it can make sense to have it false.
+
 ## Hacking Adhesive
 
 Adhesive builds with itself. In order to do that, you
