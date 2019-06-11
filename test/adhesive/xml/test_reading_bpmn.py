@@ -3,6 +3,7 @@ import unittest
 import textwrap
 
 from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
+from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Loop import Loop
 from adhesive.graph.ScriptTask import ScriptTask
@@ -93,6 +94,19 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(workflow.end_events))
 
         self.assertTrue(isinstance(workflow.tasks["_3"], ParallelGateway))
+
+    def test_reading_gateway_complex(self) -> None:
+        workflow = read_bpmn_file("test/adhesive/xml/gateway-complex.bpmn")
+
+        self.assertEqual(6, len(workflow.tasks))
+        self.assertEqual(7, len(workflow.edges))
+        self.assertEqual(1, len(workflow.start_tasks))
+        self.assertEqual(1, len(workflow.end_events))
+
+        self.assertTrue(isinstance(
+            workflow.tasks["_4"],
+            ComplexGateway
+        ))
 
     def test_reading_error_event_interrupting(self) -> None:
         workflow = read_bpmn_file("test/adhesive/xml/error-event-interrupting.bpmn")

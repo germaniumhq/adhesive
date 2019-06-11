@@ -24,6 +24,9 @@ def task(*task_names: str,
     return wrapper_builder
 
 
+gateway = task
+
+
 def usertask(*task_names: str,
              loop: Optional[str] = None,
              when: Optional[str] = None) -> Callable[..., Callable[..., T]]:

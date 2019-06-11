@@ -92,6 +92,11 @@ def read_data_from_user(context, ui) -> None:
     ui.add_default_button("Cancel")
 
 
+@adhesive.gateway('Complex Gateway')
+def complex_gateway(context) -> None:
+    context.data.selected_browsers = {'firefox'}
+
+
 def add_current_task(context):
     if not context.data.steps:
         context.data.steps = dict()

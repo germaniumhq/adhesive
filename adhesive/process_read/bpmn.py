@@ -4,16 +4,17 @@ from xml.etree import ElementTree
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
+from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Loop import Loop
-from adhesive.graph.ScriptTask import ScriptTask
-from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
+from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
+from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Workflow import Workflow
 
 TAG_NAME = re.compile(r'^(\{.+\})?(.+)$')
@@ -130,6 +131,8 @@ def process_node(result: Workflow,
         process_exclusive_gateway(result, node)
     elif "parallelGateway" == node_name or "inclusiveGateway" == node_name:
         process_parallel_gateway(result, node)
+    elif "complexGateway" == node_name:
+        process_complex_gateway(result, node)
     elif node_name not in ignored_elements:
         raise Exception(f"Unknown process node: {node.tag}")
 
@@ -267,6 +270,14 @@ def process_parallel_gateway(w: Workflow, xml_node) -> None:
     """ Create an end event from the workflow """
     node_name = normalize_name(xml_node.get("name"))
     task = ParallelGateway(xml_node.get("id"), node_name)
+
+    w.add_task(task)
+
+
+def process_complex_gateway(w: Workflow, xml_node) -> None:
+    """ Create an end event from the workflow """
+    node_name = normalize_name(xml_node.get("name"))
+    task = ComplexGateway(xml_node.get("id"), node_name)
 
     w.add_task(task)
 
