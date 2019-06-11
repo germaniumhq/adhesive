@@ -92,7 +92,7 @@ def publish_to_pypi_confirm(context, ui):
             ("pypitest", "Publish to PyPI Test"),
             ("pypi", "Publish to PyPI"),
         ),
-        value=("nexus","pypitest", "pypi")
+        value=("pypitest", "pypi")
     )
 
 
