@@ -108,6 +108,13 @@ class Workspace(ABC):
 
     @contextmanager
     def chdir(self, target_folder: str):
+        """
+        Temporarily change a folder, that will go back to the original `pwd`
+        when the `with` block ends. To change the folder for the workspace
+        permanently, simply assing the `pwd`.
+        :param target_folder:
+        :return:
+        """
         current_folder = self.pwd
         folder = os.path.join(self.pwd, target_folder)
 
