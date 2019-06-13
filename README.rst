@@ -193,6 +193,15 @@ Workspaces are just a way of interacting with a system, running
 commands, and writing/reading files. Currently only
 ``LocalLinuxWorkspace`` and ``DockerWorkspace`` are implemented.
 
+When starting ``adhesive`` allocates a default workspace folder in the
+configured temp location (implicitly ``/tmp/adhesive``). The
+``Workspace`` API is an API that allows you to run commands, and create
+files, taking care of redirecting outputs, and even escaping the
+commands to be able to easily run them inside docker containers.
+
+Note that implicitly calling ``context.workspace.run(...)`` will run the
+command on the host where adhesive is running.
+
 To create a docker workspace that runs inside a container with the
 tooling you just need to:
 
@@ -334,39 +343,46 @@ where to publish the package:
 
 .. code:: py
 
-    @adhesive.usertask('Publish to PyPI\?')
-    def publish_to_pypi_confirm(context, ui):
-        ui.add_checkbox_group(
-            "publish",
-            title="Publish",
-            values=(
-                ("nexus", "Publish to Nexus"),
-                ("pypitest", "Publish to PyPI Test"),
-                ("pypi", "Publish to PyPI"),
-            ),
-            value=("pypitest", "pypi")
-        )
+    @adhesive.usertask("Read User Data")
+    def read_user_data(context, ui) -> None:
+        ui.add_input_text("user",
+                title="Login",
+                value="root")
+        ui.add_input_password("password",
+                title="Password")
+        ui.add_checkbox_group("roles",
+                title="Roles",
+                value=["cyborg"],
+                values=["admin", "cyborg", "anonymous"])
+        ui.add_radio_group("disabled",  # title is optional
+                values=["yes", "no"],
+                value="no")
+        ui.add_combobox("machine",
+                title="Machine",
+                values=(("any", "<any>"),
+                        ("win", "Windows"),
+                        ("lin", "Linux")))
 
-Implicitly if the user just clicks the OK button will send the following
-values in the ``context.data.publish``:
+This will prompt the user with this form:
 
-.. code:: py
+.. figure:: ./doc/console_usertask.png
+   :alt: form
 
-    ["pypitest", "pypi"]
+   form
 
 This data is also available for edge conditions, so in the BPMN modeler
-we can define a condition such as ``"pypi" in context.data.publish``, or
+we can define a condition such as ``"pypi" in context.data.roles``, or
 since ``data`` is also available in the edge scope:
-``"pypi" in data.publish``.
+``"pypi" in data.roles``.
 
 The other option is simply reading what the user has selected in a
 following task:
 
 .. code:: py
 
-    @adhesive.task("Publish Items")
+    @adhesive.task("Register User")
     def publish_items(context):
-        for platform in context.data.publish:
+        for role in context.data.roles:
             # ...
 
 User tasks support the following API, available on the ``ui`` parameter,
