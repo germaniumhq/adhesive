@@ -1,4 +1,5 @@
-from typing import Optional, List, Dict, Any, cast, Tuple, Union, Iterable
+import uuid
+from typing import Optional, List, Dict, Any, cast, Tuple, Union, Iterable, Set
 
 import npyscreen as npyscreen
 
@@ -16,7 +17,7 @@ class UiBuilderButton:
                  label: Optional[str] = None,
                  value: Optional[Any] = None) -> None:
         self.name = name
-        self.label = label if label is not None else name
+        self.label = label
         self.value = value
 
 
@@ -39,21 +40,46 @@ class ConsoleUserTaskForm(npyscreen.ActionFormMinimal):
     def create_control_buttons(self):
         current_offset = -6
 
-        for button in reversed(self.ui_builder.buttons):
-            self._create_button(button, current_offset)
-            current_offset -= len(button.label) + 2
+        button_names: Set[str] = set()
+        same_name_buttons = False
 
-    def _create_button(self, button, current_offset):
+        for button in self.ui_builder.buttons:
+            if button.name in button_names:
+                same_name_buttons = True
+                break
+
+            button_names.add(button.name)
+
+        for button in reversed(self.ui_builder.buttons):
+            label = self._create_button(button, same_name_buttons, current_offset)
+            current_offset -= len(label) + 2
+
+    def _create_button(self,
+                       button: UiBuilderButton,
+                       same_name_buttons: bool,
+                       current_offset: int) -> str:
         def button_function():
             self.editing = False
             self.ui_builder.selected_button = button
 
-        self._add_button(button.name,
+        if button.label:
+            label = button.label
+        elif button.value is None:
+            label = button.name
+        elif same_name_buttons:
+            label = button.value
+        else:
+            label = button.name
+
+        self._add_button(
+            str(uuid.uuid4()),
             ConsoleUserTaskFormButton,
-            button.label,
+            label,
             -1,
-            current_offset - len(button.label),
+            current_offset - len(label),
             button_function)
+
+        return label
 
 
 class UIBuilder(UiBuilderApi):

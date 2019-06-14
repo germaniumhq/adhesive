@@ -402,6 +402,11 @@ class UiBuilderApi(ABC):
                         title: Optional[str]=None,
                         value: Optional[str]=None,
                         values: Optional[List[Any]]=None) -> None:
+
+    def add_default_button(self,
+                           name: str,
+                           title: Optional[str] = None,
+                           value: Optional[Any] = True) -> None:
 ```
 
 ## Secrets

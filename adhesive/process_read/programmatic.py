@@ -170,7 +170,7 @@ class WorkflowBuilder:
         new_task = EndEvent(next_id(), name="<end-event>")
         return self._wire_task(new_task)
 
-    def  sub_process_start(self,
+    def sub_process_start(self,
                           name: Optional[str] = None,
                           when: Optional[str] = None,
                           loop: Optional[str] = None) -> 'WorkflowBuilder':
