@@ -10,6 +10,52 @@ from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.steps.ExecutionData import ExecutionData
 
 
+class UiBuilderButton:
+    def __init__(self,
+                 name: str,
+                 label: Optional[str] = None,
+                 value: Optional[Any] = None) -> None:
+        self.name = name
+        self.label = label if label is not None else name
+        self.value = value
+
+
+DEFAULT_BUTTONS: List[UiBuilderButton] = [
+    UiBuilderButton("ok_button", label="OK"),
+]
+
+
+class ConsoleUserTaskFormButton(npyscreen.wgbutton.MiniButtonPress):
+    pass
+
+
+class ConsoleUserTaskForm(npyscreen.ActionFormMinimal):
+    def __init__(self,
+                 ui_builder: 'UIBuilder',
+                 name: str) -> None:
+        self.ui_builder = ui_builder
+        super(ConsoleUserTaskForm, self).__init__(name=name)
+
+    def create_control_buttons(self):
+        current_offset = -6
+
+        for button in reversed(self.ui_builder.buttons):
+            self._create_button(button, current_offset)
+            current_offset -= len(button.label) + 2
+
+    def _create_button(self, button, current_offset):
+        def button_function():
+            self.editing = False
+            self.ui_builder.selected_button = button
+
+        self._add_button(button.name,
+            ConsoleUserTaskFormButton,
+            button.label,
+            -1,
+            current_offset - len(button.label),
+            button_function)
+
+
 class UIBuilder(UiBuilderApi):
     def __init__(self,
                  event: ActiveEvent):
@@ -18,6 +64,8 @@ class UIBuilder(UiBuilderApi):
 
         self.labels: Dict[str, List[str]] = dict()
         self.values: Dict[str, List[str]] = dict()
+        self.buttons = DEFAULT_BUTTONS
+        self.selected_button = None
 
         self.ncurses_calls = []
 
@@ -42,6 +90,9 @@ class UIBuilder(UiBuilderApi):
                 continue
 
             result_dict[name] = ui_control.value
+
+        if self.buttons is not DEFAULT_BUTTONS:
+            result_dict[self.selected_button.name] = self.selected_button.value
 
         return ExecutionData(result_dict)
 
@@ -172,8 +223,15 @@ class UIBuilder(UiBuilderApi):
 
     def add_default_button(self,
                            name: str,
-                           title: Optional[str]=None) -> None:
-        self.context.data[name] = name
+                           title: Optional[str] = None,
+                           value: Optional[Any] = True) -> None:
+        if self.buttons is DEFAULT_BUTTONS:
+            self.buttons = []
+
+        self.buttons.append(UiBuilderButton(
+            name,
+            label=title,
+            value=value))
 
     @staticmethod
     def _get_values(values) -> List[str]:
@@ -227,7 +285,8 @@ class ConsoleUserTaskProvider(UserTaskProvider):
         def run_on_curses(x):
             try:
                 # build the UI components on ncurses:
-                ui.form = npyscreen.Form(name=event.task.name)
+                ui.form = ConsoleUserTaskForm(ui_builder=ui,
+                                              name=event.task.name)
 
                 for ncurses_call in ui.ncurses_calls:
                     ncurses_call()

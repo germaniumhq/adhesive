@@ -45,5 +45,6 @@ class UiBuilderApi(ABC):
     @abstractmethod
     def add_default_button(self,
                            name: str,
-                           title: Optional[str]=None) -> None:
+                           title: Optional[str]=None,
+                           value: Optional[Any]=None) -> None:
         pass
