@@ -409,6 +409,24 @@ class UiBuilderApi(ABC):
                            value: Optional[Any] = True) -> None:
 ```
 
+### Custom Buttons
+
+In order to allow navigation inside the process, the `add_default_button` API
+exists to permit creation of buttons. Implicitly a single button with an `OK`
+label is added to the User Task, that when pressed fills the `context.data` in
+the outgoing execution token.
+
+With `add_default_button` we create custom buttons such as `Back` and
+`Forward`, or whatever we need in our process. Unlike the default `OK` button,
+when these are called, they also set in the `context.data` the `value` that's
+assigned to them. This value we use then further in a `Gateway`, or simple as a
+condition on the outgoing edges.
+
+The title is optional, and only if missing it's build either from the `name` if
+all the buttons in the form have unique names, since they assign a different
+variable in the `context.data`, or from the `value` if they have overlapping
+names. 
+
 ## Secrets
 
 Secrets are files that contain sensitive information are not checked in the
