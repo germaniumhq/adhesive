@@ -34,6 +34,7 @@ from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Workflow import Workflow
 from adhesive.steps.AdhesiveTask import AdhesiveTask
+from adhesive import config
 
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
@@ -135,15 +136,15 @@ class WorkflowExecutor:
 
         def raise_exception(_ev):
             log_path = get_folder(_ev.data['failed_event'])
-            print(log_path)
 
-            with open(os.path.join(log_path, "stdout")) as f:
-                print(white("STDOUT:", bold=True))
-                print(white(f.read()))
+            if not config.current.stdout:
+                with open(os.path.join(log_path, "stdout")) as f:
+                    print(white("STDOUT:", bold=True))
+                    print(white(f.read()))
 
-            with open(os.path.join(log_path, "stderr")) as f:
-                print(red("STDERR:", bold=True))
-                print(red(f.read()), file=sys.stderr)
+                with open(os.path.join(log_path, "stderr")) as f:
+                    print(red("STDERR:", bold=True))
+                    print(red(f.read()), file=sys.stderr)
 
             print(red("Exception:", bold=True))
             print(red(_ev.data['error']), file=sys.stderr)

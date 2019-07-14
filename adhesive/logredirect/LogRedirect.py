@@ -4,10 +4,12 @@ from contextlib import contextmanager
 from typing import Union, Any
 
 from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive import config
 
 
 class StreamLogger:
     def __init__(self,
+                 old_stdout: Any,
                  name: str,
                  folder: str) -> None:
         if not folder:
@@ -16,14 +18,16 @@ class StreamLogger:
         self.log = open(
             os.path.join(folder, name),
             "at")
+        self.old_stdout = old_stdout
 
         self._closed = False
 
     @staticmethod
-    def from_event(event: Union[ActiveEvent, str],
+    def from_event(old_stdout: Any,
+                   event: Union[ActiveEvent, str],
                    name: str) -> 'StreamLogger':
         folder = ensure_folder(event)
-        return StreamLogger(name, folder)
+        return StreamLogger(old_stdout, name, folder)
 
     @property
     def fileno(self):
@@ -36,6 +40,9 @@ class StreamLogger:
         if self._closed:
             raise Exception("already closed")
 
+            self.old_stdout.write(message)
+            self.old_stdout.flush()
+
         self.log.write(message)
         self.log.flush()
 
@@ -46,12 +53,16 @@ class StreamLogger:
 
 @contextmanager
 def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
+    if config.current.stdout:
+        yield None
+        return
+
     old_stdout = sys.stdout
     old_stderr = sys.stderr
 
     try:
-        new_stdout = StreamLogger.from_event(event, "stdout")
-        new_stderr = StreamLogger.from_event(event, "stderr")
+        new_stdout = StreamLogger.from_event(old_stdout, event, "stdout")
+        new_stderr = StreamLogger.from_event(old_stderr, event, "stderr")
 
         sys.stdout = new_stdout
         sys.stderr = new_stderr

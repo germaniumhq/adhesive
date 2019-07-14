@@ -490,6 +490,13 @@ default value `True`, environment var: `ADHESIVE_COLOR`.
 Marks if the logging should use ANSI colors in the terminal. Implicitly this is
 `true`, but if log parsing is needed, it can make sense to have it false.
 
+### stdout
+
+default value is empty, environment var: `ADHESIVE_STDOUT`.
+
+Implicitly for each task, the log is redirected in a different file, and only
+shown if the task failed. The redirection can be disabled.
+
 ## Hacking Adhesive
 
 Adhesive builds with itself. In order to do that, you
