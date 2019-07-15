@@ -11,5 +11,6 @@ Scenario: Run a workflow that fails with an exception
 Scenario: Run a workflow that fails running a redirected program
     When I run adhesive on 'processes/stderror_no_redirect'
     Then the adhesive process has failed
-    And there is in the stdout the text 'Awesome stuff'
-    And there is in the stderr the text 'throw_some_exception'
+    And there is in the stdout the text 'test'
+    And there is in the stderr the text 'subprocess.CalledProcessError: Command'
+    And there is in the stderr the text 'false'
