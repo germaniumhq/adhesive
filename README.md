@@ -176,6 +176,29 @@ The tasks perform the actual work for the build. But in order to have that, we
 need to be able to execute commands, and create files. For that we have the
 `workspace`.
 
+## Connections
+
+Tasks are connected to each other with connections. In some cases, connections
+can have conditions. Conditions are expressions that when evaluated to `True`
+will allow the token to pass the connection. In the connection there is access
+to the `task`, `task_name`, `data`, `loop` and `context`, as well as the
+variables defined in the `context.data`.
+
+So if in a task there is defined a data field such as:
+
+```py
+@adhesive.task('prepare data')
+def prepare_data(context):
+    context.data.navigation_direction = "forward"
+```
+
+The `navigation_direction` can be validated in the condition with any of the
+following:
+
+* `context.data.navigation_direction == "forward"`
+* `data.navigation_direction == "forward"`
+* `navigation_direction == "forward"`
+
 ## Workspace
 
 Workspaces are just a way of interacting with a system, running commands, and

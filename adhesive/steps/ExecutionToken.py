@@ -64,6 +64,7 @@ class ExecutionToken:
             "data": self.data,
             "loop": self.loop,
             "task_name": self.task_name,
+            "context": self,
         }
 
 

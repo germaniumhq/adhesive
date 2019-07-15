@@ -78,7 +78,9 @@ class GatewayController:
 
 def eval_edge(condition: str,
               event: ActiveEvent) -> Any:
-    data = dict(event.context.data._data)
-    data.update(event.context.as_mapping())
+    evaldata = dict(event.context.data._data)
+    context = event.context.as_mapping()
+    
+    evaldata.update(context)
 
-    return eval(condition, globals(), data)
+    return eval(condition, globals(), evaldata)
