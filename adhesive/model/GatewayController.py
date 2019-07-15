@@ -1,4 +1,4 @@
-from typing import List, cast
+from typing import List, cast, Any
 
 from adhesive.graph.Edge import Edge
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
@@ -6,6 +6,8 @@ from adhesive.graph.Gateway import Gateway
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Workflow import Workflow
 from adhesive.model.ActiveEvent import ActiveEvent
+
+from adhesive.steps.ExecutionData import ExecutionData
 
 
 class GatewayController:
@@ -40,7 +42,7 @@ class GatewayController:
                 default_edge = edge
                 continue
 
-            if eval(edge.condition, globals(), event.context.as_mapping()):
+            if eval_edge(edge.condition, event):
                 if result_edge is not None:
                     raise Exception(f"Duplicate output edge for gateway {gateway.id}")
 
@@ -66,9 +68,17 @@ class GatewayController:
 
         for edge in edges:
             # if we have no condition on the edge, we create an event for it
-            if edge.condition and not eval(edge.condition, globals(), event.context.as_mapping()):
+            if edge.condition and not eval_edge(edge.condition, event):
                 continue
 
             result_edges.append(edge)
 
         return result_edges
+
+
+def eval_edge(condition: str,
+              event: ActiveEvent) -> Any:
+    data = dict(event.context.data._data)
+    data.update(event.context.as_mapping())
+
+    return eval(condition, globals(), data)
