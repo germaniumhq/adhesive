@@ -33,6 +33,7 @@ transitions:
     done_check: DONE_CHECK
   ROUTING:
     done_check: DONE_CHECK
+    done: DONE  # in case of failures in routing, the parent just `dones` the event
   DONE_CHECK:
     done: DONE
     done_end_task: DONE_END_TASK

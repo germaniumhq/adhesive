@@ -138,13 +138,17 @@ class WorkflowExecutor:
             log_path = get_folder(_ev.data['failed_event'])
 
             if not config.current.stdout:
-                with open(os.path.join(log_path, "stdout")) as f:
-                    print(white("STDOUT:", bold=True))
-                    print(white(f.read()))
+                stdout_file = os.path.join(log_path, "stdout")
+                if os.path.isfile(stdout_file):
+                    with open(stdout_file) as f:
+                        print(white("STDOUT:", bold=True))
+                        print(white(f.read()))
 
-                with open(os.path.join(log_path, "stderr")) as f:
-                    print(red("STDERR:", bold=True))
-                    print(red(f.read()), file=sys.stderr)
+                stderr_file = os.path.join(log_path, "stderr")
+                if os.path.isfile(stderr_file):
+                    with open(stderr_file) as f:
+                        print(red("STDERR:", bold=True))
+                        print(red(f.read()), file=sys.stderr)
 
             print(red("Exception:", bold=True))
             print(red(_ev.data['error']), file=sys.stderr)
@@ -432,6 +436,21 @@ class WorkflowExecutor:
 
             print(green("Done ") + green(event.context.task_name, bold=True))
 
+        def error_parent_task(event, e):
+            if event.parent_id in self.events:
+                parent_event = self.get_parent(event.id)
+
+                # we move the parent into error
+                parent_event.state.error(e)
+
+                # FIXME: not sure if this is enough.
+                for potential_child in list(self.events.values()):
+                    if potential_child.parent_id != event.parent_id:
+                        continue
+
+                    # potential_child.state.error(_event.data)
+                    potential_child.state.done()
+
         def error_task(_event) -> None:
             # if we have a boundary error task, we use that one for processing.
             if event.task.error_task:
@@ -444,31 +463,24 @@ class WorkflowExecutor:
 
                 return
 
-            if event.parent_id in self.events:
-                parent_event = self.get_parent(event.id)
-
-                # we move the parent into error
-                parent_event.state.error(_event.data)
-
-                # FIXME: not sure if this is enough.
-                for potential_child in list(self.events.values()):
-                    if potential_child.parent_id != event.parent_id:
-                        continue
-
-                    # potential_child.state.error(_event.data)
-                    potential_child.state.done()
-
+            error_parent_task(event, _event.data)
             # event.state.done_check(None)  # we kill the current event
 
         def route_task(_event) -> None:
-            event.context = _event.data
-            outgoing_edges = GatewayController.compute_outgoing_edges(workflow, event)
+            try:
+                event.context = _event.data
+                outgoing_edges = GatewayController.compute_outgoing_edges(workflow, event)
 
-            for outgoing_edge in outgoing_edges:
-                target_task = workflow.tasks[outgoing_edge.target_id]
-                self.clone_event(event, target_task)
+                for outgoing_edge in outgoing_edges:
+                    target_task = workflow.tasks[outgoing_edge.target_id]
+                    self.clone_event(event, target_task)
 
-            event.state.done_check(outgoing_edges)
+                event.state.done_check(outgoing_edges)
+            except Exception as e:
+                error_parent_task(event, {
+                    "error": traceback.format_exc(),
+                    "failed_event": self.events[event.id]
+                })
 
         def done_check(_event) -> None:
             outgoing_edges = _event.data

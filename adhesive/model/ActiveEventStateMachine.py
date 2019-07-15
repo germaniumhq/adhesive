@@ -107,7 +107,7 @@ def register_transition(name: Optional[str], from_state: ActiveEventState, to_st
 
 
 register_transition('process', ActiveEventState.NEW, ActiveEventState.PROCESSING)
-register_transition('run', ActiveEventState.NEW, ActiveEventState.RUNNING)
+#register_transition('run', ActiveEventState.NEW, ActiveEventState.RUNNING)
 register_transition('error', ActiveEventState.NEW, ActiveEventState.DONE)
 register_transition('route', ActiveEventState.PROCESSING, ActiveEventState.ROUTING)
 register_transition('wait_check', ActiveEventState.PROCESSING, ActiveEventState.WAITING)
@@ -123,6 +123,7 @@ register_transition('route', ActiveEventState.ERROR, ActiveEventState.ROUTING)
 register_transition('done', ActiveEventState.ERROR, ActiveEventState.DONE)
 register_transition('done_check', ActiveEventState.ERROR, ActiveEventState.DONE_CHECK)
 register_transition('done_check', ActiveEventState.ROUTING, ActiveEventState.DONE_CHECK)
+register_transition('done', ActiveEventState.ROUTING, ActiveEventState.DONE)
 register_transition('done', ActiveEventState.DONE_CHECK, ActiveEventState.DONE)
 register_transition('done_end_task', ActiveEventState.DONE_CHECK, ActiveEventState.DONE_END_TASK)
 register_transition('done', ActiveEventState.DONE_END_TASK, ActiveEventState.DONE)
