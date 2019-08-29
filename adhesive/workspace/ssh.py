@@ -68,16 +68,15 @@ class SshWorkspace(Workspace):
             self,
             file_name: str,
             content: str) -> None:
-        # FIXME: linux specific
-        full_name = os.path.join(self.pwd, file_name)
-        with self.sftp.file(full_name, "w") as f:
+        self.sftp.chdir(self.pwd)
+        with self.sftp.file(file_name, "w") as f:
             f.write(content)
 
     def rm(self, path: Optional[str]=None) -> None:
-        raise Exception("not implemented")
+        self.run('rm -fr {path}')
 
     def mkdir(self, path: str = None) -> None:
-        raise Exception("not implemented")
+        self.run('mkdir -p {shlex.quote(path)}')
 
     def copy_to_agent(self,
                       from_path: str,
