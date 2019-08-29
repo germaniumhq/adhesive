@@ -6,7 +6,7 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.UserTask import UserTask
 
 
-INVALID_CHARACTER = re.compile('[^\w\d]')
+INVALID_CHARACTER = re.compile(r'[^\w\d]')
 
 def generate_task_name(name: str) -> str:
     return INVALID_CHARACTER.sub("_", name).lower()
