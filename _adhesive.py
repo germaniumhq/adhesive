@@ -57,7 +57,10 @@ def gbs_integration_test_lin64(context) -> None:
         platform="python:3.7",
         gbs_prefix=f"/_gbs/lin64/")
 
-    with docker.inside(context.workspace, image_name) as w:
+    with docker.inside(
+            context.workspace,
+            image_name,
+            "-v /var/run/docker.sock:/var/run/docker.sock:rw") as w:
         w.run("python --version")
         w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
               "behave -t ~@manualtest")

@@ -20,7 +20,7 @@ def start_ssh_server(context):
 @adhesive.task('Test running commands on ssh connections')
 def run_ls_inside_server(context):
     with ssh.inside(context.workspace,
-            "localhost",
+            "172.17.0.1",
             username="root",
             password="root",
             port=8022) as w:
@@ -58,7 +58,7 @@ def run_ls_inside_server(context):
 @adhesive.task('Test\ write_file\ API')
 def test_write_file_api(context):
     with ssh.inside(context.workspace,
-            "localhost",
+            "172.17.0.1",
             username="root",
             password="root",
             port=8022) as w:
