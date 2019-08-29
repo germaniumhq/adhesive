@@ -1,6 +1,8 @@
 from typing import Union, Optional, Any, Dict
 from contextlib import contextmanager
 import paramiko
+import sys
+import os
 
 from .Workspace import Workspace
 
@@ -25,13 +27,45 @@ class SshWorkspace(Workspace):
             command: str,
             capture_stdout: bool = False) -> Union[str, None]:
         stdin, stdout, stderr = self.ssh.exec_command(command)
-        print(stdout)
+        channel = stdout.channel
+
+        if capture_stdout:
+            result = bytes()
+
+            while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
+                while channel.recv_ready():
+                    result += channel.recv(1024)
+
+                while channel.recv_stderr_ready():
+                    os.write(sys.stderr.fileno(), channel.recv_stderr(1024))
+
+            exit_status = channel.recv_exit_status()
+
+            if exit_status != 0:
+                raise Exception(f"Exit status is not zero, instead is {exit_status}")
+
+            return result.decode('utf-8')
+
+        while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
+            while channel.recv_ready():
+                os.write(sys.stdout.fileno(), channel.recv(1024))
+
+            while channel.recv_stderr_ready():
+                os.write(sys.stderr.fileno(), channel.recv_stderr(1024))
+
+        exit_status = channel.recv_exit_status()
+
+        if exit_status != 0:
+            raise Exception(f"Exit status is not zero, instead is {exit_status}")
+
+
 
     def write_file(
             self,
             file_name: str,
             content: str) -> None:
-        raise Exception("not implemented")
+        pass
+        #raise Exception("not implemented")
 
     def rm(self, path: Optional[str]=None) -> None:
         raise Exception("not implemented")
@@ -41,7 +75,7 @@ class SshWorkspace(Workspace):
 
     def copy_to_agent(self,
                       from_path: str,
-                      to_path: str):
+                      tdo_path: str):
         raise Exception("not implemented")
 
     def copy_from_agent(self,

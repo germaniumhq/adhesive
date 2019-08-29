@@ -454,7 +454,8 @@ class WorkflowExecutor:
         def error_task(_event) -> None:
             # if we have a boundary error task, we use that one for processing.
             if event.task.error_task:
-                self.clone_event(event, event.task.error_task)
+                new_event = self.clone_event(event, event.task.error_task)
+                new_event.context.data._error = _event.data['error']
 
                 if event.task.error_task.cancel_activity:
                     event.state.done_check(None)
