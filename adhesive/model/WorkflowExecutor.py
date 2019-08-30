@@ -91,7 +91,9 @@ class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
     """
-    pool = concurrent.futures.ProcessPoolExecutor()
+    pool = concurrent.futures.ThreadPoolExecutor() \
+            if config.current.parallel_processing == "thread" \
+            else concurrent.futures.ProcessPoolExecutor()
 
     def __init__(self,
                  process: AdhesiveProcess,
