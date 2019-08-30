@@ -520,6 +520,16 @@ default value is empty, environment var: `ADHESIVE_STDOUT`.
 Implicitly for each task, the log is redirected in a different file, and only
 shown if the task failed. The redirection can be disabled.
 
+### parallel_processing
+
+default value is `process`, environment var: `ADHESIVE_PARALLEL_PROCESSING`.
+
+Implicitly tasks are scaled using multiple processes in order to alleviate the
+global interpreter lock (GIL) from python. This value can be set to `thread`.
+
+This is useful for times when remote ssh workspaces are defined in the lanes,
+so the same connection can be reused for multiple tasks.
+
 ## Hacking Adhesive
 
 Adhesive builds with itself. In order to do that, you
