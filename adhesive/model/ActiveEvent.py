@@ -13,7 +13,7 @@ class ActiveEvent:
     def __init__(self,
                  parent_id: Optional['str'],
                  context: 'ExecutionToken') -> None:
-        self.id: str = str(uuid.uuid4())
+        self.token_id: str = str(uuid.uuid4())
         self.parent_id = parent_id
 
         if not isinstance(context, ExecutionToken):
@@ -27,7 +27,7 @@ class ActiveEvent:
 
     def __getstate__(self):
         return {
-            "id": self.id,
+            "token_id": self.token_id,
             "parent_id": self.parent_id,
             "_task": self._task,
             "context": self.context
@@ -71,8 +71,9 @@ class ActiveEvent:
         self._task = task
 
     def __repr__(self) -> str:
-        return f"ActiveEvent({self.id}, {self.state.state}): " \
-               f"({self.task.id}):{self.context.task_name}"
+        # the task.token_id should be the same as the self.token_id
+        return f"ActiveEvent({self.token_id}, {self.state.state}): " \
+               f"({self.task.token_id}):{self.context.task_name}"
 
 
 from adhesive.steps.ExecutionToken import ExecutionToken

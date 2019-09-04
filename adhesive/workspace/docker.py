@@ -14,10 +14,11 @@ class DockerWorkspace(Workspace):
                  workspace: Workspace,
                  image_name: str,
                  extra_docker_params: str = "",
+                 pwd: Optional[str] = None,
                  container_id: Optional[str] = None) -> None:
         super(DockerWorkspace, self).__init__(
-            execution=workspace.execution,
-            pwd=workspace.pwd)
+            token_id=workspace.token_id,
+            pwd=pwd if pwd else workspace.pwd)
 
         self.parent_workspace = workspace
 
@@ -108,8 +109,9 @@ class DockerWorkspace(Workspace):
     def clone(self) -> 'DockerWorkspace':
         # FIXME: should return the parent workspace somehow
         return DockerWorkspace(
-            workspace=self,
-            image_name=self.image
+            workspace=self.parent_workspace,
+            image_name=self.image,
+            pwd=self.pwd
         )
 
     def _destroy(self):

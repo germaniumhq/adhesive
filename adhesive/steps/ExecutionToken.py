@@ -1,7 +1,6 @@
 from typing import Optional, Dict, Any
 
 from adhesive.graph.BaseTask import BaseTask
-from adhesive.steps.Execution import Execution
 from adhesive.steps.ExecutionData import ExecutionData
 from adhesive.workspace.Workspace import Workspace
 
@@ -19,12 +18,12 @@ class ExecutionToken:
     """
     def __init__(self,
                  task: 'BaseTask',
-                 execution: Execution,
+                 token_id: str,
                  data: Optional[Dict],
                  workspace: Workspace) -> None:
         self.task = task
         self.data = ExecutionData(data)
-        self.execution = execution
+        self.token_id = token_id
         self.workspace = workspace
 
         self.loop: Optional[WorkflowLoop] = None
@@ -36,7 +35,7 @@ class ExecutionToken:
         try:
             self.task_name = self.task.name.format(**{
                 "context": self,
-                "execution": self.execution,
+                "token_id": self.token_id,
                 "data": self.data,
                 "loop": self.loop,
             })
@@ -46,7 +45,7 @@ class ExecutionToken:
     def clone(self, task: 'BaseTask') -> 'ExecutionToken':
         result = ExecutionToken(
             task,
-            self.execution,
+            self.token_id,
             self.data.as_dict(),
             self.workspace.clone(),
         )
@@ -60,7 +59,7 @@ class ExecutionToken:
         """
         return {
             "task": self.task,
-            "execution": self.execution,
+            "token_id": self.token_id,
             "data": self.data,
             "loop": self.loop,
             "task_name": self.task_name,

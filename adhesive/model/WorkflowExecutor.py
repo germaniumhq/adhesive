@@ -16,7 +16,6 @@ from adhesive.model.GatewayController import GatewayController
 from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
-from adhesive.steps.Execution import Execution
 from adhesive.steps.ExecutionToken import ExecutionToken
 from adhesive.steps.ExecutionData import ExecutionData
 from adhesive.steps.WorkflowLoop import WorkflowLoop, parent_loop_id, loop_id
@@ -91,9 +90,9 @@ class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
     """
-    pool = concurrent.futures.ThreadPoolExecutor() \
-            if config.current.parallel_processing == "thread" \
-            else concurrent.futures.ProcessPoolExecutor()
+    pool = concurrent.futures.ProcessPoolExecutor() \
+            if config.current.parallel_processing == "process" \
+            else concurrent.futures.ThreadPoolExecutor()
 
     def __init__(self,
                  process: AdhesiveProcess,
@@ -122,7 +121,6 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow)
 
-        new_execution = Execution()
         workflow_context = ExecutionToken(
             task=workflow,
             execution=new_execution,

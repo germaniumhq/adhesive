@@ -3,11 +3,15 @@ import unittest
 import uuid
 
 from adhesive.logredirect.LogRedirect import redirect_stdout
+from adhesive import logredirect
 from adhesive.storage.ensure_folder import ensure_folder
 
 
 class TestLogRedirection(unittest.TestCase):
     def test_file_redirection_logs(self):
+        if not logredirect.is_enabled:
+            return
+
         original_stdout = sys.stdout
         original_stderr = sys.stderr
 

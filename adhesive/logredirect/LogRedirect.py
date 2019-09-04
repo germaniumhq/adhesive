@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Union, Any
 
 from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.logredirect import is_enabled
 from adhesive import config
 
 
@@ -53,7 +54,7 @@ class StreamLogger:
 
 @contextmanager
 def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
-    if config.current.stdout:
+    if not is_enabled:
         yield None
         return
 

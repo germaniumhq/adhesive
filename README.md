@@ -522,13 +522,16 @@ shown if the task failed. The redirection can be disabled.
 
 ### parallel_processing
 
-default value is `process`, environment var: `ADHESIVE_PARALLEL_PROCESSING`.
+default value is `thread`, environment var: `ADHESIVE_PARALLEL_PROCESSING`.
 
-Implicitly tasks are scaled using multiple processes in order to alleviate the
-global interpreter lock (GIL) from python. This value can be set to `thread`.
+Implicitly tasks are scaled using multiple threads in order to alleviate waits
+for I/O. This is useful for times when remote ssh workspaces are defined in the
+lanes, so the same connection can be reused for multiple tasks.
 
-This is useful for times when remote ssh workspaces are defined in the lanes,
-so the same connection can be reused for multiple tasks.
+This value can be set to `process`, in case the tasks are CPU intensive. This
+has the drawback of recreating the connections on workspaces' each task
+execution.
+
 
 ## Hacking Adhesive
 

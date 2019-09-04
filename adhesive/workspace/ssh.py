@@ -10,13 +10,13 @@ from .Workspace import Workspace
 
 class SshWorkspace(Workspace):
     def __init__(self,
-                 workspace: Workspace,
+                 token_id: str,
                  ssh: str,
                  pwd: Optional[str] = None,
                  **kw: Dict[str, Any]) -> None:
         super(SshWorkspace, self).__init__(
-            execution=workspace.execution,
-            pwd=workspace.pwd if not pwd else pwd)
+            token_id=token_id,
+            pwd='/' if not pwd else pwd)
 
         # cloning needs to create new connections since tasks are executed
         # in different processes
@@ -90,8 +90,8 @@ class SshWorkspace(Workspace):
 
     def clone(self):
         result = SshWorkspace(self,
-                              self.parent_workspace,
-                              self._ssh,
+                              token_id=self.token_id,
+                              ssh=self._ssh,
                               pwd=self.pwd,
                               **self._kw)
 
@@ -111,7 +111,7 @@ def inside(workspace: Workspace,
     w = None
 
     try:
-        w = SshWorkspace(workspace=workspace,
+        w = SshWorkspace(token_id=workspace.token_id,
                          ssh=ssh,
                          **kw)
         yield w
