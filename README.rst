@@ -542,6 +542,14 @@ Marks if the logging should use ANSI colors in the terminal. Implicitly
 this is ``true``, but if log parsing is needed, it can make sense to
 have it false.
 
+pool\_size
+~~~~~~~~~~
+
+default value is empty, environment var: ``ADHESIVE_POOL_SIZE``.
+
+Sets the number of workers that adhesive will use. Defaults to the
+number of CPUs if unset.
+
 stdout
 ~~~~~~
 
