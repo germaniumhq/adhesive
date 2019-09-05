@@ -1,46 +1,10 @@
 from typing import Optional, Dict
-from adhesive import config
-
-
-def deep_clone(o):
-    if isinstance(o, set):
-        result = set()
-
-        for it in o:
-            result.add(deep_clone(it))
-
-        return result
-
-    if isinstance(o, list):
-        result = list()
-
-        for it in o:
-            result.append(deep_clone(it))
-
-        return result
-
-    if isinstance(o, dict):
-        result = dict()
-
-        for k, v in o.items():
-            result[k] = deep_clone(v)
-
-        return result
-
-    return o
-
-
-def noop_clone(o):
-    return o
-
-
-clone = noop_clone if config.current.parallel_processing == "process" else deep_clone
 
 
 def merge_dict(dict1: Dict, dict2: Dict) -> None:
     for k2, v2 in dict2.items():
         if k2 not in dict1:
-            dict1[k2] = clone(v2)
+            dict1[k2] = v2
             continue
 
         if v2 is None:
@@ -50,14 +14,14 @@ def merge_dict(dict1: Dict, dict2: Dict) -> None:
         v1 = dict1[k2]
 
         if isinstance(v1, set) and isinstance(v2, set):
-            v1.update(clone(v2))
+            v1.update(v2)
             continue
 
         if isinstance(v1, dict) and isinstance(v2, dict):
-            merge_dict(v1, clone(v2))
+            merge_dict(v1, v2)
             continue
 
-        dict1[k2] = clone(v2)
+        dict1[k2] = v2
 
 
 class ExecutionData:
