@@ -38,32 +38,38 @@ def gbs_build_lin64(context) -> None:
               gbs_prefix=f"/_gbs/lin64/")
 
 
-@adhesive.task("GBS Test: lin64")
+@adhesive.task('GBS Test .*?\: lin64')
 def gbs_test_lin64(context) -> None:
     image_name = gbs.test(
         workspace=context.workspace,
         platform="python:3.7",
         gbs_prefix=f"/_gbs/lin64/")
 
+    command = f"ADHESIVE_PARALLEL_PROCESSING={context.data.parallel_processing} " \
+              f"ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test " \
+              f"python -m unittest"
+
     with docker.inside(context.workspace, image_name) as w:
-        w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
-              "python -m unittest")
+        w.run(command)
 
 
-@adhesive.task("GBS Integration Test: lin64")
+@adhesive.task('GBS Integration Test .*?\: lin64')
 def gbs_integration_test_lin64(context) -> None:
     image_name = gbs.test(
         workspace=context.workspace,
         platform="python:3.7",
         gbs_prefix=f"/_gbs/lin64/")
 
+    command = f"ADHESIVE_PARALLEL_PROCESSING={context.data.parallel_processing} " \
+              f"ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test " \
+              f"behave -t ~@manualtest"
+
     with docker.inside(
             context.workspace,
             image_name,
             "-v /var/run/docker.sock:/var/run/docker.sock:rw") as w:
         w.run("python --version")
-        w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
-              "behave -t ~@manualtest")
+        w.run(command)
 
 
 @adhesive.task("GBS: win32")
