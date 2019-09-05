@@ -89,6 +89,19 @@ def is_predecessor(event, e) -> bool:
     return True
 
 
+def deep_copy_event(e: T) -> T:
+    return copy.deepcopy(e)
+
+
+def noop_copy_event(e: T) -> T:
+    return e
+
+
+copy_event = noop_copy_event \
+        if config.current.parallel_processing == "process" else \
+        deep_copy_event
+
+
 class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -410,7 +423,7 @@ class WorkflowExecutor:
             if isinstance(event.task, Task):
                 future = WorkflowExecutor.pool.submit(
                     self.tasks_impl[event.task.id].invoke,
-                    copy.deepcopy(event))
+                    copy_event(event))
                 self.futures[future] = event.token_id
                 event.future = future
                 return
@@ -418,7 +431,7 @@ class WorkflowExecutor:
             if isinstance(event.task, ScriptTask):
                 future = WorkflowExecutor.pool.submit(
                     call_script_task,
-                    copy.deepcopy(event))
+                    copy_event(event))
                 self.futures[future] = event.token_id
                 event.future = future
                 return
