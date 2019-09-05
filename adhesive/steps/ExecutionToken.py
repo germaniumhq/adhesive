@@ -31,6 +31,7 @@ class ExecutionToken:
         self.execution_id = execution_id
         self.token_id = token_id
         self.workspace = workspace
+        self.task_name: Optional[str] = None
 
         self.loop: Optional[WorkflowLoop] = None
 
@@ -39,13 +40,13 @@ class ExecutionToken:
     def update_title(self) -> None:
         # FIXME: this breaks the encapsulation of the data
         try:
-            self.task_name = self.task.name.format(**{
-                "context": self,
-                "execution_id": self.execution_id,
-                "token_id": self.token_id,
-                "data": self.data,
-                "loop": self.loop,
-            })
+            # FIXME: this is a lot like eval_edge from the gateway controller
+            evaldata = dict(self.data._data)
+            context = self.as_mapping()
+
+            evaldata.update(context)
+
+            self.task_name = self.task.name.format(**evaldata)
         except Exception as e:
             self.task_name = self.task.name
 

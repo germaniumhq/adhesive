@@ -31,6 +31,10 @@ class WorkflowLoop:
         return self._key
 
     @property
+    def item(self) -> Any:
+        return self._value
+
+    @property
     def value(self) -> Any:
         return self._value
 

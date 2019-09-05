@@ -80,7 +80,7 @@ def eval_edge(condition: str,
               event: ActiveEvent) -> Any:
     evaldata = dict(event.context.data._data)
     context = event.context.as_mapping()
-    
+
     evaldata.update(context)
 
     return eval(condition, globals(), evaldata)

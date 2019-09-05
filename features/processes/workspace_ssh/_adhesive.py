@@ -2,16 +2,25 @@ import adhesive
 from adhesive.workspace import ssh
 
 import unittest
+import random
 
 test = unittest.TestCase()
 assert_equal = unittest.TestCase().assertEqual
 
 
+def find_open_port() -> int:
+    # FIXME: this should find an open port on the host, not inside the
+    # docker container. a bit trickier to do.
+    port = random.randint(10000,60000)
+    return port
+
+
 @adhesive.task('Start\ SSH\ Server')
 def start_ssh_server(context):
     print("starting server...")
+    context.data.ssh_port = find_open_port()
     container_id = context.workspace.run(
-        "docker run -d -p 8022:22 rastasheep/ubuntu-sshd:18.04",
+        f"docker run -d -p {context.data.ssh_port}:22 rastasheep/ubuntu-sshd:18.04",
         capture_stdout=True)
 
     context.data.container_id = container_id
@@ -23,7 +32,7 @@ def run_ls_inside_server(context):
             "172.17.0.1",
             username="root",
             password="root",
-            port=8022) as w:
+            port=context.data.ssh_port) as w:
         # since the path doesn't exists on the ssh server, we first change it
         # here
         w.pwd = "/tmp"
@@ -61,7 +70,7 @@ def test_write_file_api(context):
             "172.17.0.1",
             username="root",
             password="root",
-            port=8022) as w:
+            port=context.data.ssh_port) as w:
         w.pwd = "/tmp"
         w.write_file("test.txt", "yay")
         test_content = w.run("cat test.txt", capture_stdout=True)
