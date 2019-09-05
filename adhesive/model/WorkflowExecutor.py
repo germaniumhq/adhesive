@@ -8,6 +8,7 @@ import uuid
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple
 
+from adhesive import logredirect
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
@@ -139,6 +140,7 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow)
 
+        # FIXME: it's getting pretty crowded
         token_id = str(uuid.uuid4())
         workflow_context = ExecutionToken(
             task=workflow,
@@ -163,18 +165,22 @@ class WorkflowExecutor:
         def raise_exception(_ev):
             log_path = get_folder(_ev.data['failed_event'])
 
-            if not config.current.stdout:
+            if logredirect.is_enabled:
                 stdout_file = os.path.join(log_path, "stdout")
                 if os.path.isfile(stdout_file):
                     with open(stdout_file) as f:
                         print(white("STDOUT:", bold=True))
                         print(white(f.read()))
+                else:
+                    print(white("STDOUT:", bold=True) + white(" not found"))
 
                 stderr_file = os.path.join(log_path, "stderr")
                 if os.path.isfile(stderr_file):
                     with open(stderr_file) as f:
                         print(red("STDERR:", bold=True))
                         print(red(f.read()), file=sys.stderr)
+                else:
+                    print(red("STDERR:", bold=True) + red(" not found"))
 
             print(red("Exception:", bold=True))
             print(red(_ev.data['error']), file=sys.stderr)

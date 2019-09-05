@@ -47,7 +47,7 @@ def gbs_test_lin64(context) -> None:
 
     with docker.inside(context.workspace, image_name) as w:
         w.run("ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test "
-              "python -m pytest -n 4")
+              "python -m unittest")
 
 
 @adhesive.task("GBS Integration Test: lin64")

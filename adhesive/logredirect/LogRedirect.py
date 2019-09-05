@@ -10,21 +10,37 @@ from adhesive import config
 
 from threading import local
 
-
+# Save the original stdout/stderr. This is what we initialize our
+# threadlocal, so python stays always happy on every thread.
 python_stdout = sys.stdout
 python_stderr = sys.stderr
 
 
+# We inherit the threading.local in order to have initialization
+# of the variables happening in the new constructor.
 class StdThreadLocal(local):
+    """
+    A thread local object that implicitly initializes the newly
+    created threads with data. In this case it's the orginal
+    python stdout and stderr objects.
+    """
     def __init__(self):
-        self.__dict__["stdout"] = python_stdout
-        self.__dict__["stderr"] = python_stderr
+        super(StdThreadLocal, self).__init__()
 
+        self.stdout = python_stdout
+        self.stderr = python_stderr
 
+# The data that's shared by the threads in order to have the
+# output redirected per each individual task.
 data = StdThreadLocal()
 
 
 class ObjectForward:
+    """
+    Redirects everything to the object stored in the threadlocal.
+    This is use to replace the sys.stdout/stderr, and to have
+    an object that delegates to the threadlocal instance.
+    """
     def __init__(self, key: str) -> None:
         self.__key = key
 
@@ -46,8 +62,12 @@ sys.stderr = ObjectForward("stderr")
 
 
 class StreamLogger:
+    """
+    Redirects a stream output to a file. Since we can't intercept
+    subprocess redirections - because they use the native file handle
+    to write the output, we redirect all the content to the file.
+    """
     def __init__(self,
-                 old_stdout: Any,
                  name: str,
                  folder: str) -> None:
         if not folder:
@@ -56,16 +76,14 @@ class StreamLogger:
         self.log = open(
             os.path.join(folder, name),
             "at")
-        self.old_stdout = old_stdout
 
         self._closed = False
 
     @staticmethod
-    def from_event(old_stdout: Any,
-                   event: Union[ActiveEvent, str],
+    def from_event(event: Union[ActiveEvent, str],
                    name: str) -> 'StreamLogger':
         folder = ensure_folder(event)
-        return StreamLogger(old_stdout, name, folder)
+        return StreamLogger(name, folder)
 
     @property
     def fileno(self):
@@ -78,9 +96,6 @@ class StreamLogger:
         if self._closed:
             raise Exception("already closed")
 
-            self.old_stdout.write(message)
-            self.old_stdout.flush()
-
         self.log.write(message)
         self.log.flush()
 
@@ -91,6 +106,9 @@ class StreamLogger:
 
 @contextmanager
 def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
+    """
+    Redirects the stdout/stderr to a file.
+    """
     if not is_enabled:
         yield None
         return
@@ -105,11 +123,13 @@ def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
     new_stderr = None
 
     try:
-        new_stdout = StreamLogger.from_event(old_stdout, event, "stdout")
-        new_stderr = StreamLogger.from_event(old_stderr, event, "stderr")
+        new_stdout = StreamLogger.from_event(event, "stdout")
+        new_stderr = StreamLogger.from_event(event, "stderr")
 
         data.stdout = new_stdout
         data.stderr = new_stderr
+
+        old_stdout.write(f"{new_stdout.fileno()}")
 
         yield None
     finally:
