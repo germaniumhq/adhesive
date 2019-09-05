@@ -2,10 +2,47 @@ import os
 import sys
 from contextlib import contextmanager
 from typing import Union, Any
+from threading import local
 
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.logredirect import is_enabled
 from adhesive import config
+
+from threading import local
+
+
+python_stdout = sys.stdout
+python_stderr = sys.stderr
+
+
+class StdThreadLocal(local):
+    def __init__(self):
+        self.__dict__["stdout"] = python_stdout
+        self.__dict__["stderr"] = python_stderr
+
+
+data = StdThreadLocal()
+
+
+class ObjectForward:
+    def __init__(self, key: str) -> None:
+        self.__key = key
+
+    def __getattribute__(self, key: str) -> Any:
+        if key == "_ObjectForward__key":
+            return super(ObjectForward, self).__getattribute__(key)
+
+        return data.__getattribute__(self.__key).__getattribute__(key)
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        if key == "_ObjectForward__key":
+            return super(ObjectForward, self).__setattr__(key, value)
+
+        data[self.__key].__setattr__(key, value)
+
+
+sys.stdout = ObjectForward("stdout")
+sys.stderr = ObjectForward("stderr")
 
 
 class StreamLogger:
@@ -58,20 +95,20 @@ def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
         yield None
         return
 
-    old_stdout = sys.stdout
-    old_stderr = sys.stderr
+    old_stdout = data.stdout
+    old_stderr = data.stderr
 
     try:
         new_stdout = StreamLogger.from_event(old_stdout, event, "stdout")
         new_stderr = StreamLogger.from_event(old_stderr, event, "stderr")
 
-        sys.stdout = new_stdout
-        sys.stderr = new_stderr
+        data.stdout = new_stdout
+        data.stderr = new_stderr
 
         yield None
     finally:
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
+        data.stdout = old_stdout
+        data.stderr = old_stderr
 
         new_stdout.close()
         new_stderr.close()

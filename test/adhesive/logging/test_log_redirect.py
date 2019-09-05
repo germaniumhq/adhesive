@@ -9,25 +9,22 @@ from adhesive.storage.ensure_folder import ensure_folder
 
 class TestLogRedirection(unittest.TestCase):
     def test_file_redirection_logs(self):
-        if not logredirect.is_enabled:
-            return
-
-        original_stdout = sys.stdout
-        original_stderr = sys.stderr
+        original_stdout_fileno = sys.stdout.fileno()
+        original_stderr_fileno = sys.stderr.fileno()
 
         target_folder = ensure_folder(str(uuid.uuid4()))
 
-        self.assertEqual(original_stdout, sys.stdout)
-        self.assertEqual(original_stderr, sys.stderr)
+        self.assertEqual(original_stdout_fileno, sys.stdout.fileno())
+        self.assertEqual(original_stderr_fileno, sys.stderr.fileno())
         print("x")
 
         with redirect_stdout(target_folder):
-            self.assertNotEqual(original_stdout, sys.stdout)
-            self.assertNotEqual(original_stderr, sys.stderr)
+            self.assertNotEqual(original_stdout_fileno, sys.stdout.fileno())
+            self.assertNotEqual(original_stderr_fileno, sys.stderr.fileno())
             print("y")
 
-        self.assertEqual(original_stdout, sys.stdout)
-        self.assertEqual(original_stderr, sys.stderr)
+        self.assertEqual(original_stdout_fileno, sys.stdout.fileno())
+        self.assertEqual(original_stderr_fileno, sys.stderr.fileno())
         print("z")
 
 
