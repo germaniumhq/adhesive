@@ -126,6 +126,7 @@ class WorkflowExecutor:
         self.ut_provider = ut_provider
 
         self.config = WorkflowExecutorConfig(wait_tasks=wait_tasks)
+        self.execution_id = str(uuid.uuid4())
 
     async def execute(self,
                       initial_data=None) -> ExecutionData:
@@ -141,14 +142,21 @@ class WorkflowExecutor:
         token_id = str(uuid.uuid4())
         workflow_context = ExecutionToken(
             task=workflow,
+            execution_id=self.execution_id,
             token_id=token_id,
             data=initial_data,
-            # FIXME: create the workspace with a factory
-            workspace=LocalLinuxWorkspace(token_id=token_id, pwd=None)
+            workspace=LocalLinuxWorkspace(
+                execution_id=self.execution_id,
+                token_id=token_id,
+                pwd=None)
         )
 
-        fake_event = ActiveEvent(parent_id=None, context=workflow_context)
-        fake_event.token_id = None
+        fake_event = ActiveEvent(
+            execution_id=self.execution_id,
+            parent_id=None,
+            context=workflow_context
+        )
+        fake_event.token_id = None  # FIXME: why
 
         root_event = self.clone_event(fake_event, workflow)
 

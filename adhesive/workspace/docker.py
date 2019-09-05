@@ -17,6 +17,7 @@ class DockerWorkspace(Workspace):
                  pwd: Optional[str] = None,
                  container_id: Optional[str] = None) -> None:
         super(DockerWorkspace, self).__init__(
+            execution_id=workspace.execution_id,
             token_id=workspace.token_id,
             pwd=pwd if pwd else workspace.pwd)
 

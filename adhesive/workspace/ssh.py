@@ -10,11 +10,13 @@ from .Workspace import Workspace
 
 class SshWorkspace(Workspace):
     def __init__(self,
+                 execution_id: str,
                  token_id: str,
                  ssh: str,
                  pwd: Optional[str] = None,
                  **kw: Dict[str, Any]) -> None:
         super(SshWorkspace, self).__init__(
+            execution_id=execution_id,
             token_id=token_id,
             pwd='/' if not pwd else pwd)
 
@@ -90,6 +92,7 @@ class SshWorkspace(Workspace):
 
     def clone(self):
         result = SshWorkspace(self,
+                              execution_id=self.execution_id,
                               token_id=self.token_id,
                               ssh=self._ssh,
                               pwd=self.pwd,
@@ -111,7 +114,8 @@ def inside(workspace: Workspace,
     w = None
 
     try:
-        w = SshWorkspace(token_id=workspace.token_id,
+        w = SshWorkspace(execution_id=workspace.execution_id,
+                         token_id=workspace.token_id,
                          ssh=ssh,
                          **kw)
         yield w

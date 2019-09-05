@@ -91,12 +91,14 @@ class StreamLogger:
 
 @contextmanager
 def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
-    if not is_enabled:
-        yield None
-        return
-
     old_stdout = data.stdout
     old_stderr = data.stderr
+
+    # if we don't define them here, and we get an exception in the
+    # stream redirect initialization, we can't check if they were
+    # not initialized, and don't attempt to close() the streams.
+    new_stdout = None
+    new_stderr = None
 
     try:
         new_stdout = StreamLogger.from_event(old_stdout, event, "stdout")
@@ -110,8 +112,12 @@ def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
         data.stdout = old_stdout
         data.stderr = old_stderr
 
-        new_stdout.close()
-        new_stderr.close()
+        if new_stdout:
+            new_stdout.close()
+
+        if new_stderr:
+            new_stderr.close()
 
 
 from adhesive.storage.ensure_folder import ensure_folder
+

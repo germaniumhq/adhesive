@@ -17,12 +17,18 @@ class ExecutionToken:
     A workflow context it's an execution token that's being passed around.
     """
     def __init__(self,
+                 *args,
                  task: 'BaseTask',
+                 execution_id: str,
                  token_id: str,
                  data: Optional[Dict],
                  workspace: Workspace) -> None:
+        if args:
+            raise Exception("You need to pass the parameters by name")
+
         self.task = task
         self.data = ExecutionData(data)
+        self.execution_id = execution_id
         self.token_id = token_id
         self.workspace = workspace
 
@@ -35,6 +41,7 @@ class ExecutionToken:
         try:
             self.task_name = self.task.name.format(**{
                 "context": self,
+                "execution_id": self.execution_id,
                 "token_id": self.token_id,
                 "data": self.data,
                 "loop": self.loop,
@@ -44,10 +51,11 @@ class ExecutionToken:
 
     def clone(self, task: 'BaseTask') -> 'ExecutionToken':
         result = ExecutionToken(
-            task,
-            self.token_id,
-            self.data.as_dict(),
-            self.workspace.clone(),
+            task=task,
+            execution_id=self.execution_id,
+            token_id=self.token_id,   # FIXME: probably a new token?
+            data=self.data.as_dict(),
+            workspace=self.workspace.clone(),
         )
 
         return result
@@ -59,6 +67,7 @@ class ExecutionToken:
         """
         return {
             "task": self.task,
+            "execution_id": self.execution_id,
             "token_id": self.token_id,
             "data": self.data,
             "loop": self.loop,

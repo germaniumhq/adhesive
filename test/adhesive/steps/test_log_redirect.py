@@ -18,9 +18,6 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
         """
         Load a workflow with a gateway and test it..
         """
-        if not logredirect.is_enabled:
-            return
-
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/redirect-logs.bpmn")
 
         workflow_executor = WorkflowExecutor(adhesive.process)
@@ -37,6 +34,9 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
 
         log_path = glob.glob(path_to_glob)
 
+        if not log_path:
+            raise Exception(f"Unable to match any file for glob {path_to_glob}")
+
         with open(log_path[0], "rt") as f:
             self.assertEqual(f.read(), "sh: echo hello world && "
                                        "echo bad world >&2 && "
@@ -52,3 +52,8 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
 
         with open(log_path[0], "rt") as f:
             self.assertEqual(f.read(), "bad world\n")
+
+
+if __name__ == '__main__':
+    unittest.main()
+

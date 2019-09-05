@@ -12,8 +12,10 @@ class Workspace(ABC):
     execution.
     """
     def __init__(self,
+                 execution_id: str,
                  token_id: str,
                  pwd: str) -> None:
+        self.execution_id = execution_id
         self.token_id = token_id
         self.pwd = pwd
 

@@ -18,9 +18,11 @@ class LocalLinuxWorkspace(Workspace):
     execution.
     """
     def __init__(self,
+                 execution_id: str,
                  token_id: str,
                  pwd: Optional[str]=None) -> None:
         super(LocalLinuxWorkspace, self).__init__(
+            execution_id=execution_id,
             token_id=token_id,
             pwd=pwd,
         )
@@ -99,6 +101,7 @@ class LocalLinuxWorkspace(Workspace):
 
     def clone(self) -> 'LocalLinuxWorkspace':
         return LocalLinuxWorkspace(
+            execution_id=self.execution_id,
             token_id=self.token_id,
             pwd=self.pwd,
         )
