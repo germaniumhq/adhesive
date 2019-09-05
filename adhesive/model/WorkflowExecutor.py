@@ -1,7 +1,10 @@
 import logging
+import copy
 import os
 import sys
 import traceback
+import uuid
+
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple
 
@@ -90,9 +93,10 @@ class WorkflowExecutor:
     """
     An executor of AdhesiveProcesses.
     """
-    pool = concurrent.futures.ProcessPoolExecutor() \
+    pool_size = int(config.current.pool_size) if config.current.pool_size else None
+    pool = concurrent.futures.ProcessPoolExecutor(max_workers=pool_size) \
             if config.current.parallel_processing == "process" \
-            else concurrent.futures.ThreadPoolExecutor()
+            else concurrent.futures.ThreadPoolExecutor(max_workers=pool_size)
 
     def __init__(self,
                  process: AdhesiveProcess,
@@ -121,16 +125,17 @@ class WorkflowExecutor:
 
         self._validate_tasks(workflow)
 
+        token_id = str(uuid.uuid4())
         workflow_context = ExecutionToken(
             task=workflow,
-            execution=new_execution,
+            token_id=token_id,
             data=initial_data,
             # FIXME: create the workspace with a factory
-            workspace=LocalLinuxWorkspace(execution=new_execution, pwd=None, id="default")
+            workspace=LocalLinuxWorkspace(token_id=token_id, pwd=None)
         )
 
         fake_event = ActiveEvent(parent_id=None, context=workflow_context)
-        fake_event.id = None
+        fake_event.token_id = None
 
         root_event = self.clone_event(fake_event, workflow)
 
@@ -185,14 +190,14 @@ class WorkflowExecutor:
                 timeout=5)
 
             for future in done_futures:
-                event_id = self.futures[future]
+                token_id = self.futures[future]
                 try:
                     context = future.result()
-                    self.events[event_id].state.route(context)
+                    self.events[token_id].state.route(context)
                 except Exception as e:
-                    self.events[event_id].state.error({
+                    self.events[token_id].state.error({
                         "error": traceback.format_exc(),
-                        "failed_event": self.events[event_id]
+                        "failed_event": self.events[token_id]
                     })
 
     def register_event(self,
@@ -205,35 +210,35 @@ class WorkflowExecutor:
         :param event:
         :return:
         """
-        if event.id in self.events:
-            raise Exception(f"Event {event.id} is already registered as "
-                            f"{self.events[event.id]}. Got a new request to register "
+        if event.token_id in self.events:
+            raise Exception(f"Event {event.token_id} is already registered as "
+                            f"{self.events[event.token_id]}. Got a new request to register "
                             f"it as {event}.")
 
         LOG.debug(f"Register {event}")
 
-        self.events[event.id] = event
+        self.events[event.token_id] = event
 
         return event
 
     def unregister_event(self,
                          event: ActiveEvent) -> None:
-        if event.id not in self.events:
+        if event.token_id not in self.events:
             raise Exception(f"{event} not found in events. Either the event was "
                             f"already terminated, either it was not registered.")
 
         LOG.debug(f"Unregister {event}")
 
-        del self.events[event.id]
+        del self.events[event.token_id]
 
     def get_parent(self,
-                   event_id: str) -> ActiveEvent:
+                   token_id: str) -> ActiveEvent:
         """
         Find the parent of an event by looking at the event ids.
-        :param event_id:
+        :param token_id:
         :return:
         """
-        event = self.events[event_id]
+        event = self.events[token_id]
         parent = self.events[event.parent_id]
 
         return parent
@@ -399,28 +404,28 @@ class WorkflowExecutor:
             if isinstance(event.task, Workflow):
                 for start_task in event.task.start_tasks.values():
                     # this automatically registers our events for execution
-                    self.clone_event(event, start_task, parent_id=event.id)
+                    self.clone_event(event, start_task, parent_id=event.token_id)
                 return
 
             if isinstance(event.task, Task):
                 future = WorkflowExecutor.pool.submit(
                     self.tasks_impl[event.task.id].invoke,
-                    event)
-                self.futures[future] = event.id
+                    copy.deepcopy(event))
+                self.futures[future] = event.token_id
                 event.future = future
                 return
 
             if isinstance(event.task, ScriptTask):
                 future = WorkflowExecutor.pool.submit(
                     call_script_task,
-                    event)
-                self.futures[future] = event.id
+                    copy.deepcopy(event))
+                self.futures[future] = event.token_id
                 event.future = future
                 return
 
             if isinstance(event.task, UserTask):
                 future = Future()
-                self.futures[future] = event.id
+                self.futures[future] = event.token_id
                 event.future = future
 
                 self.ut_provider.register_event(self, event)
@@ -438,7 +443,7 @@ class WorkflowExecutor:
 
         def error_parent_task(event, e):
             if event.parent_id in self.events:
-                parent_event = self.get_parent(event.id)
+                parent_event = self.get_parent(event.token_id)
 
                 # we move the parent into error
                 parent_event.state.error(e)
@@ -480,7 +485,7 @@ class WorkflowExecutor:
             except Exception as e:
                 error_parent_task(event, {
                     "error": traceback.format_exc(),
-                    "failed_event": self.events[event.id]
+                    "failed_event": self.events[event.token_id]
                 })
 
         def done_check(_event) -> None:

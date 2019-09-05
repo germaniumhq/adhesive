@@ -73,7 +73,7 @@ class ActiveEvent:
     def __repr__(self) -> str:
         # the task.token_id should be the same as the self.token_id
         return f"ActiveEvent({self.token_id}, {self.state.state}): " \
-               f"({self.task.token_id}):{self.context.task_name}"
+               f"({self.task.id}):{self.context.task_name}"
 
 
 from adhesive.steps.ExecutionToken import ExecutionToken
