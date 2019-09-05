@@ -91,6 +91,10 @@ class StreamLogger:
 
 @contextmanager
 def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
+    if not is_enabled:
+        yield None
+        return
+
     old_stdout = data.stdout
     old_stderr = data.stderr
 
