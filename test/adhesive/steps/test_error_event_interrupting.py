@@ -3,8 +3,8 @@ import unittest
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
-from .test_tasks import adhesive, _async
-from .check_equals import assert_equal_steps
+from test.adhesive.steps.test_tasks import adhesive, _async
+from test.adhesive.steps.check_equals import assert_equal_steps
 
 
 class TestErrorEventInterrupting(unittest.TestCase):
@@ -19,6 +19,8 @@ class TestErrorEventInterrupting(unittest.TestCase):
 
         workflow_executor = WorkflowExecutor(adhesive.process)
         data = _async(workflow_executor.execute())
+
+        print(data._error)
 
         assert_equal_steps({
             "Cleanup Broken Tasks": 1,

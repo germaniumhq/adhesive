@@ -2,14 +2,72 @@ import os
 import sys
 from contextlib import contextmanager
 from typing import Union, Any
+from threading import local
 
 from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.logredirect import is_enabled
 from adhesive import config
+
+from threading import local
+
+# Save the original stdout/stderr. This is what we initialize our
+# threadlocal, so python stays always happy on every thread.
+python_stdout = sys.stdout
+python_stderr = sys.stderr
+
+
+# We inherit the threading.local in order to have initialization
+# of the variables happening in the new constructor.
+class StdThreadLocal(local):
+    """
+    A thread local object that implicitly initializes the newly
+    created threads with data. In this case it's the orginal
+    python stdout and stderr objects.
+    """
+    def __init__(self):
+        super(StdThreadLocal, self).__init__()
+
+        self.stdout = python_stdout
+        self.stderr = python_stderr
+
+# The data that's shared by the threads in order to have the
+# output redirected per each individual task.
+data = StdThreadLocal()
+
+
+class ObjectForward:
+    """
+    Redirects everything to the object stored in the threadlocal.
+    This is use to replace the sys.stdout/stderr, and to have
+    an object that delegates to the threadlocal instance.
+    """
+    def __init__(self, key: str) -> None:
+        self.__key = key
+
+    def __getattribute__(self, key: str) -> Any:
+        if key == "_ObjectForward__key":
+            return super(ObjectForward, self).__getattribute__(key)
+
+        return data.__getattribute__(self.__key).__getattribute__(key)
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        if key == "_ObjectForward__key":
+            return super(ObjectForward, self).__setattr__(key, value)
+
+        data[self.__key].__setattr__(key, value)
+
+
+sys.stdout = ObjectForward("stdout")
+sys.stderr = ObjectForward("stderr")
 
 
 class StreamLogger:
+    """
+    Redirects a stream output to a file. Since we can't intercept
+    subprocess redirections - because they use the native file handle
+    to write the output, we redirect all the content to the file.
+    """
     def __init__(self,
-                 old_stdout: Any,
                  name: str,
                  folder: str) -> None:
         if not folder:
@@ -18,16 +76,14 @@ class StreamLogger:
         self.log = open(
             os.path.join(folder, name),
             "at")
-        self.old_stdout = old_stdout
 
         self._closed = False
 
     @staticmethod
-    def from_event(old_stdout: Any,
-                   event: Union[ActiveEvent, str],
+    def from_event(event: Union[ActiveEvent, str],
                    name: str) -> 'StreamLogger':
         folder = ensure_folder(event)
-        return StreamLogger(old_stdout, name, folder)
+        return StreamLogger(name, folder)
 
     @property
     def fileno(self):
@@ -40,9 +96,6 @@ class StreamLogger:
         if self._closed:
             raise Exception("already closed")
 
-            self.old_stdout.write(message)
-            self.old_stdout.flush()
-
         self.log.write(message)
         self.log.flush()
 
@@ -53,27 +106,42 @@ class StreamLogger:
 
 @contextmanager
 def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
-    if config.current.stdout:
+    """
+    Redirects the stdout/stderr to a file.
+    """
+    if not is_enabled:
         yield None
         return
 
-    old_stdout = sys.stdout
-    old_stderr = sys.stderr
+    old_stdout = data.stdout
+    old_stderr = data.stderr
+
+    # if we don't define them here, and we get an exception in the
+    # stream redirect initialization, we can't check if they were
+    # not initialized, and don't attempt to close() the streams.
+    new_stdout = None
+    new_stderr = None
 
     try:
-        new_stdout = StreamLogger.from_event(old_stdout, event, "stdout")
-        new_stderr = StreamLogger.from_event(old_stderr, event, "stderr")
+        new_stdout = StreamLogger.from_event(event, "stdout")
+        new_stderr = StreamLogger.from_event(event, "stderr")
 
-        sys.stdout = new_stdout
-        sys.stderr = new_stderr
+        data.stdout = new_stdout
+        data.stderr = new_stderr
+
+        old_stdout.write(f"{new_stdout.fileno()}")
 
         yield None
     finally:
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
+        data.stdout = old_stdout
+        data.stderr = old_stderr
 
-        new_stdout.close()
-        new_stderr.close()
+        if new_stdout:
+            new_stdout.close()
+
+        if new_stderr:
+            new_stderr.close()
 
 
 from adhesive.storage.ensure_folder import ensure_folder
+

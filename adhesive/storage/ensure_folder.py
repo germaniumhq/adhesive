@@ -21,19 +21,18 @@ def get_folder(item: Union['Workspace', 'ActiveEvent', str]) -> str:
     if isinstance(item, Workspace):
         return os.path.join(
             config.current.temp_folder,
-            item.execution.id,
-            "workspaces",
-            item.id)
+            item.execution_id,
+            "workspace")
 
     if isinstance(item, ActiveEvent):
         # FIXME: implement test when programmatic workflow builder is available
         return os.path.join(
             config.current.temp_folder,
-            item.context.execution.id,
+            item.execution_id,
             "logs",
             _get_loop(item),
             item.task.id,
-            item.id)
+            item.token_id)
 
     if isinstance(item, str):
         return os.path.join(config.current.temp_folder, item)

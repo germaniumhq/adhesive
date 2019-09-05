@@ -1,6 +1,5 @@
 import os
 import shlex
-import subprocess
 import sys
 from contextlib import contextmanager
 from typing import Optional, Union, Iterable
@@ -15,10 +14,14 @@ class DockerWorkspace(Workspace):
                  workspace: Workspace,
                  image_name: str,
                  extra_docker_params: str = "",
+                 pwd: Optional[str] = None,
                  container_id: Optional[str] = None) -> None:
         super(DockerWorkspace, self).__init__(
-            execution=workspace.execution,
-            pwd=workspace.pwd)
+            execution_id=workspace.execution_id,
+            token_id=workspace.token_id,
+            pwd=pwd if pwd else workspace.pwd)
+
+        self.parent_workspace = workspace
 
         if container_id is not None:
             self.container_id = container_id
@@ -51,29 +54,9 @@ class DockerWorkspace(Workspace):
     def run(self,
             command: str,
             capture_stdout: bool = False) -> Union[str, None]:
-        if capture_stdout:
-            return subprocess.check_output(
-                [
-                    "docker", "exec",
-                    "-w", self.pwd,
-                    self.container_id,
-                    "/bin/sh", "-c",
-                    command
-                ],
-                cwd=self.pwd,
-                stderr=sys.stderr).decode('utf-8')
-
-        subprocess.check_call(
-            [
-                "docker", "exec",
-                          "-w", self.pwd,
-                          self.container_id,
-                          "/bin/sh", "-c",
-                          command
-            ],
-            cwd=self.pwd,
-            stdout=sys.stdout,
-            stderr=sys.stderr)
+        return self.parent_workspace.run(
+                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} /bin/sh -c {shlex.quote(command)}",
+                capture_stdout=capture_stdout)
 
     def write_file(
             self,
@@ -115,36 +98,26 @@ class DockerWorkspace(Workspace):
     def copy_to_agent(self,
                       from_path: str,
                       to_path: str):
-        subprocess.check_call(
-            [
-                "docker", "cp", from_path, f"{self.container_id}:{to_path}"
-            ],
-            stdout=sys.stdout,
-            stderr=sys.stderr)
+        self.parent_workspace.run(
+                f"docker cp {from_path} {self.container_id}:{to_path}")
 
     def copy_from_agent(self,
                         from_path: str,
                         to_path: str):
-        subprocess.check_call(
-            [
-                "docker", "cp", f"{self.container_id}:{from_path}", to_path
-            ],
-            stdout=sys.stdout,
-            stderr=sys.stderr)
+        self.parent_workspace.run(
+                f"docker cp {self.container_id}:{from_path} {to_path}")
 
     def clone(self) -> 'DockerWorkspace':
+        # FIXME: should return the parent workspace somehow
         return DockerWorkspace(
-            workspace=self,
-            image_name=self.image
+            workspace=self.parent_workspace,
+            image_name=self.image,
+            pwd=self.pwd
         )
 
     def _destroy(self):
-        subprocess.check_call(
-            [
-                "docker", "rm", "-f", self.container_id
-            ],
-            stdout=sys.stdout,
-            stderr=sys.stderr)
+        self.parent_workspace.run(
+                f"docker rm -f {self.container_id}")
 
 
 @contextmanager

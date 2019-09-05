@@ -18,9 +18,9 @@ def _async(fn):
     'Build Germanium Image',
     'Prepare Firefox',
     # exclusive gateway
-    'Exclusive\ Task\ Branch',
-    'Populate\ task\ data',
-    'Exclusive\ default\ branch',
+    'Exclusive Task Branch',
+    'Populate task data',
+    'Exclusive default branch',
     'Cleanup Broken Tasks',
     'Error Was Caught',
     'Error Was Not Caught',
@@ -50,7 +50,7 @@ def throw_some_exception(context) -> None:
     raise Exception("broken")
 
 
-@adhesive.task('Increment\ X\ by\ 1')
+@adhesive.task('Increment X by 1')
 def increment_x_by_1(context):
     add_current_task(context)
 
@@ -64,7 +64,7 @@ def increment_x_by_1(context):
 @adhesive.task('Store current execution id')
 def store_current_execution_id(context: ExecutionToken):
     add_current_task(context)
-    context.data.execution_id = context.execution.id
+    context.data.execution_id = context.execution_id
 
 
 @adhesive.task('^sh:(.*)$')

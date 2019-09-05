@@ -11,9 +11,11 @@ class ActiveEvent:
     in case there are multiple executions going down.
     """
     def __init__(self,
+                 execution_id: str,
                  parent_id: Optional['str'],
                  context: 'ExecutionToken') -> None:
-        self.id: str = str(uuid.uuid4())
+        self.execution_id = execution_id
+        self.token_id: str = str(uuid.uuid4())
         self.parent_id = parent_id
 
         if not isinstance(context, ExecutionToken):
@@ -27,7 +29,8 @@ class ActiveEvent:
 
     def __getstate__(self):
         return {
-            "id": self.id,
+            "execution_id": self.execution_id,
+            "token_id": self.token_id,
             "parent_id": self.parent_id,
             "_task": self._task,
             "context": self.context
@@ -39,7 +42,12 @@ class ActiveEvent:
         """
         Clone the current event for another task id target.
         """
-        result = ActiveEvent(parent_id, self.context.clone(task))
+        result = ActiveEvent(
+            execution_id=self.execution_id,
+            parent_id=parent_id,  # FIXME: why, if this is a clone
+            context=self.context.clone(task)
+        )
+        result.context.token_id = result.token_id
 
         # if we are exiting the current loop, we need to switch to the
         # parent loop.
@@ -71,7 +79,8 @@ class ActiveEvent:
         self._task = task
 
     def __repr__(self) -> str:
-        return f"ActiveEvent({self.id}, {self.state.state}): " \
+        # the task.token_id should be the same as the self.texecutionoken_id
+        return f"ActiveEvent({self.token_id}, {self.state.state}): " \
                f"({self.task.id}):{self.context.task_name}"
 
 

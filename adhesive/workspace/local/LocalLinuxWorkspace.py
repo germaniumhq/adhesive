@@ -6,7 +6,6 @@ import sys
 from distutils.dir_util import copy_tree
 from typing import Optional, Union
 
-from adhesive.steps.Execution import Execution
 from adhesive.workspace.Workspace import Workspace
 
 LOG = logging.getLogger(__name__)
@@ -19,13 +18,13 @@ class LocalLinuxWorkspace(Workspace):
     execution.
     """
     def __init__(self,
-                 execution: Execution,
-                 pwd: Optional[str]=None,
-                 id: Optional[str] = None) -> None:
+                 execution_id: str,
+                 token_id: str,
+                 pwd: Optional[str]=None) -> None:
         super(LocalLinuxWorkspace, self).__init__(
-            execution=execution,
+            execution_id=execution_id,
+            token_id=token_id,
             pwd=pwd,
-            id=id,
         )
 
         if not pwd:
@@ -81,7 +80,12 @@ class LocalLinuxWorkspace(Workspace):
 
     def mkdir(self, path: str=None) -> None:
         LOG.debug("mkdir {}", path)
-        os.mkdir(os.path.join(self.pwd, path))
+        full_path = os.path.join(self.pwd, path)
+
+        if os.path.isdir(full_path):
+            return
+
+        os.mkdir(full_path)
 
     def copy_to_agent(self,
                       from_path: str,
@@ -97,10 +101,11 @@ class LocalLinuxWorkspace(Workspace):
 
     def clone(self) -> 'LocalLinuxWorkspace':
         return LocalLinuxWorkspace(
-            execution=self.execution,
+            execution_id=self.execution_id,
+            token_id=self.token_id,
             pwd=self.pwd,
-            id=self.id,
         )
 
 
 from adhesive.storage.ensure_folder import ensure_folder
+

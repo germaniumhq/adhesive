@@ -3,6 +3,7 @@ import os
 import unittest
 
 from adhesive.model.WorkflowExecutor import WorkflowExecutor
+from adhesive import logredirect
 from adhesive.process_read.bpmn import read_bpmn_file
 import adhesive.config as config
 from test.adhesive.steps.check_equals import assert_equal_steps
@@ -33,6 +34,9 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
 
         log_path = glob.glob(path_to_glob)
 
+        if not log_path:
+            raise Exception(f"Unable to match any file for glob {path_to_glob}")
+
         with open(log_path[0], "rt") as f:
             self.assertEqual(f.read(), "sh: echo hello world && "
                                        "echo bad world >&2 && "
@@ -48,3 +52,8 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
 
         with open(log_path[0], "rt") as f:
             self.assertEqual(f.read(), "bad world\n")
+
+
+if __name__ == '__main__':
+    unittest.main()
+

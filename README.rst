@@ -542,6 +542,14 @@ Marks if the logging should use ANSI colors in the terminal. Implicitly
 this is ``true``, but if log parsing is needed, it can make sense to
 have it false.
 
+pool\_size
+~~~~~~~~~~
+
+default value is empty, environment var: ``ADHESIVE_POOL_SIZE``.
+
+Sets the number of workers that adhesive will use. Defaults to the
+number of CPUs if unset.
+
 stdout
 ~~~~~~
 
@@ -549,6 +557,21 @@ default value is empty, environment var: ``ADHESIVE_STDOUT``.
 
 Implicitly for each task, the log is redirected in a different file, and
 only shown if the task failed. The redirection can be disabled.
+
+parallel\_processing
+~~~~~~~~~~~~~~~~~~~~
+
+default value is ``thread``, environment var:
+``ADHESIVE_PARALLEL_PROCESSING``.
+
+Implicitly tasks are scaled using multiple threads in order to alleviate
+waits for I/O. This is useful for times when remote ssh workspaces are
+defined in the lanes, so the same connection can be reused for multiple
+tasks.
+
+This value can be set to ``process``, in case the tasks are CPU
+intensive. This has the drawback of recreating the connections on
+workspaces' each task execution.
 
 Hacking Adhesive
 ----------------

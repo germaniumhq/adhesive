@@ -31,6 +31,10 @@ class WorkflowLoop:
         return self._key
 
     @property
+    def item(self) -> Any:
+        return self._value
+
+    @property
     def value(self) -> Any:
         return self._value
 
@@ -43,11 +47,16 @@ class WorkflowLoop:
                     clone_event: Callable[['ActiveEvent', 'BaseTask'], 'ActiveEvent']) -> int:
         expression = event.task.loop.loop_expression
 
-        result = eval(expression, {}, {
-            "context": event.context,
-            "data": event.context.data,
-            "loop": event.context.loop,
-        })
+        # FIXME: I'm not sure why this is here and not in the model, since it has nothing
+        # to do with what's being exposed.
+
+        # FIXME: this is a lot like eval_edge from the gateway controller
+        evaldata = dict(event.context.data._data)
+        context = event.context.as_mapping()
+
+        evaldata.update(context)
+
+        result = eval(expression, {}, evaldata)
 
         if not result:
             return 0
