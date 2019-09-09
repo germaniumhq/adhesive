@@ -2,7 +2,7 @@ from typing import Optional, List, Iterable, Union, Tuple, Any
 
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.UiBuilderApi import UiBuilderApi
-from adhesive.model.WorkflowExecutor import WorkflowExecutor
+from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.model.UserTaskProvider import UserTaskProvider
 from adhesive.steps.ExecutionToken import ExecutionToken
 
@@ -54,7 +54,7 @@ class UIBuilder(UiBuilderApi):
 
 class TestUserTaskProvider(UserTaskProvider):
     def register_event(self,
-                       executor: WorkflowExecutor,
+                       executor: ProcessExecutor,
                        event: ActiveEvent) -> None:
         try:
             ui = UIBuilder(event.context)

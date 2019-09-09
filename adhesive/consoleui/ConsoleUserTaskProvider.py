@@ -6,7 +6,7 @@ import npyscreen as npyscreen
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.UiBuilderApi import UiBuilderApi
 from adhesive.model.UserTaskProvider import UserTaskProvider
-from adhesive.model.WorkflowExecutor import WorkflowExecutor
+from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
 from adhesive.steps.ExecutionData import ExecutionData
 
@@ -298,7 +298,7 @@ class ConsoleUserTaskProvider(UserTaskProvider):
         super(ConsoleUserTaskProvider, self).__init__()
 
     def register_event(self,
-                       executor: WorkflowExecutor,
+                       executor: ProcessExecutor,
                        event: ActiveEvent) -> None:
 
         ui = UIBuilder(event)

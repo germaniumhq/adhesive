@@ -133,6 +133,8 @@ def process_node(result: Workflow,
         process_parallel_gateway(result, node)
     elif "complexGateway" == node_name:
         process_complex_gateway(result, node)
+    elif "laneSet" == node_name:
+        process_lane_set(result, node)
     elif node_name not in ignored_elements:
         raise Exception(f"Unknown process node: {node.tag}")
 
@@ -280,6 +282,11 @@ def process_complex_gateway(w: Workflow, xml_node) -> None:
     task = ComplexGateway(xml_node.get("id"), node_name)
 
     w.add_task(task)
+
+
+def process_lane_set(w: Workflow, xml_node) -> None:
+    """ Read the lane set and create lane objects for the lane """
+    raise Exception("not implemented")
 
 
 def process_potential_loop(task: BaseTask, xml_node) -> BaseTask:

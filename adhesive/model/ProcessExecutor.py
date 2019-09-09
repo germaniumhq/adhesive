@@ -17,7 +17,7 @@ from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
-from adhesive.model.WorkflowExecutorConfig import WorkflowExecutorConfig
+from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from adhesive.steps.ExecutionToken import ExecutionToken
@@ -103,7 +103,7 @@ copy_event = noop_copy_event \
         deep_copy_event
 
 
-class WorkflowExecutor:
+class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
     """
@@ -126,7 +126,7 @@ class WorkflowExecutor:
         self.futures: Dict[Any, str] = dict()
         self.ut_provider = ut_provider
 
-        self.config = WorkflowExecutorConfig(wait_tasks=wait_tasks)
+        self.config = ProcessExecutorConfig(wait_tasks=wait_tasks)
         self.execution_id = str(uuid.uuid4())
 
     async def execute(self,
@@ -435,7 +435,7 @@ class WorkflowExecutor:
                 return
 
             if isinstance(event.task, Task):
-                future = WorkflowExecutor.pool.submit(
+                future = ProcessExecutor.pool.submit(
                     self.tasks_impl[event.task.id].invoke,
                     copy_event(event))
                 self.futures[future] = event.token_id
@@ -443,7 +443,7 @@ class WorkflowExecutor:
                 return
 
             if isinstance(event.task, ScriptTask):
-                future = WorkflowExecutor.pool.submit(
+                future = ProcessExecutor.pool.submit(
                     call_script_task,
                     copy_event(event))
                 self.futures[future] = event.token_id

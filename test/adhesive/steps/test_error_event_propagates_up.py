@@ -1,6 +1,6 @@
 import unittest
 
-from adhesive.model.WorkflowExecutor import WorkflowExecutor
+from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
 from .test_tasks import adhesive, _async
@@ -17,7 +17,7 @@ class TestErrorEventPropagatesUp(unittest.TestCase):
         """
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/error-event-subprocess-propagates-up.bpmn")
 
-        workflow_executor = WorkflowExecutor(adhesive.process)
+        workflow_executor = ProcessExecutor(adhesive.process)
         data = _async(workflow_executor.execute())
 
         assert_equal_steps({

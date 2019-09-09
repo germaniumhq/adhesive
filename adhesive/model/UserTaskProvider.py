@@ -1,5 +1,5 @@
 from adhesive.model.ActiveEvent import ActiveEvent
-from adhesive.model.WorkflowExecutor import WorkflowExecutor
+from adhesive.model.ProcessExecutor import ProcessExecutor
 
 import abc
 
@@ -7,6 +7,6 @@ import abc
 class UserTaskProvider:
     @abc.abstractmethod
     def register_event(self,
-                       executor: WorkflowExecutor,
+                       executor: ProcessExecutor,
                        event: ActiveEvent) -> None:
         pass

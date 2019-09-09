@@ -4,6 +4,7 @@ import asyncio
 import uuid
 
 from adhesive.steps.ExecutionToken import ExecutionToken
+from adhesive.workspace import Workspace
 
 
 def _async(fn):
@@ -95,6 +96,12 @@ def read_data_from_user(context, ui) -> None:
 @adhesive.gateway('Complex Gateway')
 def complex_gateway(context) -> None:
     context.data.selected_browsers = {'firefox'}
+
+
+@adhesive.lane("docker")
+def docker_lane(context) -> Workspace:
+    with docker.inside(context.workspace, "maven") as w:
+        yield w
 
 
 def add_current_task(context):

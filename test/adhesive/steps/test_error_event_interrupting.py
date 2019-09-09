@@ -1,6 +1,6 @@
 import unittest
 
-from adhesive.model.WorkflowExecutor import WorkflowExecutor
+from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
 from test.adhesive.steps.test_tasks import adhesive, _async
@@ -17,7 +17,7 @@ class TestErrorEventInterrupting(unittest.TestCase):
         """
         adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/error-event-interrupting.bpmn")
 
-        workflow_executor = WorkflowExecutor(adhesive.process)
+        workflow_executor = ProcessExecutor(adhesive.process)
         data = _async(workflow_executor.execute())
 
         print(data._error)
