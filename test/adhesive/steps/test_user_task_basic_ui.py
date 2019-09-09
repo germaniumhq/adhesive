@@ -8,11 +8,11 @@ from test.adhesive.steps.test_tasks import adhesive, _async
 
 class TestUserTaskBasic(unittest.TestCase):
     def test_link_back_execution(self):
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/user-task.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/user-task.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process,
+        process_executor = ProcessExecutor(adhesive.process,
                                              ut_provider=TestUserTaskProvider())
-        data = _async(workflow_executor.execute())
+        data = _async(process_executor.execute())
 
         self.assertEqual("OK", data.OK)
         self.assertEqual("Cancel", data.Cancel)
@@ -21,7 +21,7 @@ class TestUserTaskBasic(unittest.TestCase):
         self.assertEqual("password", data.password)
         self.assertEqual(('integration',), data.run_tests)
 
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

@@ -9,16 +9,16 @@ from .check_equals import assert_equal_steps
 
 class TestProcessExecutorSimple(unittest.TestCase):
     """
-    Test if the workflow executor can execute simple workflows.
+    Test if the process executor can execute simple processs.
     """
     def test_simple_execution(self):
         """
-        Load a simple workflow and execute it.
+        Load a simple process and execute it.
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/adhesive.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Ensure Docker Tooling": 1,
@@ -26,19 +26,19 @@ class TestProcessExecutorSimple(unittest.TestCase):
             "Test Chrome": 1,
             "Test Firefox": 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
     """
-    Test if the workflow executor can execute simple without waiting tasks.
+    Test if the process executor can execute simple without waiting tasks.
     """
     def test_simple_execution_non_wait(self):
         """
-        Load a simple workflow and execute it.
+        Load a simple process and execute it.
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/adhesive.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Ensure Docker Tooling": 1,
@@ -46,7 +46,7 @@ class TestProcessExecutorSimple(unittest.TestCase):
             "Test Chrome": 1,
             "Test Firefox": 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

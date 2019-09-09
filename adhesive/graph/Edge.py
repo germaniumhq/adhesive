@@ -3,7 +3,7 @@ from typing import Optional
 
 class Edge():
     """
-    An edge between two tasks in a Workflow.
+    An edge between two tasks in a Process.
     """
     def __init__(self,
                  _id: str,

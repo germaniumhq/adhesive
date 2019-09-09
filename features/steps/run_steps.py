@@ -8,8 +8,8 @@ use_step_matcher("re")
 test = unittest.TestCase()
 
 
-@step("I run adhesive on a workflow with a UT with a single checkbox")
-def run_the_workflow_with_a_single_checkbox(contxt):
+@step("I run adhesive on a process with a UT with a single checkbox")
+def run_the_process_with_a_single_checkbox(contxt):
     subprocess.check_call(["python", "-m", "adhesive.mainapp"],
                           cwd=f"{os.getcwd()}/features/processes/single_checkbox")
 
@@ -21,7 +21,7 @@ def run_without_ui_redirection(contxt, folder):
 
 
 @step("I run adhesive on '(.*?)'")
-def run_an_adhesive_workflow(context, folder):
+def run_an_adhesive_process(context, folder):
     pipes = subprocess.Popen(
         ["adhesive"],
         cwd=f"{os.getcwd()}/features/{folder}",

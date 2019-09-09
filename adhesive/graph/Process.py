@@ -9,14 +9,14 @@ from .EndEvent import EndEvent
 from .Edge import Edge
 
 
-class Workflow(BaseTask):
+class Process(BaseTask):
     """
-    A workflow for the build
+    A process for the build
     """
     def __init__(self,
                  id: str,
                  name: str = '[root process]') -> None:
-        super(Workflow, self).__init__(id, name)
+        super(Process, self).__init__(id, name)
 
         self._start_events: Dict[str, StartEvent] = dict()
         self._tasks: Dict[str, BaseTask] = dict()
@@ -46,7 +46,7 @@ class Workflow(BaseTask):
         self._tasks[task.id] = task
         self._graph.add_node(task.id)
 
-        task.workflow_id = self.id
+        task.process_id = self.id
 
     def add_boundary_event(self, boundary_event: BoundaryEvent) -> None:
         self.add_task(boundary_event)

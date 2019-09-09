@@ -8,18 +8,18 @@ from .test_tasks import adhesive, _async
 
 class TestUserTaskJoin(unittest.TestCase):
     def test_link_back_execution(self):
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/user-task-join.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/user-task-join.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process,
+        process_executor = ProcessExecutor(adhesive.process,
                                              ut_provider=TestUserTaskProvider())
-        data = _async(workflow_executor.execute())
+        data = _async(process_executor.execute())
 
         self.assertEqual("OK", data.OK)
         self.assertEqual("Cancel", data.Cancel)
         self.assertEqual("branch", data.branch)
         self.assertEqual("12.0", data.version)
 
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
-from adhesive.graph.Workflow import Workflow
+from adhesive.graph.Process import Process
 
 TAG_NAME = re.compile(r'^(\{.+\})?(.+)$')
 SPACE = re.compile(r"\s+", re.IGNORECASE)
@@ -36,8 +36,8 @@ boundary_ignored_elements = set(ignored_elements)
 boundary_ignored_elements.add("outputSet")
 
 
-def read_bpmn_file(file_name: str) -> Workflow:
-    """ Read a BPMN file as a build workflow. """
+def read_bpmn_file(file_name: str) -> Process:
+    """ Read a BPMN file as a build process. """
     root_node = ElementTree.parse(file_name).getroot()
     process = find_node(root_node, 'process')
 
@@ -67,11 +67,11 @@ def get_boolean(parent_node, attr: str, default_value: bool) -> bool:
     raise Exception(f"Not a boolean value for {attr}: {attr_value}")
 
 
-def read_process(process) -> Workflow:
+def read_process(process) -> Process:
     node_ns, node_name = parse_tag(process)
 
     if "process" == node_name:
-        result = Workflow(process.get('id'))
+        result = Process(process.get('id'))
     elif "subProcess" == node_name:
         result = SubProcess(process.get('id'), normalize_name(process.get('name')))
     else:
@@ -105,7 +105,7 @@ def read_process(process) -> Workflow:
     return result
 
 
-def process_node(result: Workflow,
+def process_node(result: Process,
                  node) -> None:
     node_ns, node_name = parse_tag(node)
 
@@ -139,7 +139,7 @@ def process_node(result: Workflow,
         raise Exception(f"Unknown process node: {node.tag}")
 
 
-def process_boundary_event(result: Workflow,
+def process_boundary_event(result: Process,
                            node) -> None:
     node_ns, node_name = parse_tag(node)
 
@@ -147,7 +147,7 @@ def process_boundary_event(result: Workflow,
         process_boundary_task(result, node)
 
 
-def process_edge(result: Workflow,
+def process_edge(result: Process,
                  node) -> None:
     node_ns, node_name = parse_tag(node)
 
@@ -155,28 +155,28 @@ def process_edge(result: Workflow,
         process_node_sequence_flow(result, node)
 
 
-def process_node_task(w: Workflow, xml_node) -> None:
-    """ Create a Task element from the workflow """
+def process_node_task(p: Process, xml_node) -> None:
+    """ Create a Task element from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = Task(xml_node.get("id"), node_name)
 
     task = process_potential_loop(task, xml_node)
 
-    w.add_task(task)
+    p.add_task(task)
 
 
-def process_user_task(w: Workflow, xml_node) -> None:
-    """ Create a HumanTask element from the workflow """
+def process_user_task(p: Process, xml_node) -> None:
+    """ Create a HumanTask element from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = UserTask(xml_node.get("id"), node_name)
 
     task = process_potential_loop(task, xml_node)
 
-    w.add_task(task)
+    p.add_task(task)
 
 
-def process_script_task(w: Workflow, xml_node) -> None:
-    """ Create a ScriptTask element from the workflow """
+def process_script_task(p: Process, xml_node) -> None:
+    """ Create a ScriptTask element from the process """
     node_name = normalize_name(xml_node.get("name"))
     language = xml_node.get("scriptFormat")
 
@@ -190,11 +190,11 @@ def process_script_task(w: Workflow, xml_node) -> None:
 
     task = process_potential_loop(task, xml_node)
 
-    w.add_task(task)
+    p.add_task(task)
 
 
-def process_boundary_task(w: Workflow, xml_node) -> None:
-    """ Create a Task element from the workflow """
+def process_boundary_task(p: Process, xml_node) -> None:
+    """ Create a Task element from the process """
     for node in list(xml_node):
         node_ns, node_name = parse_tag(node)
 
@@ -218,7 +218,7 @@ def process_boundary_task(w: Workflow, xml_node) -> None:
             boundary_task.parallel_multiple = get_boolean(
                 xml_node, "parallelMultiple", True)
 
-            w.add_boundary_event(boundary_task)
+            p.add_boundary_event(boundary_task)
 
             return
 
@@ -226,28 +226,28 @@ def process_boundary_task(w: Workflow, xml_node) -> None:
                     "<errorEventDefinition> is supported.")
 
 
-def process_node_start_event(w: Workflow, xml_node) -> None:
-    """ Create a start event from the workflow """
+def process_node_start_event(p: Process, xml_node) -> None:
+    """ Create a start event from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = StartEvent(xml_node.get("id"), node_name)
-    w.add_start_event(task)
+    p.add_start_event(task)
 
 
-def process_node_end_event(w: Workflow, xml_node) -> None:
-    """ Create an end event from the workflow """
+def process_node_end_event(p: Process, xml_node) -> None:
+    """ Create an end event from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = EndEvent(xml_node.get("id"), node_name)
-    w.add_end_event(task)
+    p.add_end_event(task)
 
 
-def process_node_sub_process(w: Workflow, xml_node) -> None:
+def process_node_sub_process(p: Process, xml_node) -> None:
     task = read_process(xml_node)
     task = process_potential_loop(task, xml_node)
 
-    w.add_task(task)
+    p.add_task(task)
 
 
-def process_node_sequence_flow(w: Workflow, xml_node) -> None:
+def process_node_sequence_flow(p: Process, xml_node) -> None:
     edge = Edge(xml_node.get("id"),
                 xml_node.get("sourceRef"),
                 xml_node.get("targetRef"))
@@ -257,34 +257,34 @@ def process_node_sequence_flow(w: Workflow, xml_node) -> None:
     if condition_node is not None:
         edge.condition = condition_node.text
 
-    w.add_edge(edge)
+    p.add_edge(edge)
 
 
-def process_exclusive_gateway(w: Workflow, xml_node) -> None:
-    """ Create an exclusive gateway from the workflow """
+def process_exclusive_gateway(p: Process, xml_node) -> None:
+    """ Create an exclusive gateway from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = ExclusiveGateway(xml_node.get("id"), node_name)
 
-    w.add_task(task)
+    p.add_task(task)
 
 
-def process_parallel_gateway(w: Workflow, xml_node) -> None:
-    """ Create an end event from the workflow """
+def process_parallel_gateway(p: Process, xml_node) -> None:
+    """ Create an end event from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = ParallelGateway(xml_node.get("id"), node_name)
 
-    w.add_task(task)
+    p.add_task(task)
 
 
-def process_complex_gateway(w: Workflow, xml_node) -> None:
-    """ Create an end event from the workflow """
+def process_complex_gateway(p: Process, xml_node) -> None:
+    """ Create an end event from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = ComplexGateway(xml_node.get("id"), node_name)
 
-    w.add_task(task)
+    p.add_task(task)
 
 
-def process_lane_set(w: Workflow, xml_node) -> None:
+def process_lane_set(p: Process, xml_node) -> None:
     """ Read the lane set and create lane objects for the lane """
     raise Exception("not implemented")
 

@@ -9,22 +9,22 @@ from .check_equals import assert_equal_steps
 
 class TestErrorEventPropagatesUp(unittest.TestCase):
     """
-    Test if the workflow executor can process parallel gateways.
+    Test if the process executor can process parallel gateways.
     """
     def test_error_propagates_up(self):
         """
-        Load a workflow with a gateway and test it..
+        Load a process with a gateway and test it..
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/error-event-subprocess-propagates-up.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/error-event-subprocess-propagates-up.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Error Was Caught": 1,
         }, data.steps)
 
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

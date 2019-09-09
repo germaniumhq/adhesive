@@ -9,37 +9,37 @@ from test.adhesive.steps.check_equals import assert_equal_steps
 
 class TestLane(unittest.TestCase):
     """
-    Test if the workflow executor can process parallel gateways.
+    Test if the process executor can process parallel gateways.
     """
     def test_lane(self):
         """
-        Load a workflow with a gateway and test it..
+        Load a process with a gateway and test it..
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/lane.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/lane.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Test Chrome": 3,
             "Build Germanium Image": 3,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
     def test_lane_non_wait(self):
         """
-        Load a workflow with a gateway and test it..
+        Load a process with a gateway and test it..
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/lane.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/lane.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Test Chrome": 3,
             "Build Germanium Image": 3,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

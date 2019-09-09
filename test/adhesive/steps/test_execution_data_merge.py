@@ -4,7 +4,7 @@ from adhesive.steps.ExecutionData import ExecutionData
 
 
 class TestExecutionData(unittest.TestCase):
-    def test_workflow_data_merge(self):
+    def test_process_data_merge(self):
         data1 = ExecutionData({
             "list": [1, 2, 3],
             "set": {"a", "b"},

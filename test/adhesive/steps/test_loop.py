@@ -10,10 +10,10 @@ from test.adhesive.steps.test_tasks import adhesive, _async
 class TestLoopExecution(unittest.TestCase):
 
     def test_loop_execution(self):
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/loop.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/loop.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             'Build Germanium Image on mac': 1,
@@ -32,13 +32,13 @@ class TestLoopExecution(unittest.TestCase):
             'Test Browser edge on mac': 1,
             'Test Browser ie on mac': 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
     def test_loop_execution_no_wait(self):
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/loop.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/loop.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             'Build Germanium Image on mac': 1,
@@ -57,7 +57,7 @@ class TestLoopExecution(unittest.TestCase):
             'Test Browser edge on mac': 1,
             'Test Browser ie on mac': 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

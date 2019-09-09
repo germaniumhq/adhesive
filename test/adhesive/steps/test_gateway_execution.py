@@ -9,37 +9,37 @@ from .test_tasks import adhesive, _async
 
 class TestGatewayExecution(unittest.TestCase):
     """
-    Test if the workflow executor can process exclusive gateways.
+    Test if the process executor can process exclusive gateways.
     """
     def test_exclusive_gateway(self):
         """
-        Load a workflow with a gateway and test it..
+        Load a process with a gateway and test it..
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/exclusive_gateway.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/exclusive_gateway.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Populate task data": 1,
             "Exclusive default branch": 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
     def test_exclusive_gateway_non_wait(self):
         """
-        Load a workflow with a gateway and test it..
+        Load a process with a gateway and test it..
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/exclusive_gateway.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/exclusive_gateway.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Populate task data": 1,
             "Exclusive default branch": 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 if __name__ == '__main__':
     unittest.main()

@@ -8,21 +8,21 @@ from .test_tasks import adhesive, _async
 
 class TestProcessExecutorBasic(unittest.TestCase):
     """
-    Run a workflow with a single task.
+    Run a process with a single task.
     """
     def test_basic_execution(self):
         """
-        Load a simple workflow and execute it.
+        Load a simple process and execute it.
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/adhesive-basic.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/adhesive-basic.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Build Germanium Image": 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

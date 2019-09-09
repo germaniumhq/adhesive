@@ -12,22 +12,22 @@ from test.adhesive.steps.test_tasks import adhesive, _async
 
 class TestIfLogRedirectionWorks(unittest.TestCase):
     """
-    Test if the workflow executor can process inclusive gateways.
+    Test if the process executor can process inclusive gateways.
     """
     def test_log_redirection(self):
         """
-        Load a workflow with a gateway and test it..
+        Load a process with a gateway and test it..
         """
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/redirect-logs.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/redirect-logs.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "sh: echo hello world && echo bad world >&2 && echo good world": 1,
             "Store current execution id": 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
         adhesive_temp_folder = config.current.temp_folder
         path_to_glob = os.path.join(adhesive_temp_folder, data.execution_id, "logs", "_4", "*", "stdout")

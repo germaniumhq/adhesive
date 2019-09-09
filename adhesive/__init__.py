@@ -58,7 +58,7 @@ def lane(*lane_names:str,
 def build(ut_provider: Optional['UserTaskProvider'] = None,
           wait_tasks: bool = True,
           initial_data = None):
-    process.workflow = generate_from_tasks(process)
+    process.process = generate_from_tasks(process)
 
     return _build(ut_provider=ut_provider,
                   wait_tasks=wait_tasks,
@@ -67,7 +67,7 @@ def build(ut_provider: Optional['UserTaskProvider'] = None,
 
 def process_start():
     builder = generate_from_calls(_build)
-    process.workflow = builder.workflow
+    process.process = builder.process
 
     return builder
 
@@ -77,7 +77,7 @@ def bpmn_build(file_name: str,
                wait_tasks: bool = True,
                initial_data = None):
     """ Start a build that was described in BPMN """
-    process.workflow = read_bpmn_file(file_name)
+    process.process = read_bpmn_file(file_name)
 
     return _build(ut_provider=ut_provider,
                   wait_tasks=wait_tasks,
@@ -105,7 +105,7 @@ def bpmn_build_async(
         wait_tasks: bool = True,
         initial_data = None):
     """ Start a build that was described in BPMN """
-    process.workflow = read_bpmn_file(file_name)
+    process.process = read_bpmn_file(file_name)
 
     if ut_provider is None:
         ut_provider = ConsoleUserTaskProvider()

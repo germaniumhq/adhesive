@@ -14,7 +14,7 @@ class ExecutionToken:
       (ie linux, windows, docker)
     - loop information (when in a loop).
 
-    A workflow context it's an execution token that's being passed around.
+    A process context it's an execution token that's being passed around.
     """
     def __init__(self,
                  *args,
@@ -33,7 +33,7 @@ class ExecutionToken:
         self.workspace = workspace
         self.task_name: Optional[str] = None
 
-        self.loop: Optional[WorkflowLoop] = None
+        self.loop: Optional[ProcessLoop] = None
 
         self.update_title()
 
@@ -77,4 +77,4 @@ class ExecutionToken:
         }
 
 
-from adhesive.steps.WorkflowLoop import WorkflowLoop
+from adhesive.steps.ProcessLoop import ProcessLoop

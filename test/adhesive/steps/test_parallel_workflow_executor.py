@@ -15,7 +15,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         :return:
         """
         ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
         _async(ProcessExecutor(adhesive.process).execute())
@@ -34,7 +34,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         :return:
         """
         ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
 
         start_time = time.time() * 1000.0
         _async(ProcessExecutor(adhesive.process).execute())
@@ -53,7 +53,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         :return:
         """
         ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
         _async(ProcessExecutor(adhesive.process, wait_tasks=False).execute())
@@ -72,7 +72,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         :return:
         """
         ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
 
         start_time = time.time() * 1000.0
         _async(ProcessExecutor(adhesive.process, wait_tasks=False).execute())

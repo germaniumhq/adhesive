@@ -22,7 +22,7 @@ from adhesive.model.generate_methods import display_unmatched_tasks
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 from adhesive.steps.ExecutionToken import ExecutionToken
 from adhesive.steps.ExecutionData import ExecutionData
-from adhesive.steps.WorkflowLoop import WorkflowLoop, parent_loop_id, loop_id
+from adhesive.steps.ProcessLoop import ProcessLoop, parent_loop_id, loop_id
 from adhesive.steps.call_script_task import call_script_task
 from adhesive.storage.ensure_folder import get_folder
 from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
@@ -35,7 +35,7 @@ from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.BaseTask import BaseTask
-from adhesive.graph.Workflow import Workflow
+from adhesive.graph.Process import Process
 from adhesive.steps.AdhesiveTask import AdhesiveTask
 from adhesive import config
 
@@ -121,7 +121,7 @@ class ProcessExecutor:
 
         # A dictionary of events that are currently active. This is just to find out
         # the parent of an event, since from it we can also derive the current parent
-        # workflow.
+        # process.
         self.events: Dict[str, ActiveEvent] = dict()
         self.futures: Dict[Any, str] = dict()
         self.ut_provider = ut_provider
@@ -135,15 +135,15 @@ class ProcessExecutor:
         Execute the current events. This will ensure new events are
         generating for forked events.
         """
-        workflow = self.process.workflow
+        process = self.process.process
         self.tasks_impl: Dict[str, AdhesiveTask] = dict()
 
-        self._validate_tasks(workflow)
+        self._validate_tasks(process)
 
         # FIXME: it's getting pretty crowded
         token_id = str(uuid.uuid4())
-        workflow_context = ExecutionToken(
-            task=workflow,
+        process_context = ExecutionToken(
+            task=process,
             execution_id=self.execution_id,
             token_id=token_id,
             data=initial_data,
@@ -156,11 +156,11 @@ class ProcessExecutor:
         fake_event = ActiveEvent(
             execution_id=self.execution_id,
             parent_id=None,
-            context=workflow_context
+            context=process_context
         )
         fake_event.token_id = None  # FIXME: why
 
-        root_event = self.clone_event(fake_event, workflow)
+        root_event = self.clone_event(fake_event, process)
 
         def raise_exception(_ev):
             log_path = get_folder(_ev.data['failed_event'])
@@ -189,14 +189,14 @@ class ProcessExecutor:
 
         root_event.state.after_enter(ActiveEventState.ERROR, raise_exception)
 
-        await self.execute_workflow()
+        await self.execute_process()
 
         return root_event.context.data
 
-    async def execute_workflow(self) -> None:
+    async def execute_process(self) -> None:
         """
-        Process the events in a workflow until no more events are available.
-        For example an event is the start of the workflow. The events are
+        Process the events in a process until no more events are available.
+        For example an event is the start of the process. The events are
         then creating futures (i.e. actual stuff that's being processed)
         that in turn might generate new events.
         :return:
@@ -271,17 +271,17 @@ class ProcessExecutor:
         return parent
 
     def _validate_tasks(self,
-                        workflow: Workflow) -> None:
+                        process: Process) -> None:
         """
         Recursively traverse the graph, and print to the user if it needs to implement
         some tasks.
 
-        :param workflow:
+        :param process:
         :return:
         """
         unmatched_tasks: Set[BaseTask] = set()
 
-        for task_id, task in workflow.tasks.items():
+        for task_id, task in process.tasks.items():
             if isinstance(task, SubProcess):
                 self._validate_tasks(task)
                 continue
@@ -330,9 +330,9 @@ class ProcessExecutor:
         self.register_event(event)
 
         if parent_id is None:
-            workflow = self.process.workflow
+            process = self.process.process
         else:
-            workflow = self.events[parent_id].task
+            process = self.events[parent_id].task
 
         def process_event(_event) -> ActiveEventState:
             # if there is no processing needed, we skip to routing
@@ -352,7 +352,7 @@ class ProcessExecutor:
                     isinstance(event.task, ScriptTask) or
                     isinstance(event.task, UserTask) or
                     isinstance(event.task, Task) or
-                    isinstance(event.task, Workflow)
+                    isinstance(event.task, Process)
             ):
                 return event.state.wait_check()
 
@@ -398,7 +398,7 @@ class ProcessExecutor:
                 event.state.done()
 
             # if we have predecessors, we stay in waiting
-            if workflow.are_predecessors(event.task, potential_predecessors):
+            if process.are_predecessors(event.task, potential_predecessors):
                 return None
 
             if not other_waiting:
@@ -420,7 +420,7 @@ class ProcessExecutor:
             # loop context, if we're running in a nested loop.
             if event.task.loop and (not event.context.loop or event.context.loop.task != event.task):
                 # we start a loop by firing the loop events, and consume this event.
-                events_created = WorkflowLoop.create_loop(event, self.clone_event)
+                events_created = ProcessLoop.create_loop(event, self.clone_event)
                 if events_created == 0:
                     event.state.route(event.context)
                 else:
@@ -428,7 +428,7 @@ class ProcessExecutor:
 
                 return
 
-            if isinstance(event.task, Workflow):
+            if isinstance(event.task, Process):
                 for start_task in event.task.start_tasks.values():
                     # this automatically registers our events for execution
                     self.clone_event(event, start_task, parent_id=event.token_id)
@@ -502,10 +502,10 @@ class ProcessExecutor:
         def route_task(_event) -> None:
             try:
                 event.context = _event.data
-                outgoing_edges = GatewayController.compute_outgoing_edges(workflow, event)
+                outgoing_edges = GatewayController.compute_outgoing_edges(process, event)
 
                 for outgoing_edge in outgoing_edges:
-                    target_task = workflow.tasks[outgoing_edge.target_id]
+                    target_task = process.tasks[outgoing_edge.target_id]
                     self.clone_event(event, target_task)
 
                 event.state.done_check(outgoing_edges)
@@ -532,7 +532,7 @@ class ProcessExecutor:
                 if self_event.state.state in DONE_STATES:
                     continue
 
-                if self_event.task.workflow_id != workflow.id:
+                if self_event.task.process_id != process.id:
                     continue
 
                 event_count[self_event.task] = event_count.get(self_event.task, 0) + 1
@@ -544,14 +544,14 @@ class ProcessExecutor:
                 if event_count[waiting_event.task] > 1:
                     continue
 
-                if waiting_event.task.workflow_id != workflow.id:
+                if waiting_event.task.process_id != process.id:
                     continue
 
                 potential_predecessors = list(map(
                     lambda e: e.task,
                     filter(lambda e: is_predecessor(waiting_event, e), self.events.values())))
 
-                if not workflow.are_predecessors(waiting_event.task, potential_predecessors):
+                if not process.are_predecessors(waiting_event.task, potential_predecessors):
                     waiting_event.state.run()
 
             # check sub-process termination

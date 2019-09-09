@@ -1,10 +1,10 @@
 from adhesive import AdhesiveTask, AdhesiveUserTask
-from adhesive.graph.Workflow import Workflow
+from adhesive.graph.Process import Process
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.process_read.programmatic import generate_from_calls
 
 
-def generate_from_tasks(process: AdhesiveProcess) -> Workflow:
+def generate_from_tasks(process: AdhesiveProcess) -> Process:
     if not process.steps:
         raise Exception("No task was defined. You need to create "
                         "tasks with @adhesive.task or @adhesive.usertask .")
@@ -25,4 +25,4 @@ def generate_from_tasks(process: AdhesiveProcess) -> Workflow:
 
     builder.process_end()
 
-    return builder.workflow
+    return builder.process

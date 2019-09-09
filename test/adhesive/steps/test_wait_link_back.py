@@ -8,16 +8,16 @@ from .test_tasks import adhesive, _async
 
 class TestWaitLinkBack(unittest.TestCase):
     def test_link_back_execution(self):
-        adhesive.process.workflow = read_bpmn_file("test/adhesive/xml/link-back.bpmn")
+        adhesive.process.process = read_bpmn_file("test/adhesive/xml/link-back.bpmn")
 
-        workflow_executor = ProcessExecutor(adhesive.process)
-        data = _async(workflow_executor.execute())
+        process_executor = ProcessExecutor(adhesive.process)
+        data = _async(process_executor.execute())
 
         assert_equal_steps({
             "Increment X by 1": 5,
             "Build Germanium Image": 1,
         }, data.steps)
-        self.assertFalse(workflow_executor.events)
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':

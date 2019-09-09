@@ -25,7 +25,7 @@ def get_folder(item: Union['Workspace', 'ActiveEvent', str]) -> str:
             "workspace")
 
     if isinstance(item, ActiveEvent):
-        # FIXME: implement test when programmatic workflow builder is available
+        # FIXME: implement test when programmatic process builder is available
         return os.path.join(
             config.current.temp_folder,
             item.execution_id,

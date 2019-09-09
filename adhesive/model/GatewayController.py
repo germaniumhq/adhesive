@@ -4,7 +4,7 @@ from adhesive.graph.Edge import Edge
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Gateway import Gateway
 from adhesive.graph.BaseTask import BaseTask
-from adhesive.graph.Workflow import Workflow
+from adhesive.graph.Process import Process
 from adhesive.model.ActiveEvent import ActiveEvent
 
 from adhesive.steps.ExecutionData import ExecutionData
@@ -12,27 +12,27 @@ from adhesive.steps.ExecutionData import ExecutionData
 
 class GatewayController:
     @staticmethod
-    def compute_outgoing_edges(workflow, event) -> List[Edge]:
+    def compute_outgoing_edges(process, event) -> List[Edge]:
         if isinstance(event.task, ExclusiveGateway):
             gateway = cast(Gateway, event.task)
             outgoing_edges = GatewayController.route_single_output(
-                workflow, gateway, event)
+                process, gateway, event)
         else:
             outgoing_edges = GatewayController.route_all_outputs(
-                workflow, event.task, event)
+                process, event.task, event)
 
         return outgoing_edges
 
     @staticmethod
     def route_single_output(
-            workflow: Workflow,
+            process: Process,
             gateway: Gateway,
             event: ActiveEvent) -> List[Edge]:
 
         default_edge = None
         result_edge = None
 
-        edges = workflow.get_outgoing_edges(gateway.id)
+        edges = process.get_outgoing_edges(gateway.id)
 
         for edge in edges:
             if not edge.condition:
@@ -59,12 +59,12 @@ class GatewayController:
 
     @staticmethod
     def route_all_outputs(
-            workflow: Workflow,
+            process: Process,
             task: BaseTask,
             event: ActiveEvent) -> List[Edge]:
 
         result_edges = []
-        edges = workflow.get_outgoing_edges(task.id)
+        edges = process.get_outgoing_edges(task.id)
 
         for edge in edges:
             # if we have no condition on the edge, we create an event for it

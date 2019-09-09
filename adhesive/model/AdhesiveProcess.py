@@ -1,6 +1,6 @@
 from typing import List
 
-from adhesive.graph.Workflow import Workflow
+from adhesive.graph.Process import Process
 from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
 
 
@@ -11,4 +11,4 @@ class AdhesiveProcess:
     """
     def __init__(self, id: str) -> None:
         self.steps: List[AdhesiveBaseTask] = []
-        self.workflow: Workflow = Workflow(id)
+        self.process: Process = Process(id)

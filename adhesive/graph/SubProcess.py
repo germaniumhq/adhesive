@@ -1,8 +1,8 @@
 
-from .Workflow import Workflow
+from .Process import Process
 
 
-class SubProcess(Workflow):
+class SubProcess(Process):
     def __init__(self,
                  id: str,
                  name: str):
