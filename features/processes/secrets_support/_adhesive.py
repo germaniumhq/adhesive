@@ -1,6 +1,6 @@
 import adhesive
 from adhesive.secrets import secret
-from adhesive.steps.ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionToken import ExecutionToken
 
 
 @adhesive.task("Test Secret On Local Workspace")

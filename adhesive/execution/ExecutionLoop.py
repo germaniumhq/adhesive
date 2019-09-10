@@ -5,13 +5,13 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.model.ActiveEvent import ActiveEvent
 
 
-class ProcessLoop:
+class ExecutionLoop:
     """
     Holds the current looping information.
     """
     def __init__(self,
                  loop_id: str,
-                 parent_loop: Optional['ProcessLoop'],
+                 parent_loop: Optional['ExecutionLoop'],
                  task: BaseTask,
                  item: Any,
                  index: int) -> None:
@@ -67,7 +67,7 @@ class ProcessLoop:
             loop_id = str(uuid.uuid4())
 
             parent_loop = new_event.context.loop
-            new_event.context.loop = ProcessLoop(
+            new_event.context.loop = ExecutionLoop(
                 loop_id,
                 parent_loop,
                 event.task,

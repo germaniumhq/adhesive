@@ -4,11 +4,11 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Task import Task
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
-from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
+from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 from .ExecutionToken import ExecutionToken
 
 
-class AdhesiveTask(AdhesiveBaseTask):
+class ExecutionTask(ExecutionBaseTask):
     """
     A task implementation.
     """
@@ -25,7 +25,7 @@ class AdhesiveTask(AdhesiveBaseTask):
         :param loop:
         :param when:
         """
-        super(AdhesiveTask, self).__init__(code, *expressions)
+        super(ExecutionTask, self).__init__(code, *expressions)
 
         self.loop = loop
         self.when = when
@@ -36,7 +36,7 @@ class AdhesiveTask(AdhesiveBaseTask):
         if not isinstance(task, Task):
             return None
 
-        return super(AdhesiveTask, self).matches(task, resolved_name)
+        return super(ExecutionTask, self).matches(task, resolved_name)
 
     def invoke(
             self,

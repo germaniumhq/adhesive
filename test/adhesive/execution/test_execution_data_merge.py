@@ -1,6 +1,6 @@
 import unittest
 
-from adhesive.steps.ExecutionData import ExecutionData
+from adhesive.execution.ExecutionData import ExecutionData
 
 
 class TestExecutionData(unittest.TestCase):

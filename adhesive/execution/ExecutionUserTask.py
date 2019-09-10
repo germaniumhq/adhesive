@@ -4,11 +4,11 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
-from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
-from adhesive.steps.ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
+from adhesive.execution.ExecutionToken import ExecutionToken
 
 
-class AdhesiveUserTask(AdhesiveBaseTask):
+class ExecutionUserTask(ExecutionBaseTask):
     """
     A task implementation.
     """
@@ -17,7 +17,7 @@ class AdhesiveUserTask(AdhesiveBaseTask):
                  *expressions: str,
                  loop: Optional[str] = None,
                  when: Optional[str] = None) -> None:
-        super(AdhesiveUserTask, self).__init__(code, *expressions)
+        super(ExecutionUserTask, self).__init__(code, *expressions)
 
         self.loop = loop
         self.when = when
@@ -28,7 +28,7 @@ class AdhesiveUserTask(AdhesiveBaseTask):
         if not isinstance(task, UserTask):
             return None
 
-        return super(AdhesiveUserTask, self).matches(task, resolved_name)
+        return super(ExecutionUserTask, self).matches(task, resolved_name)
 
     def invoke_user_task(
             self,

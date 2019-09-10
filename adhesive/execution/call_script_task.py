@@ -3,7 +3,7 @@ from typing import cast
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
-from adhesive.steps.ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionToken import ExecutionToken
 
 
 def call_script_task(event: ActiveEvent) -> ExecutionToken:

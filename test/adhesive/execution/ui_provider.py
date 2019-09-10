@@ -4,7 +4,7 @@ from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.UiBuilderApi import UiBuilderApi
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.model.UserTaskProvider import UserTaskProvider
-from adhesive.steps.ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionToken import ExecutionToken
 
 
 class UIBuilder(UiBuilderApi):

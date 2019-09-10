@@ -5,8 +5,8 @@ import unittest
 test = unittest.TestCase()
 
 
-def assert_equal_steps(expected: Dict[str, int],
-                       actual: Dict[str, Set[str]]) -> None:
+def assert_equal_execution(expected: Dict[str, int],
+                           actual: Dict[str, Set[str]]) -> None:
     test.assertEqual(expected.keys(), actual.keys())
     actual_dict = dict()
 

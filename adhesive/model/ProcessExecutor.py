@@ -19,11 +19,11 @@ from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_tasks
-from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
-from adhesive.steps.ExecutionToken import ExecutionToken
-from adhesive.steps.ExecutionData import ExecutionData
-from adhesive.steps.ProcessLoop import ProcessLoop, parent_loop_id, loop_id
-from adhesive.steps.call_script_task import call_script_task
+from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
+from adhesive.execution.ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionData import ExecutionData
+from adhesive.execution.ExecutionLoop import ExecutionLoop, parent_loop_id, loop_id
+from adhesive.execution.call_script_task import call_script_task
 from adhesive.storage.ensure_folder import get_folder
 from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 
@@ -36,7 +36,7 @@ from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Process import Process
-from adhesive.steps.AdhesiveTask import AdhesiveTask
+from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
 
 from .ActiveEvent import ActiveEvent
@@ -117,7 +117,7 @@ class ProcessExecutor:
                  ut_provider: Optional['UserTaskProvider'] = None,
                  wait_tasks: bool = True) -> None:
         self.process = process
-        self.tasks_impl: Dict[str, AdhesiveTask] = dict()
+        self.tasks_impl: Dict[str, ExecutionTask] = dict()
 
         # A dictionary of events that are currently active. This is just to find out
         # the parent of an event, since from it we can also derive the current parent
@@ -129,6 +129,8 @@ class ProcessExecutor:
         self.config = ProcessExecutorConfig(wait_tasks=wait_tasks)
         self.execution_id = str(uuid.uuid4())
 
+    # FIXME: remove async. async is's not possible since it would thread switch
+    # and completely screw up log redirection.
     async def execute(self,
                       initial_data=None) -> ExecutionData:
         """
@@ -136,7 +138,7 @@ class ProcessExecutor:
         generating for forked events.
         """
         process = self.process.process
-        self.tasks_impl: Dict[str, AdhesiveTask] = dict()
+        self.tasks_impl: Dict[str, ExecutionTask] = dict()
 
         self._validate_tasks(process)
 
@@ -311,7 +313,7 @@ class ProcessExecutor:
             display_unmatched_tasks(unmatched_tasks)
             sys.exit(1)
 
-    def _match_task(self, task: BaseTask) -> Optional[AdhesiveBaseTask]:
+    def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:
         for step in self.process.steps:
             if step.matches(task, task.name) is not None:
                 return step
@@ -420,7 +422,7 @@ class ProcessExecutor:
             # loop context, if we're running in a nested loop.
             if event.task.loop and (not event.context.loop or event.context.loop.task != event.task):
                 # we start a loop by firing the loop events, and consume this event.
-                events_created = ProcessLoop.create_loop(event, self.clone_event)
+                events_created = ExecutionLoop.create_loop(event, self.clone_event)
                 if events_created == 0:
                     event.state.route(event.context)
                 else:

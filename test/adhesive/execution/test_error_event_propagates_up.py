@@ -4,7 +4,7 @@ from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
 from .test_tasks import adhesive, _async
-from .check_equals import assert_equal_steps
+from .check_equals import assert_equal_execution
 
 
 class TestErrorEventPropagatesUp(unittest.TestCase):
@@ -20,9 +20,9 @@ class TestErrorEventPropagatesUp(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process)
         data = _async(process_executor.execute())
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Error Was Caught": 1,
-        }, data.steps)
+        }, data.executions)
 
         self.assertFalse(process_executor.events)
 

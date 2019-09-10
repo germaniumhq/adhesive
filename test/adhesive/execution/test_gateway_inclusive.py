@@ -4,7 +4,7 @@ from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
 from .test_tasks import adhesive, _async
-from .check_equals import assert_equal_steps
+from .check_equals import assert_equal_execution
 
 
 class TestInclusiveGateway(unittest.TestCase):
@@ -20,12 +20,12 @@ class TestInclusiveGateway(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process)
         data = _async(process_executor.execute())
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Test Chrome": 1,
             "Test Firefox": 1,
             "Build Germanium Image": 1,
             "Cleanup Broken Tasks": 1,
-        }, data.steps)
+        }, data.executions)
         self.assertFalse(process_executor.events)
 
     def test_inclusive_gateway_non_wait(self):
@@ -37,12 +37,12 @@ class TestInclusiveGateway(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
         data = _async(process_executor.execute())
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Test Chrome": 1,
             "Test Firefox": 1,
             "Build Germanium Image": 1,
             "Cleanup Broken Tasks": 1,
-        }, data.steps)
+        }, data.executions)
         self.assertFalse(process_executor.events)
 
 

@@ -2,8 +2,8 @@ import unittest
 
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
-from test.adhesive.steps.ui_provider import TestUserTaskProvider
-from test.adhesive.steps.test_tasks import adhesive, _async
+from test.adhesive.execution.ui_provider import TestUserTaskProvider
+from test.adhesive.execution.test_tasks import adhesive, _async
 
 
 class TestUserTaskBasic(unittest.TestCase):

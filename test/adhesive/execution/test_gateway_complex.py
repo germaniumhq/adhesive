@@ -2,8 +2,8 @@ import unittest
 
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
-from test.adhesive.steps.check_equals import assert_equal_steps
-from test.adhesive.steps.test_tasks import adhesive, _async
+from test.adhesive.execution.check_equals import assert_equal_execution
+from test.adhesive.execution.test_tasks import adhesive, _async
 
 
 class TestGatewayComplex(unittest.TestCase):
@@ -19,12 +19,12 @@ class TestGatewayComplex(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process)
         data = _async(process_executor.execute())
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Test Firefox": 1,
             "Test Chrome": 1,
             "Test Browser chrome on linux": 1,
             "Test Browser firefox on linux": 1,
-        }, data.steps)
+        }, data.executions)
         self.assertFalse(process_executor.events)
 
     def test_exclusive_gateway_non_wait(self):
@@ -36,12 +36,12 @@ class TestGatewayComplex(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
         data = _async(process_executor.execute())
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Test Firefox": 1,
             "Test Chrome": 1,
             "Test Browser chrome on linux": 2,
             "Test Browser firefox on linux": 2,
-        }, data.steps)
+        }, data.executions)
         self.assertFalse(process_executor.events)
 
 

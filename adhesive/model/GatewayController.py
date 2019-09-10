@@ -7,7 +7,7 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Process import Process
 from adhesive.model.ActiveEvent import ActiveEvent
 
-from adhesive.steps.ExecutionData import ExecutionData
+from adhesive.execution.ExecutionData import ExecutionData
 
 
 class GatewayController:

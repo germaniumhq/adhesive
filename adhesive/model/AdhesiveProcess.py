@@ -1,7 +1,7 @@
 from typing import List
 
 from adhesive.graph.Process import Process
-from adhesive.steps.AdhesiveBaseTask import AdhesiveBaseTask
+from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 
 
 class AdhesiveProcess:
@@ -10,5 +10,5 @@ class AdhesiveProcess:
     the graph, and the steps.
     """
     def __init__(self, id: str) -> None:
-        self.steps: List[AdhesiveBaseTask] = []
+        self.steps: List[ExecutionBaseTask] = []
         self.process: Process = Process(id)

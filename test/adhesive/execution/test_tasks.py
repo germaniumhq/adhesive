@@ -3,7 +3,7 @@ import time
 import asyncio
 import uuid
 
-from adhesive.steps.ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.workspace import Workspace
 
 
@@ -35,10 +35,10 @@ def basic_task(context) -> None:
 @adhesive.task(r'^Parallel \d+$')
 def parallel_task(context) -> None:
     time.sleep(1)
-    if not context.data.steps:
-        context.data.steps = set()
+    if not context.data.executions:
+        context.data.executions = set()
 
-    context.data.steps.add(context.task_name)
+    context.data.executions.add(context.task_name)
 
 
 @adhesive.task(
@@ -105,11 +105,11 @@ def docker_lane(context) -> Workspace:
 
 
 def add_current_task(context):
-    if not context.data.steps:
-        context.data.steps = dict()
+    if not context.data.executions:
+        context.data.executions = dict()
 
-    if context.task_name not in context.data.steps:
-        context.data.steps[context.task_name] = set()
+    if context.task_name not in context.data.executions:
+        context.data.executions[context.task_name] = set()
 
-    context.data.steps[context.task_name].add(str(uuid.uuid4()))
+    context.data.executions[context.task_name].add(str(uuid.uuid4()))
     print(context.task_name)

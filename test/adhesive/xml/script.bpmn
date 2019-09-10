@@ -15,13 +15,13 @@
       <outgoing>_6</outgoing>
       <script><![CDATA[import uuid
 
-if not context.data.steps:
-    context.data.steps = dict()
+if not context.data.executions:
+    context.data.executions = dict()
 
-if context.task.name not in context.data.steps:
-    context.data.steps[context.task.name] = set()
+if context.task.name not in context.data.executions:
+    context.data.executions[context.task.name] = set()
 
-context.data.steps[context.task.name].add(str(uuid.uuid4()))]]></script>
+context.data.executions[context.task.name].add(str(uuid.uuid4()))]]></script>
     </scriptTask>
     <task completionQuantity="1" id="_4" isForCompensation="false" name="Build Germanium Image" startQuantity="1">
       <incoming>_6</incoming>

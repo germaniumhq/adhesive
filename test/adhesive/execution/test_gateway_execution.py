@@ -2,7 +2,7 @@ import unittest
 
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
-from test.adhesive.steps.check_equals import assert_equal_steps
+from test.adhesive.execution.check_equals import assert_equal_execution
 
 from .test_tasks import adhesive, _async
 
@@ -20,10 +20,10 @@ class TestGatewayExecution(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process)
         data = _async(process_executor.execute())
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Populate task data": 1,
             "Exclusive default branch": 1,
-        }, data.steps)
+        }, data.executions)
         self.assertFalse(process_executor.events)
 
     def test_exclusive_gateway_non_wait(self):
@@ -35,10 +35,10 @@ class TestGatewayExecution(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
         data = _async(process_executor.execute())
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Populate task data": 1,
             "Exclusive default branch": 1,
-        }, data.steps)
+        }, data.executions)
         self.assertFalse(process_executor.events)
 
 if __name__ == '__main__':

@@ -159,13 +159,13 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(textwrap.dedent("""\
             import uuid
             
-            if not context.data.steps:
-                context.data.steps = dict()
+            if not context.data.executions:
+                context.data.executions = dict()
             
-            if context.task.name not in context.data.steps:
-                context.data.steps[context.task.name] = set()
+            if context.task.name not in context.data.executions:
+                context.data.executions[context.task.name] = set()
             
-            context.data.steps[context.task.name].add(str(uuid.uuid4()))"""), script_task.script)
+            context.data.executions[context.task.name].add(str(uuid.uuid4()))"""), script_task.script)
 
     def test_reading_loop(self) -> None:
         process = read_bpmn_file("test/adhesive/xml/loop.bpmn")

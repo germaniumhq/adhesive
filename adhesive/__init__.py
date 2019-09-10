@@ -5,8 +5,8 @@ from typing import Callable, TypeVar, Optional
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
 from adhesive.model.ProcessExecutor import ProcessExecutor
-from adhesive.steps.AdhesiveTask import AdhesiveTask
-from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
+from adhesive.execution.ExecutionTask import ExecutionTask
+from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.process_read.bpmn import read_bpmn_file
 from adhesive.process_read.tasks import generate_from_tasks
 from adhesive.process_read.programmatic import generate_from_calls
@@ -22,7 +22,7 @@ def task(*task_names: str,
          loop: Optional[str] = None,
          when: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.steps.append(AdhesiveTask(f, *task_names, loop=loop, when=when))
+        process.steps.append(ExecutionTask(f, *task_names, loop=loop, when=when))
         return f
 
     return wrapper_builder
@@ -35,7 +35,7 @@ def usertask(*task_names: str,
              loop: Optional[str] = None,
              when: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.steps.append(AdhesiveUserTask(f, *task_names, loop=loop, when=when))
+        process.steps.append(ExecutionUserTask(f, *task_names, loop=loop, when=when))
         return f
 
     return wrapper_builder

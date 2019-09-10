@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 
 from adhesive.graph.BaseTask import BaseTask
-from adhesive.steps.ExecutionData import ExecutionData
+from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.workspace.Workspace import Workspace
 
 
@@ -33,7 +33,7 @@ class ExecutionToken:
         self.workspace = workspace
         self.task_name: Optional[str] = None
 
-        self.loop: Optional[ProcessLoop] = None
+        self.loop: Optional[ExecutionLoop] = None
 
         self.update_title()
 
@@ -77,4 +77,4 @@ class ExecutionToken:
         }
 
 
-from adhesive.steps.ProcessLoop import ProcessLoop
+from adhesive.execution.ExecutionLoop import ExecutionLoop

@@ -4,7 +4,7 @@ from typing import Callable, Optional, List
 from adhesive.graph.BaseTask import BaseTask
 
 
-class AdhesiveBaseTask:
+class ExecutionBaseTask:
     """
     A task implementation.
     """

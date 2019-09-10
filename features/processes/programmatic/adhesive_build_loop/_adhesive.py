@@ -4,10 +4,10 @@ import uuid
 
 @adhesive.task("Basic loop", loop="data.loop_items")
 def basic_loop(context):
-    if not context.data.executions:
-        context.data.executions = set()
+    if not context.data.executionss:
+        context.data.executionss = set()
 
-    context.data.executions.add(str(uuid.uuid4()))
+    context.data.executionss.add(str(uuid.uuid4()))
 
 
 result = adhesive.build(initial_data={

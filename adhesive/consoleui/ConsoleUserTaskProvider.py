@@ -7,8 +7,8 @@ from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.UiBuilderApi import UiBuilderApi
 from adhesive.model.UserTaskProvider import UserTaskProvider
 from adhesive.model.ProcessExecutor import ProcessExecutor
-from adhesive.steps.AdhesiveUserTask import AdhesiveUserTask
-from adhesive.steps.ExecutionData import ExecutionData
+from adhesive.execution.ExecutionUserTask import ExecutionUserTask
+from adhesive.execution.ExecutionData import ExecutionData
 
 
 class UiBuilderButton:
@@ -303,7 +303,7 @@ class ConsoleUserTaskProvider(UserTaskProvider):
 
         ui = UIBuilder(event)
 
-        adhesive_task = cast(AdhesiveUserTask, executor.tasks_impl[event.task.id])
+        adhesive_task = cast(ExecutionUserTask, executor.tasks_impl[event.task.id])
         context = adhesive_task.invoke_user_task(event, ui)
 
         # redirecting logs, and initializing ncurses is prolly a bad idea

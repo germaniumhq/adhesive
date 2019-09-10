@@ -3,8 +3,8 @@ import unittest
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
-from test.adhesive.steps.test_tasks import adhesive, _async
-from test.adhesive.steps.check_equals import assert_equal_steps
+from test.adhesive.execution.test_tasks import adhesive, _async
+from test.adhesive.execution.check_equals import assert_equal_execution
 
 
 class TestErrorEventInterrupting(unittest.TestCase):
@@ -22,9 +22,9 @@ class TestErrorEventInterrupting(unittest.TestCase):
 
         print(data._error)
 
-        assert_equal_steps({
+        assert_equal_execution({
             "Cleanup Broken Tasks": 1,
-        }, data.steps)
+        }, data.executions)
         self.assertFalse(process_executor.events)
 
 
