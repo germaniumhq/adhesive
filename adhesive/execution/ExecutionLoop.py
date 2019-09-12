@@ -44,6 +44,12 @@ class ExecutionLoop:
     def index(self) -> int:
         return self._index
 
+    def __repr__(self) -> str:
+        """
+        String object representation
+        """
+        return f"Loop[ loop_id: {self.loop_id}, index: {self.index}, key: {self._key}, value: {self._value}"
+
     @staticmethod
     def create_loop(event: 'ActiveEvent',
                     clone_event: Callable[['ActiveEvent', 'BaseTask'], 'ActiveEvent']) -> int:
@@ -65,11 +71,11 @@ class ExecutionLoop:
 
             parent_loop = new_event.context.loop
             new_event.context.loop = ExecutionLoop(
-                loop_id,
-                parent_loop,
-                event.task,
-                item,
-                index)
+                loop_id=loop_id,
+                parent_loop=parent_loop,
+                task=event.task,
+                item=item,
+                index=index)
 
             # if we're iterating over a map, we're going to store the
             # values as well.
