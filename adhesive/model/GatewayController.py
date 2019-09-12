@@ -79,7 +79,7 @@ class GatewayController:
 
 def eval_edge(condition: str,
               event: ActiveEvent) -> Any:
-    token_utils.get_eval_data(event.context)
+    eval_data = token_utils.get_eval_data(event.context)
 
-    return eval(condition, globals(), evaldata)
+    return eval(condition, globals(), eval_data)
 

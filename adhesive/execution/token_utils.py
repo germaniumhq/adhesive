@@ -25,8 +25,8 @@ def get_eval_data(context: ExecutionToken) -> Dict:
     Obtain a dict that can be passed into the local of an
     eval/exec statement from an execution token.
     """
-    evaldata = dict(event.context.data._data)
-    context = event.context.as_mapping()
+    evaldata = dict(context.data._data)
+    context = context.as_mapping()
 
     evaldata.update(context)
 
