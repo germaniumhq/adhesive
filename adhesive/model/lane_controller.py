@@ -1,12 +1,30 @@
+import adhesive
 from typing import Optional
 
 from adhesive.workspace.Workspace import Workspace
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLaneId import ExecutionLaneId
+from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 from .AdhesiveLane import AdhesiveLane
+
+
+def ensure_default_lane(process: AdhesiveProcess) -> None:
+    """
+    Ensures the 'default' lane is defined.
+    """
+    default_lane_id = ExecutionLaneId("root", "default")
+
+    if default_lane_id.key in process.lanes:
+        return
+
+    @adhesive.lane('default')
+    def lane_default(context):
+        yield LocalLinuxWorkspace(
+                context.execution_id,
+                context.token_id)
 
 
 def allocate_workspace(process: AdhesiveProcess,

@@ -144,6 +144,10 @@ class ProcessExecutor:
 
         self._validate_tasks(process)
 
+        # since the workspaces are allocated by lanes, we need to ensure
+        # our default lane is existing.
+        lane_controller.ensure_default_lane(self.process)
+
         # FIXME: it's getting pretty crowded
         token_id = str(uuid.uuid4())
         process_context = ExecutionToken(

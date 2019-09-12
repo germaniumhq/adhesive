@@ -25,7 +25,7 @@ class Process(BaseTask):
         self._end_events: Dict[str, EndEvent] = dict()
 
         self._task_lane_map: Dict[str, Lane] = dict()
-        self._default_lane = Lane(id, "default")
+        self._default_lane = Lane("root", "default")
 
         self._lanes: Dict[str, Lane] = dict()
 
