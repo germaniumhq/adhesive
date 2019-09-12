@@ -24,7 +24,8 @@ class ExecutionToken:
                  task: 'BaseTask',
                  execution_id: str,
                  token_id: str,
-                 data: Optional[Dict]) -> None:
+                 data: Optional[Dict],
+                 workspace: Optional[Workspace] = None) -> None:
         if args:
             raise Exception("You need to pass the parameters by name")
 
@@ -35,7 +36,7 @@ class ExecutionToken:
         self.task_name: Optional[str] = None
 
         # These are None until the task is assgined to a lane
-        self.workspace: Optional[Workspace] = None
+        self.workspace: Optional[Workspace] = workspace
         self.lane: Optional[ExecutionLaneId] = None
 
         self.loop: Optional[ExecutionLoop] = None
@@ -47,6 +48,7 @@ class ExecutionToken:
             execution_id=self.execution_id,
             token_id=self.token_id,   # FIXME: probably a new token?
             data=self.data.as_dict(),
+            workspace=self.workspace.clone() if self.workspace else None,
         )
 
         return result

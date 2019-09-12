@@ -129,8 +129,6 @@ def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
         data.stdout = new_stdout
         data.stderr = new_stderr
 
-        old_stdout.write(f"{new_stdout.fileno()}")
-
         yield None
     finally:
         data.stdout = old_stdout

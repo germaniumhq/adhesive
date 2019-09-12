@@ -22,6 +22,7 @@ class DockerWorkspace(Workspace):
             pwd=pwd if pwd else workspace.pwd)
 
         self.parent_workspace = workspace
+        self.image = image_name
 
         if container_id is not None:
             self.container_id = container_id

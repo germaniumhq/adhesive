@@ -58,9 +58,9 @@ class Process(BaseTask):
         """
         Add a lane definition.
         """
-        self._lanes[lane.lane_name] = lane
+        self._lanes[lane.name] = lane
 
-    def add_lane_to_task(self, lane: Lane, task_id: str) -> None:
+    def add_task_to_lane(self, lane: Lane, task_id: str) -> None:
         """
         Assign a task to one of the lanes.
         """

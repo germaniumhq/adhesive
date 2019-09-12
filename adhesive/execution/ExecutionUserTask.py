@@ -6,6 +6,7 @@ from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 from adhesive.execution.ExecutionToken import ExecutionToken
+from adhesive.execution import token_utils
 
 
 class ExecutionUserTask(ExecutionBaseTask):

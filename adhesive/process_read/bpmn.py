@@ -159,7 +159,7 @@ def process_edge(result: Process,
         process_node_sequence_flow(result, node)
 
 
-def process_lane_set(result: Process,
+def process_lane_set(process: Process,
                      result_set_node) -> None:
     """ Read the lane set and create lane objects for the lane """
     node_ns, node_name = parse_tag(result_set_node)
@@ -167,14 +167,15 @@ def process_lane_set(result: Process,
     if "laneSet" != node_name:
         return
 
-    for node in list(xml_node):
+    for node in list(result_set_node):
         node_ns, node_name = parse_tag(node)
 
         if node_name in boundary_ignored_elements:
             continue
 
         if node_name == "lane":
-            process_lane(result, node)
+            process_lane(process, node)
+            continue
 
         raise Exception(f"Unknown node <{node_name}> inside a <laneSet>.")
 
@@ -182,13 +183,13 @@ def process_lane_set(result: Process,
 def process_lane(process: Process,
                  lane_node) -> None:
     """ Create a lane object """
-    node_ns, node_name = parse_tag(lane_node)
+    lane_node_ns, lane_node_name = parse_tag(lane_node)
 
-    lane = Lane(lane_id=xml_node.get("id"),
-                name=xml_node.get("name"))
+    lane = Lane(lane_id=lane_node.get("id"),
+                name=lane_node.get("name"))
     process.add_lane(lane)
 
-    for node in list(xml_node):
+    for node in list(lane_node):
         node_ns, node_name = parse_tag(node)
 
         if node_name in boundary_ignored_elements:
@@ -196,8 +197,9 @@ def process_lane(process: Process,
 
         if node_name == "flowNodeRef":
             process_lane_task(process, lane, node)
+            continue
 
-        raise Exception(f"Unknown node <{node_name}> inside a <laneSet>.")
+        raise Exception(f"Unknown node <{node_name}> inside a <{lane_node_name}>.")
 
 
 def process_lane_task(
