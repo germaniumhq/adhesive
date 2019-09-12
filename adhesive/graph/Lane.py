@@ -1,5 +1,7 @@
 class Lane:
     def __init__(self,
-                 _id: str,
+                 lane_id: str,
                  name: str) -> None:
-        pass
+        self.id = lane_id
+        self.name = name
+

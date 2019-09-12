@@ -1,6 +1,7 @@
 import uuid
 from typing import Optional
 
+from adhesive.execution import token_utils
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine
 
@@ -62,7 +63,9 @@ class ActiveEvent:
         else:
             result.context.loop = self.context.loop
 
-        result.context.update_title()
+        result.context.task_name = token_utils.parse_name(
+                result.context,
+                result.context.task.name)
 
         return result
 

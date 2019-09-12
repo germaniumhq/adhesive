@@ -8,6 +8,7 @@ from adhesive.graph.Process import Process
 from adhesive.model.ActiveEvent import ActiveEvent
 
 from adhesive.execution.ExecutionData import ExecutionData
+from adhesive.execution import token_utils
 
 
 class GatewayController:
@@ -78,9 +79,7 @@ class GatewayController:
 
 def eval_edge(condition: str,
               event: ActiveEvent) -> Any:
-    evaldata = dict(event.context.data._data)
-    context = event.context.as_mapping()
-
-    evaldata.update(context)
+    token_utils.get_eval_data(event.context)
 
     return eval(condition, globals(), evaldata)
+

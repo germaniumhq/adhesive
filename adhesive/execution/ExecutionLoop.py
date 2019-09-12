@@ -2,7 +2,9 @@ import uuid
 from typing import Callable, Any, Optional
 
 from adhesive.graph.BaseTask import BaseTask
-from adhesive.model.ActiveEvent import ActiveEvent
+#from adhesive.model.ActiveEvent import ActiveEvent  # FIXME move from here
+# references to the ActiveEvent
+from adhesive.execution import token_utils
 
 
 class ExecutionLoop:
@@ -50,13 +52,8 @@ class ExecutionLoop:
         # FIXME: I'm not sure why this is here and not in the model, since it has nothing
         # to do with what's being exposed.
 
-        # FIXME: this is a lot like eval_edge from the gateway controller
-        evaldata = dict(event.context.data._data)
-        context = event.context.as_mapping()
-
-        evaldata.update(context)
-
-        result = eval(expression, {}, evaldata)
+        eval_data = token_utils.get_eval_data(event.context)
+        result = eval(expression, {}, eval_data)
 
         if not result:
             return 0
@@ -79,7 +76,13 @@ class ExecutionLoop:
             if isinstance(result, dict):
                 new_event.context.loop._value = result[item]
 
-            new_event.context.update_title()
+            # FIXME: this knows way too much about how the ExecutionTokens are
+            # supposed to function
+            # FIXME: rename all event.contexts to event.token. Context is only
+            # true in the scope of an execution task.
+            new_event.context.task_name = token_utils.parse_name(
+                    new_event.context,
+                    new_event.context.task.name)
 
             index += 1
 

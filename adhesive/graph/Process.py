@@ -7,6 +7,7 @@ from .BaseTask import BaseTask
 from .StartEvent import StartEvent
 from .EndEvent import EndEvent
 from .Edge import Edge
+from .Lane import Lane
 
 
 class Process(BaseTask):
@@ -22,6 +23,11 @@ class Process(BaseTask):
         self._tasks: Dict[str, BaseTask] = dict()
         self._edges: Dict[str, Edge] = dict()
         self._end_events: Dict[str, EndEvent] = dict()
+
+        self._task_lane_map: Dict[str, Lane] = dict()
+        self._default_lane = Lane(id, "default")
+
+        self._lanes: Dict[str, Lane] = dict()
 
         self._graph = nx.MultiDiGraph()
 
@@ -47,6 +53,25 @@ class Process(BaseTask):
         self._graph.add_node(task.id)
 
         task.process_id = self.id
+
+    def add_lane(self, lane: Lane) -> None:
+        """
+        Add a lane definition.
+        """
+        self._lanes[lane.lane_name] = lane
+
+    def add_lane_to_task(self, lane: Lane, task_id: str) -> None:
+        """
+        Assign a task to one of the lanes.
+        """
+        self._task_lane_map[task_id] = lane
+
+    def get_lane_definition(self, task_id: str) -> Lane:
+        """
+        Fetches the lane definition that was associated with this
+        task.
+        """
+        return self._task_lane_map.get(task_id, self._default_lane)
 
     def add_boundary_event(self, boundary_event: BoundaryEvent) -> None:
         self.add_task(boundary_event)

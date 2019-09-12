@@ -10,6 +10,10 @@ class Workspace(ABC):
     A workspace is a place where work can be done. That means a writable
     folder is being allocated, that will be cleaned up at the end of the
     execution.
+
+    :param execution_id: The execution id of the whole process.
+    :param token_id: The id of the current token being processed.
+    :param pwd: The current folder.
     """
     def __init__(self,
                  execution_id: str,
@@ -131,3 +135,4 @@ class Workspace(ABC):
         :return:
         """
         pass
+

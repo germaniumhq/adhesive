@@ -1,12 +1,9 @@
+from typing import Callable
 import re
-from typing import Callable, Optional, List
 
-from adhesive.graph.BaseTask import BaseTask
-
-
-class ExecutionBaseTask:
+class ExecutionLane:
     """
-    A task implementation.
+    Has the programmatic definition of a lane.
     """
     def __init__(self,
                  code: Callable,

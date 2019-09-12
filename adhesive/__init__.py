@@ -1,10 +1,12 @@
 import asyncio
 import functools
 from typing import Callable, TypeVar, Optional
+from contextlib import contextmanager
 
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
 from adhesive.model.ProcessExecutor import ProcessExecutor
+from adhesive.execution.ExecutionLane import ExecutionLane
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.process_read.bpmn import read_bpmn_file
@@ -22,7 +24,7 @@ def task(*task_names: str,
          loop: Optional[str] = None,
          when: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.steps.append(ExecutionTask(f, *task_names, loop=loop, when=when))
+        process.task_definitions.append(ExecutionTask(f, *task_names, loop=loop, when=when))
         return f
 
     return wrapper_builder
@@ -35,20 +37,23 @@ def usertask(*task_names: str,
              loop: Optional[str] = None,
              when: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.steps.append(ExecutionUserTask(f, *task_names, loop=loop, when=when))
+        process.task_definitions.append(ExecutionUserTask(f, *task_names, loop=loop, when=when))
         return f
 
     return wrapper_builder
 
 
-def lane(*lane_names:str,
-         lazy: Optional[bool] = None) -> Callable[..., Callable[..., T]]:
+def lane(*lane_names:str) -> Callable[..., Callable[..., T]]:
+    """
+    Allow defining a lane where a custom workspace will be created. This
+    function needs to yield a workspace that will be used. It's a
+    contextmanager. When all the execution tokens exit the lane, the code after
+    the yield will be executed.
+    """
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        @functools.wraps(f)
-        def wrapper(*args, **kw) -> T:
-            return f(*args, **kw)
-
-        return wrapper
+        newf = contextmanager(f)
+        process.lane_definitions.append(ExecutionLane(newf, *lane_names))
+        return newf
 
     return wrapper_builder
 

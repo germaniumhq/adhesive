@@ -4,6 +4,7 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Task import Task
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.execution import token_utils
 from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 from .ExecutionToken import ExecutionToken
 
@@ -30,22 +31,14 @@ class ExecutionTask(ExecutionBaseTask):
         self.loop = loop
         self.when = when
 
-    def matches(self,
-                task: BaseTask,
-                resolved_name: str) -> Optional[List[str]]:
-        if not isinstance(task, Task):
-            return None
-
-        return super(ExecutionTask, self).matches(task, resolved_name)
-
     def invoke(
             self,
             event: ActiveEvent) -> ExecutionToken:
         with redirect_stdout(event):
-            context = event.context
+            params = token_utils.matches(self.re_expressions,
+                                         event.context.task_name)
 
-            params = self.matches(context.task, context.task_name)
+            self.code(event.context, *params)  # type: ignore
 
-            self.code(context, *params)  # type: ignore
+            return event.context
 
-            return context

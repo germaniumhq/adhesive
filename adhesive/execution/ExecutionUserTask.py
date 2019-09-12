@@ -22,23 +22,16 @@ class ExecutionUserTask(ExecutionBaseTask):
         self.loop = loop
         self.when = when
 
-    def matches(self,
-                task: BaseTask,
-                resolved_name: str) -> Optional[List[str]]:
-        if not isinstance(task, UserTask):
-            return None
-
-        return super(ExecutionUserTask, self).matches(task, resolved_name)
-
     def invoke_user_task(
             self,
             event: ActiveEvent,
             ui: Any) -> ExecutionToken:
         with redirect_stdout(event):
-            context = event.context
+            params = token_utils.matches(
+                    self.re_expressions,
+                    event.context.task_name)
 
-            params = self.matches(context.task, context.task_name)
+            self.code(event.context, ui, *params)  # type: ignore
 
-            self.code(context, ui, *params)  # type: ignore
+            return event.context
 
-            return context

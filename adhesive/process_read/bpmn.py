@@ -16,6 +16,7 @@ from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Process import Process
+from adhesive.graph.Lane import Lane
 
 TAG_NAME = re.compile(r'^(\{.+\})?(.+)$')
 SPACE = re.compile(r"\s+", re.IGNORECASE)
@@ -89,6 +90,9 @@ def read_process(process) -> Process:
     for node in list(process):
         process_edge(result, node)
 
+    for node in list(process):
+        process_lane_set(result, node)
+
     for task_id, task in result.tasks.items():
         if isinstance(task, BoundaryEvent):
             continue
@@ -134,7 +138,7 @@ def process_node(result: Process,
     elif "complexGateway" == node_name:
         process_complex_gateway(result, node)
     elif "laneSet" == node_name:
-        process_lane_set(result, node)
+        pass
     elif node_name not in ignored_elements:
         raise Exception(f"Unknown process node: {node.tag}")
 
@@ -153,6 +157,59 @@ def process_edge(result: Process,
 
     if "sequenceFlow" == node_name:
         process_node_sequence_flow(result, node)
+
+
+def process_lane_set(result: Process,
+                     result_set_node) -> None:
+    """ Read the lane set and create lane objects for the lane """
+    node_ns, node_name = parse_tag(result_set_node)
+
+    if "laneSet" != node_name:
+        return
+
+    for node in list(xml_node):
+        node_ns, node_name = parse_tag(node)
+
+        if node_name in boundary_ignored_elements:
+            continue
+
+        if node_name == "lane":
+            process_lane(result, node)
+
+        raise Exception(f"Unknown node <{node_name}> inside a <laneSet>.")
+
+
+def process_lane(process: Process,
+                 lane_node) -> None:
+    """ Create a lane object """
+    node_ns, node_name = parse_tag(lane_node)
+
+    lane = Lane(lane_id=xml_node.get("id"),
+                name=xml_node.get("name"))
+    process.add_lane(lane)
+
+    for node in list(xml_node):
+        node_ns, node_name = parse_tag(node)
+
+        if node_name in boundary_ignored_elements:
+            continue
+
+        if node_name == "flowNodeRef":
+            process_lane_task(process, lane, node)
+
+        raise Exception(f"Unknown node <{node_name}> inside a <laneSet>.")
+
+
+def process_lane_task(
+        process: Process,
+        lane: Lane,
+        xml_node
+    ) -> None:
+    """
+    Binds the task for the lane.
+    """
+    task_id = xml_node.text
+    process.add_task_to_lane(lane, task_id)
 
 
 def process_node_task(p: Process, xml_node) -> None:
@@ -282,11 +339,6 @@ def process_complex_gateway(p: Process, xml_node) -> None:
     task = ComplexGateway(xml_node.get("id"), node_name)
 
     p.add_task(task)
-
-
-def process_lane_set(p: Process, xml_node) -> None:
-    """ Read the lane set and create lane objects for the lane """
-    raise Exception("not implemented")
 
 
 def process_potential_loop(task: BaseTask, xml_node) -> BaseTask:

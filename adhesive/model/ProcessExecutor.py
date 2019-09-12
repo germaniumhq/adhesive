@@ -24,8 +24,8 @@ from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLoop import ExecutionLoop, parent_loop_id, loop_id
 from adhesive.execution.call_script_task import call_script_task
+from adhesive.execution import token_utils
 from adhesive.storage.ensure_folder import get_folder
-from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 
 T = TypeVar('T')
 
@@ -38,6 +38,8 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Process import Process
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
+
+from adhesive.model import lane_controller
 
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
@@ -148,11 +150,7 @@ class ProcessExecutor:
             task=process,
             execution_id=self.execution_id,
             token_id=token_id,
-            data=initial_data,
-            workspace=LocalLinuxWorkspace(
-                execution_id=self.execution_id,
-                token_id=token_id,
-                pwd=None)
+            data=initial_data
         )
 
         fake_event = ActiveEvent(
@@ -302,11 +300,11 @@ class ProcessExecutor:
                 raise Exception(f"Unknown script task language: {task.language}. Only python and "
                                 f"text/python are supported.")
 
-            adhesive_step = self._match_task(task)
+            adhesive_task = self._match_task(task)
 
-            self.tasks_impl[task_id] = adhesive_step
+            self.tasks_impl[task_id] = adhesive_task
 
-            if not adhesive_step:
+            if not adhesive_task:
                 unmatched_tasks.add(task)
 
         if unmatched_tasks:
@@ -314,9 +312,9 @@ class ProcessExecutor:
             sys.exit(1)
 
     def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:
-        for step in self.process.steps:
-            if step.matches(task, task.name) is not None:
-                return step
+        for task_definition in self.process.task_definitions:
+            if token_utils.matches(task_definition.re_expressions, task.name) is not None:
+                return task_definition
 
         return None
 
@@ -584,6 +582,19 @@ class ProcessExecutor:
 
             self.unregister_event(event)
 
+        def allocate_workspace(_event) -> None:
+            lane_controller.allocate_workspace(
+                self.process,  # AdhesiveProcess
+                event
+            )
+
+        def deallocate_workspace(_event) -> None:
+            lane_controller.deallocate_workspace(
+                self.process,  # AdhesiveProcess
+                event
+            )
+
+        event.state.after_enter(ActiveEventState.PROCESSING, allocate_workspace)
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
         event.state.after_enter(ActiveEventState.WAITING, wait_task)
         event.state.after_enter(ActiveEventState.RUNNING, run_task)
@@ -593,5 +604,6 @@ class ProcessExecutor:
         event.state.after_enter(ActiveEventState.DONE_CHECK, done_check)
         event.state.after_enter(ActiveEventState.DONE_END_TASK, done_end_task)
         event.state.after_enter(ActiveEventState.DONE, done_task)
+        event.state.after_enter(ActiveEventState.DONE, deallocate_workspace)
 
         return event
