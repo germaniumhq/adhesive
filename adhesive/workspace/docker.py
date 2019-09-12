@@ -113,7 +113,8 @@ class DockerWorkspace(Workspace):
         return DockerWorkspace(
             workspace=self.parent_workspace,
             image_name=self.image,
-            pwd=self.pwd
+            pwd=self.pwd,
+            container_id=self.container_id,
         )
 
     def _destroy(self):

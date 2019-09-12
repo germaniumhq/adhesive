@@ -37,14 +37,15 @@ def allocate_workspace(process: AdhesiveProcess,
     if loop_controller.is_top_loop_event(event):
         return
 
+    original_execution_lane_id = event.context.lane
     fill_in_lane_id(process, event)
 
     lane = find_existing_lane_for_event(process, event)
 
     if not lane:
-        lane = create_lane_for_event(process, event)
+        lane = create_lane_for_event(process, event, original_execution_lane_id)
 
-    lane.references += 1
+    lane.increment_references()
 
     event.context.workspace = lane.workspace.clone()
 
@@ -63,13 +64,15 @@ def deallocate_workspace(process: AdhesiveProcess,
     if not lane:
         raise Exception(f"Unable to find lane for {event} on lane {event.context.lane}")
 
-    lane.references -= 1
+    lane.decrement_references()
 
-    if lane.references > 0:
-        return
+    while lane and lane.references == 0:
+        parent_lane = lane.parent_lane
 
-    lane.deallocate_lane()
-    del process.lanes[event.context.lane.key]
+        lane.deallocate_lane()
+        del process.lanes[lane.lane_id.key]
+
+        lane = parent_lane
 
 
 def fill_in_lane_id(process: AdhesiveProcess,
@@ -98,7 +101,8 @@ def find_existing_lane_for_event(process: AdhesiveProcess,
 
 
 def create_lane_for_event(process: AdhesiveProcess,
-                          event: ActiveEvent) -> None:
+                          event: ActiveEvent,
+                          execution_lane_id: ExecutionLaneId) -> None:
     """
     Creates the lane object and the associated workspace.
     """
@@ -117,7 +121,17 @@ def create_lane_for_event(process: AdhesiveProcess,
         if not isinstance(workspace, Workspace):
             raise Exception(f"The lane yielded the wrong type {type(workspace)} instead of a Workspace")
 
-        lane = AdhesiveLane(event.context.lane, workspace, gen)
+        if execution_lane_id:
+            parent_lane = process.lanes[execution_lane_id.key]
+        else:
+            parent_lane = None
+
+        lane = AdhesiveLane(
+            lane_id=event.context.lane,
+            workspace=workspace,
+            generator=gen,
+            parent_lane=parent_lane)
+
         process.lanes[event.context.lane.key] = lane
 
         return lane

@@ -249,6 +249,8 @@ class ProcessExecutor:
                             f"{self.events[event.token_id]}. Got a new request to register "
                             f"it as {event}.")
 
+        lane_controller.allocate_workspace(self.process, event)
+
         LOG.debug(f"Register {event}")
 
         self.events[event.token_id] = event
@@ -260,6 +262,8 @@ class ProcessExecutor:
         if event.token_id not in self.events:
             raise Exception(f"{event} not found in events. Either the event was "
                             f"already terminated, either it was not registered.")
+
+        lane_controller.deallocate_workspace(self.process, event)
 
         LOG.debug(f"Unregister {event}")
 
@@ -614,7 +618,7 @@ class ProcessExecutor:
                 event
             )
 
-        event.state.after_enter(ActiveEventState.PROCESSING, allocate_workspace)
+        # event.state.after_enter(ActiveEventState.PROCESSING, allocate_workspace)
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
         event.state.after_enter(ActiveEventState.WAITING, wait_task)
         event.state.after_enter(ActiveEventState.RUNNING, run_task)
@@ -624,6 +628,6 @@ class ProcessExecutor:
         event.state.after_enter(ActiveEventState.DONE_CHECK, done_check)
         event.state.after_enter(ActiveEventState.DONE_END_TASK, done_end_task)
         event.state.after_enter(ActiveEventState.DONE, done_task)
-        event.state.after_enter(ActiveEventState.DONE, deallocate_workspace)
+        # event.state.after_enter(ActiveEventState.DONE, deallocate_workspace)
 
         return event

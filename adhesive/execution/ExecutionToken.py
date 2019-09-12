@@ -25,7 +25,8 @@ class ExecutionToken:
                  execution_id: str,
                  token_id: str,
                  data: Optional[Dict],
-                 workspace: Optional[Workspace] = None) -> None:
+                 workspace: Optional[Workspace] = None,
+                 lane: Optional[ExecutionLaneId] = None) -> None:
         if args:
             raise Exception("You need to pass the parameters by name")
 
@@ -37,7 +38,9 @@ class ExecutionToken:
 
         # These are None until the task is assgined to a lane
         self.workspace: Optional[Workspace] = workspace
-        self.lane: Optional[ExecutionLaneId] = None
+        # The lane execution id is kept in case of clonning to allow
+        # tracking from what lane dhis event came from.
+        self.lane: Optional[ExecutionLaneId] = lane
 
         self.loop: Optional[ExecutionLoop] = None
         self.task_name = token_utils.parse_name(self, self.task.name)
@@ -49,6 +52,7 @@ class ExecutionToken:
             token_id=self.token_id,   # FIXME: probably a new token?
             data=self.data.as_dict(),
             workspace=self.workspace.clone() if self.workspace else None,
+            lane=self.lane,
         )
 
         return result
