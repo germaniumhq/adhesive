@@ -1,4 +1,3 @@
-import asyncio
 import functools
 from typing import Callable, TypeVar, Optional
 from contextlib import contextmanager
@@ -96,12 +95,10 @@ def _build(ut_provider: Optional['UserTaskProvider'] = None,
     if ut_provider is None:
         ut_provider = ConsoleUserTaskProvider()
 
-    fn = ProcessExecutor(
+    return ProcessExecutor(
         process,
         ut_provider=ut_provider,
         wait_tasks=wait_tasks).execute(initial_data=initial_data)
-
-    return asyncio.get_event_loop().run_until_complete(fn)
 
 
 def bpmn_build_async(

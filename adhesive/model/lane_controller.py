@@ -103,12 +103,9 @@ def create_lane_for_event(process: AdhesiveProcess,
             continue
 
         # create the lane object using the context
-        gen = lane_definition.code(event.context)
+        gen = lane_definition.code(event.context, *params)
 
-        if isinstance(gen, Workspace):
-            workspace = gen
-        else:
-            workspace = type(gen).__enter__(gen)
+        workspace = type(gen).__enter__(gen)
 
         if not isinstance(workspace, Workspace):
             raise Exception(f"The lane yielded the wrong type {type(workspace)} instead of a Workspace")

@@ -3,7 +3,7 @@ import unittest
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 from test.adhesive.execution.ui_provider import TestUserTaskProvider
-from .test_tasks import adhesive, _async
+from .test_tasks import adhesive
 
 
 class TestUserTaskJoin(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestUserTaskJoin(unittest.TestCase):
 
         process_executor = ProcessExecutor(adhesive.process,
                                              ut_provider=TestUserTaskProvider())
-        data = _async(process_executor.execute())
+        data = process_executor.execute()
 
         self.assertEqual("OK", data.OK)
         self.assertEqual("Cancel", data.Cancel)

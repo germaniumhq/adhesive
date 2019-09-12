@@ -3,7 +3,7 @@ import unittest
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
-from .test_tasks import adhesive, _async
+from .test_tasks import adhesive
 from .check_equals import assert_equal_execution
 
 
@@ -15,7 +15,7 @@ class TestScriptTask(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/script.bpmn")
 
         process_executor = ProcessExecutor(adhesive.process)
-        data = _async(process_executor.execute())
+        data = process_executor.execute()
 
         assert_equal_execution({
             'Script Task': 1,

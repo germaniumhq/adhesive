@@ -5,7 +5,7 @@ import unittest
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
-from .test_tasks import adhesive, _async
+from .test_tasks import adhesive
 
 
 class TestParallelProcessExecutor(unittest.TestCase):
@@ -18,7 +18,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
-        _async(ProcessExecutor(adhesive.process).execute())
+        ProcessExecutor(adhesive.process).execute()
         end_time = time.time() * 1000.0
 
         # the whole thing should be faster than 2 secs
@@ -37,7 +37,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
 
         start_time = time.time() * 1000.0
-        _async(ProcessExecutor(adhesive.process).execute())
+        ProcessExecutor(adhesive.process).execute()
         end_time = time.time() * 1000.0
 
         # the whole thing should be faster than 2 secs
@@ -56,7 +56,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
-        _async(ProcessExecutor(adhesive.process, wait_tasks=False).execute())
+        ProcessExecutor(adhesive.process, wait_tasks=False).execute()
         end_time = time.time() * 1000.0
 
         # the whole thing should be faster than 2 secs
@@ -75,7 +75,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
 
         start_time = time.time() * 1000.0
-        _async(ProcessExecutor(adhesive.process, wait_tasks=False).execute())
+        ProcessExecutor(adhesive.process, wait_tasks=False).execute()
         end_time = time.time() * 1000.0
 
         # the whole thing should be faster than 2 secs

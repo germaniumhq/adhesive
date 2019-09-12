@@ -133,7 +133,7 @@ class ProcessExecutor:
 
     # FIXME: remove async. async is's not possible since it would thread switch
     # and completely screw up log redirection.
-    async def execute(self,
+    def execute(self,
                       initial_data=None) -> ExecutionData:
         """
         Execute the current events. This will ensure new events are
@@ -193,11 +193,11 @@ class ProcessExecutor:
 
         root_event.state.after_enter(ActiveEventState.ERROR, raise_exception)
 
-        await self.execute_process()
+        self.execute_process()
 
         return root_event.context.data
 
-    async def execute_process(self) -> None:
+    def execute_process(self) -> None:
         """
         Process the events in a process until no more events are available.
         For example an event is the start of the process. The events are

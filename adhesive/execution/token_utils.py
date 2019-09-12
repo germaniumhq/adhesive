@@ -15,7 +15,7 @@ def parse_name(context: ExecutionToken,
     """
     try:
         eval_data = get_eval_data(context)
-        return name.format(**evaldata)
+        return name.format(**eval_data)
     except Exception as e:
         return name
 

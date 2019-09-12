@@ -19,10 +19,5 @@ class AdhesiveLane:
         self.references = 0
 
     def deallocate_lane(self):
-        # if the function just returned instead of yielding we have the
-        # generator as the actual value that was returned.
-        if self.generator is self.workspace:
-            return
-
         type(self.generator).__exit__(self.generator, None, None, None)
 

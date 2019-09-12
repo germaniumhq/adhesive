@@ -1,6 +1,5 @@
 import adhesive
 import time
-import asyncio
 import uuid
 
 from adhesive.execution.ExecutionToken import ExecutionToken
@@ -8,18 +7,19 @@ from adhesive.workspace import Workspace
 from adhesive.workspace import docker
 
 
-def _async(fn):
-    data = asyncio.get_event_loop().run_until_complete(fn)
-    return data
-
-
-@adhesive.lane("Docker: maven")
-def docker_lane(context) -> Workspace:
+@adhesive.lane("docker: (.*)")
+def docker_lane(context, image_name) -> Workspace:
     if not context.workspace:
         raise Exception("No workspace is defined.")
 
-    with docker.inside(context.workspace, "maven") as w:
-        yield w
+    result = context.workspace.clone()
+
+    # FIXME: reference counting should be implemented for nested workspaces
+    # for example having a three lanes that go
+    # default -> ssh -> docker
+    # even if we have no task actively running in the `ssh` lane, we still
+    # need to keep the lane open until docker finishes.
+    yield result
 
 
 @adhesive.task(

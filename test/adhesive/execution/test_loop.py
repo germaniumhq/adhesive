@@ -4,7 +4,7 @@ from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
 from test.adhesive.execution.check_equals import assert_equal_execution
-from test.adhesive.execution.test_tasks import adhesive, _async
+from test.adhesive.execution.test_tasks import adhesive
 
 
 class TestLoopExecution(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestLoopExecution(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/loop.bpmn")
 
         process_executor = ProcessExecutor(adhesive.process)
-        data = _async(process_executor.execute())
+        data = process_executor.execute()
 
         assert_equal_execution({
             'Build Germanium Image on mac': 1,
@@ -38,7 +38,7 @@ class TestLoopExecution(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/loop.bpmn")
 
         process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
-        data = _async(process_executor.execute())
+        data = process_executor.execute()
 
         assert_equal_execution({
             'Build Germanium Image on mac': 1,

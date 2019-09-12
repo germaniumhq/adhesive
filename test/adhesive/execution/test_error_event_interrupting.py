@@ -3,7 +3,7 @@ import unittest
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
-from test.adhesive.execution.test_tasks import adhesive, _async
+from test.adhesive.execution.test_tasks import adhesive
 from test.adhesive.execution.check_equals import assert_equal_execution
 
 
@@ -18,7 +18,7 @@ class TestErrorEventInterrupting(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/error-event-interrupting.bpmn")
 
         process_executor = ProcessExecutor(adhesive.process)
-        data = _async(process_executor.execute())
+        data = process_executor.execute()
 
         print(data._error)
 

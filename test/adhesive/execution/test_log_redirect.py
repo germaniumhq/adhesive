@@ -7,7 +7,7 @@ from adhesive import logredirect
 from adhesive.process_read.bpmn import read_bpmn_file
 import adhesive.config as config
 from test.adhesive.execution.check_equals import assert_equal_execution
-from test.adhesive.execution.test_tasks import adhesive, _async
+from test.adhesive.execution.test_tasks import adhesive
 
 
 class TestIfLogRedirectionWorks(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestIfLogRedirectionWorks(unittest.TestCase):
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/redirect-logs.bpmn")
 
         process_executor = ProcessExecutor(adhesive.process)
-        data = _async(process_executor.execute())
+        data = process_executor.execute()
 
         assert_equal_execution({
             "sh: echo hello world && echo bad world >&2 && echo good world": 1,
