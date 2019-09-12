@@ -6,7 +6,7 @@ import traceback
 import uuid
 
 from concurrent.futures import Future
-from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple
+from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple, Union
 
 from adhesive import logredirect
 from adhesive.consoleui.color_print import green, red, yellow, white
@@ -18,8 +18,9 @@ from adhesive.graph.UserTask import UserTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
-from adhesive.model.generate_methods import display_unmatched_tasks
+from adhesive.model.generate_methods import display_unmatched_items
 from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
+from adhesive.execution.ExecutionLane import ExecutionLane
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLoop import ExecutionLoop, parent_loop_id, loop_id
@@ -36,6 +37,7 @@ from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Process import Process
+from adhesive.graph.Lane import Lane
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
 
@@ -283,7 +285,7 @@ class ProcessExecutor:
         :param process:
         :return:
         """
-        unmatched_tasks: Set[BaseTask] = set()
+        unmatched_items: Set[Union[BaseTask, Lane]] = set()
 
         for task_id, task in process.tasks.items():
             if isinstance(task, SubProcess):
@@ -309,16 +311,29 @@ class ProcessExecutor:
             self.tasks_impl[task_id] = adhesive_task
 
             if not adhesive_task:
-                unmatched_tasks.add(task)
+                unmatched_items.add(task)
 
-        if unmatched_tasks:
-            display_unmatched_tasks(unmatched_tasks)
+        for lane_id, lane in process.lanes.items():
+            lane_definition = self._match_lane(lane)
+
+            if not lane_definition:
+                unmatched_items.add(lane)
+
+        if unmatched_items:
+            display_unmatched_items(unmatched_items)
             sys.exit(1)
 
     def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:
         for task_definition in self.process.task_definitions:
             if token_utils.matches(task_definition.re_expressions, task.name) is not None:
                 return task_definition
+
+        return None
+
+    def _match_lane(self, lane: Lane) -> Optional[ExecutionLane]:
+        for lane_definition in self.process.lane_definitions:
+            if token_utils.matches(lane_definition.re_expressions, lane.name) is not None:
+                return lane_definition
 
         return None
 

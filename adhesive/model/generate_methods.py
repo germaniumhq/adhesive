@@ -1,9 +1,10 @@
-from typing import Iterable
+from typing import Iterable, Union
 
 import re
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.UserTask import UserTask
+from adhesive.graph.Lane import Lane
 
 
 INVALID_CHARACTER = re.compile(r'[^\w\d]')
@@ -29,17 +30,22 @@ def generate_matching_re(name: str) -> str:
     return result
 
 
-def display_unmatched_tasks(unmatched_tasks: Iterable[BaseTask]) -> None:
+def display_unmatched_items(unmatched_items: Iterable[Union[BaseTask, Lane]]) -> None:
     print("Missing tasks implementations. Generate with:\n")
 
-    for unmatched_task in unmatched_tasks:
-        if isinstance(unmatched_task, UserTask):
-            print(f"@adhesive.usertask('{generate_matching_re(unmatched_task.name)}')")
-            print(f"def {generate_task_name(unmatched_task.name)}(context, ui):")
+    for unmatched_item in unmatched_items:
+        if isinstance(unmatched_item, UserTask):
+            print(f"@adhesive.usertask('{generate_matching_re(unmatched_item.name)}')")
+            print(f"def {generate_task_name(unmatched_item.name)}(context, ui):")
             print("    pass\n\n")
             continue
 
-        print(f"@adhesive.task('{generate_matching_re(unmatched_task.name)}')")
-        print(f"def {generate_task_name(unmatched_task.name)}(context):")
+        if isinstance(unmatched_item, Lane):
+            print(f"@adhesive.lane('{generate_matching_re(unmatched_item.name)}')")
+            print(f"def lane_{generate_task_name(unmatched_item.name)}(context):")
+            print("    yield context.workspace.clone()\n\n")
+            continue
+        print(f"@adhesive.task('{generate_matching_re(unmatched_item.name)}')")
+        print(f"def {generate_task_name(unmatched_item.name)}(context):")
         print("    pass\n\n")
 

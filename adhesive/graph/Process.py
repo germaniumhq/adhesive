@@ -40,6 +40,10 @@ class Process(BaseTask):
         return self._tasks
 
     @property
+    def lanes(self) -> Dict[str, Lane]:
+        return self._lanes
+
+    @property
     def edges(self) -> Dict[str, Edge]:
         return self._edges
 
