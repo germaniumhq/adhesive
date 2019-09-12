@@ -42,6 +42,7 @@ from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
 
 from adhesive.model import lane_controller
+from adhesive.model import loop_controller
 
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
@@ -437,7 +438,7 @@ class ProcessExecutor:
 
             # If the event is not yet started as a loop, we need to do that. We might have a wrong
             # loop context, if we're running in a nested loop.
-            if event.task.loop and (not event.context.loop or event.context.loop.task != event.task):
+            if loop_controller.is_top_loop_event(event):
                 # we start a loop by firing the loop events, and consume this event.
                 events_created = ExecutionLoop.create_loop(event, self.clone_event)
                 if events_created == 0:

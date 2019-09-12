@@ -9,6 +9,7 @@ from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 from .AdhesiveLane import AdhesiveLane
+from adhesive.model import loop_controller
 
 
 def ensure_default_lane(process: AdhesiveProcess) -> None:
@@ -33,6 +34,9 @@ def allocate_workspace(process: AdhesiveProcess,
     Allocates a workspace. This matches against the available lanes,
     and creates the workspace.
     """
+    if loop_controller.is_top_loop_event(event):
+        return
+
     fill_in_lane_id(process, event)
 
     lane = find_existing_lane_for_event(process, event)
@@ -51,6 +55,9 @@ def deallocate_workspace(process: AdhesiveProcess,
     Deallocates a workspace. This also checks for potentially the need
     to destroy workspaces (including parent ones)
     """
+    if loop_controller.is_top_loop_event(event):
+        return
+
     lane = find_existing_lane_for_event(process, event)
 
     if not lane:
