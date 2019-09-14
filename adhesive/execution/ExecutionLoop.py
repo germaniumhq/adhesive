@@ -52,11 +52,9 @@ class ExecutionLoop:
 
     @staticmethod
     def create_loop(event: 'ActiveEvent',
-                    clone_event: Callable[['ActiveEvent', 'BaseTask'], 'ActiveEvent']) -> int:
-        expression = event.task.loop.loop_expression
-
-        # FIXME: I'm not sure why this is here and not in the model, since it has nothing
-        # to do with what's being exposed.
+                    clone_event: Callable[['ActiveEvent', 'BaseTask'], 'ActiveEvent'],
+                    target_task: 'BaseTask') -> int:
+        expression = target_task.loop.loop_expression
 
         eval_data = token_utils.get_eval_data(event.context)
         result = eval(expression, {}, eval_data)
@@ -66,14 +64,14 @@ class ExecutionLoop:
 
         index = 0
         for item in result:
-            new_event = clone_event(event, event.task)
+            new_event = clone_event(event, target_task)
             loop_id = str(uuid.uuid4())
 
             parent_loop = new_event.context.loop
             new_event.context.loop = ExecutionLoop(
                 loop_id=loop_id,
                 parent_loop=parent_loop,
-                task=event.task,
+                task=target_task,
                 item=item,
                 index=index)
 

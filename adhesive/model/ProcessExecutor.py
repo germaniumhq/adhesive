@@ -440,18 +440,6 @@ class ProcessExecutor:
             except Exception as e:
                 raise Exception(f"Failure on {event.context.task_name}", e)
 
-            # If the event is not yet started as a loop, we need to do that. We might have a wrong
-            # loop context, if we're running in a nested loop.
-            if loop_controller.is_top_loop_event(event):
-                # we start a loop by firing the loop events, and consume this event.
-                events_created = ExecutionLoop.create_loop(event, self.clone_event)
-                if events_created == 0:
-                    event.state.route(event.context)
-                else:
-                    event.state.done_check(None)
-
-                return
-
             if isinstance(event.task, Process):
                 for start_task in event.task.start_tasks.values():
                     # this automatically registers our events for execution
@@ -530,7 +518,11 @@ class ProcessExecutor:
 
                 for outgoing_edge in outgoing_edges:
                     target_task = process.tasks[outgoing_edge.target_id]
-                    self.clone_event(event, target_task)
+                    if target_task.loop:
+                        # we start a loop by firing the loop events, and consume this event.
+                        ExecutionLoop.create_loop(event, self.clone_event, target_task)
+                    else:
+                        self.clone_event(event, target_task)
 
                 event.state.done_check(outgoing_edges)
             except Exception as e:

@@ -1,5 +1,6 @@
 import adhesive
 from typing import Optional
+import logging
 
 from adhesive.workspace.Workspace import Workspace
 from adhesive.execution import token_utils
@@ -10,6 +11,8 @@ from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 from .AdhesiveLane import AdhesiveLane
 from adhesive.model import loop_controller
+
+LOG = logging.getLogger(__name__)
 
 
 def ensure_default_lane(process: AdhesiveProcess) -> None:
@@ -42,9 +45,13 @@ def allocate_workspace(process: AdhesiveProcess,
 
     lane = find_existing_lane_for_event(process, event)
 
+    LOG.debug(f"allocate: Found lane for {event}: {lane}")
+
     if not lane:
+        LOG.debug(f"Crating a new lane for {event}")
         lane = create_lane_for_event(process, event, original_execution_lane_id)
 
+    LOG.debug(f"Incrementing references for lane {lane}")
     lane.increment_references()
 
     event.context.workspace = lane.workspace.clone()
@@ -60,6 +67,8 @@ def deallocate_workspace(process: AdhesiveProcess,
         return
 
     lane = find_existing_lane_for_event(process, event)
+
+    LOG.debug(f"deallocate: Found lane for {event}: {lane}")
 
     if not lane:
         raise Exception(f"Unable to find lane for {event} on lane {event.context.lane}")
