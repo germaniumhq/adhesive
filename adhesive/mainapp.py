@@ -19,7 +19,7 @@ def __main():
     adhesive.config.current = \
         LocalConfigReader.read_configuration()
 
-    configure_logging(adhesive.config)
+    configure_logging(adhesive.config.current)
 
     for plugin_path in adhesive.config.current.plugins:
         sys.path.append(plugin_path)
