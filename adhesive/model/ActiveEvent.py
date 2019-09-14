@@ -26,6 +26,8 @@ class ActiveEvent:
         self.context = context
 
         self.state = ActiveEventStateMachine()
+        self.state.active_event = self
+
         self.future = None
 
     def __getstate__(self):

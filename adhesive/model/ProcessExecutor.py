@@ -172,6 +172,8 @@ class ProcessExecutor:
         def raise_exception(_ev):
             log_path = get_folder(_ev.data['failed_event'])
 
+            LOG.error(red("Process execution failed. Unhandled error."))
+
             if logredirect.is_enabled:
                 stdout_file = os.path.join(log_path, "stdout")
                 if os.path.isfile(stdout_file):
@@ -249,9 +251,9 @@ class ProcessExecutor:
                             f"{self.events[event.token_id]}. Got a new request to register "
                             f"it as {event}.")
 
-        lane_controller.allocate_workspace(self.process, event)
-
         LOG.debug(f"Register {event}")
+
+        lane_controller.allocate_workspace(self.process, event)
 
         self.events[event.token_id] = event
 
@@ -436,7 +438,7 @@ class ProcessExecutor:
 
         def run_task(_event) -> None:
             try:
-                print(yellow("Run  ") + yellow(event.context.task_name, bold=True))
+                LOG.info(yellow("Run  ") + yellow(event.context.task_name, bold=True))
             except Exception as e:
                 raise Exception(f"Failure on {event.context.task_name}", e)
 
@@ -475,10 +477,10 @@ class ProcessExecutor:
 
         def log_running_done(_event):
             if _event.target_state == ActiveEventState.ERROR:
-                print(red("Failed ") + red(event.context.task_name, bold=True))
+                LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
                 return
 
-            print(green("Done ") + green(event.context.task_name, bold=True))
+            LOG.info(green("Done ") + green(event.context.task_name, bold=True))
 
         def error_parent_task(event, e):
             if event.parent_id in self.events:
@@ -598,19 +600,6 @@ class ProcessExecutor:
 
             self.unregister_event(event)
 
-        def allocate_workspace(_event) -> None:
-            lane_controller.allocate_workspace(
-                self.process,  # AdhesiveProcess
-                event
-            )
-
-        def deallocate_workspace(_event) -> None:
-            lane_controller.deallocate_workspace(
-                self.process,  # AdhesiveProcess
-                event
-            )
-
-        # event.state.after_enter(ActiveEventState.PROCESSING, allocate_workspace)
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
         event.state.after_enter(ActiveEventState.WAITING, wait_task)
         event.state.after_enter(ActiveEventState.RUNNING, run_task)
@@ -620,6 +609,5 @@ class ProcessExecutor:
         event.state.after_enter(ActiveEventState.DONE_CHECK, done_check)
         event.state.after_enter(ActiveEventState.DONE_END_TASK, done_end_task)
         event.state.after_enter(ActiveEventState.DONE, done_task)
-        # event.state.after_enter(ActiveEventState.DONE, deallocate_workspace)
 
         return event

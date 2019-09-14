@@ -18,6 +18,7 @@ class LocalAdhesiveConfig(AdhesiveConfig):
         self._defaults = {
             "color": True,
             "temp_folder": "/tmp/adhesive",
+            "log_level": "info",
             "plugins": [],
         }
         self._local_config = local_config if local_config is not None else dict()

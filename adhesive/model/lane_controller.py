@@ -10,8 +10,6 @@ from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 from .AdhesiveLane import AdhesiveLane
-from adhesive.model import loop_controller
-
 LOG = logging.getLogger(__name__)
 
 
@@ -37,21 +35,17 @@ def allocate_workspace(process: AdhesiveProcess,
     Allocates a workspace. This matches against the available lanes,
     and creates the workspace.
     """
-    if loop_controller.is_top_loop_event(event):
-        return
+    LOG.debug(f"Lane allocate workspace check for {event}")
 
     original_execution_lane_id = event.context.lane
     fill_in_lane_id(process, event)
 
     lane = find_existing_lane_for_event(process, event)
 
-    LOG.debug(f"allocate: Found lane for {event}: {lane}")
-
     if not lane:
         LOG.debug(f"Crating a new lane for {event}")
         lane = create_lane_for_event(process, event, original_execution_lane_id)
 
-    LOG.debug(f"Incrementing references for lane {lane}")
     lane.increment_references()
 
     event.context.workspace = lane.workspace.clone()
@@ -63,12 +57,9 @@ def deallocate_workspace(process: AdhesiveProcess,
     Deallocates a workspace. This also checks for potentially the need
     to destroy workspaces (including parent ones)
     """
-    if loop_controller.is_top_loop_event(event):
-        return
+    LOG.debug(f"Lane deallocate workspace check for {event}")
 
     lane = find_existing_lane_for_event(process, event)
-
-    LOG.debug(f"deallocate: Found lane for {event}: {lane}")
 
     if not lane:
         raise Exception(f"Unable to find lane for {event} on lane {event.context.lane}")

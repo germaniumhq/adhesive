@@ -542,6 +542,14 @@ Marks if the logging should use ANSI colors in the terminal. Implicitly
 this is ``true``, but if log parsing is needed, it can make sense to
 have it false.
 
+log\_level
+~~~~~~~~~~
+
+default\_value ``info``, environment var: ``ADHESIVE_LOG_LEVEL``.
+
+How verbose should the logging be on the terminal. Possible values are
+``trace``, ``debug``, ``info``, ``warning``, ``error`` and ``critical``.
+
 pool\_size
 ~~~~~~~~~~
 

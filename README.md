@@ -513,6 +513,13 @@ default value `True`, environment var: `ADHESIVE_COLOR`.
 Marks if the logging should use ANSI colors in the terminal. Implicitly this is
 `true`, but if log parsing is needed, it can make sense to have it false.
 
+### log_level
+
+default_value `info`, environment var: `ADHESIVE_LOG_LEVEL`.
+
+How verbose should the logging be on the terminal. Possible values are `trace`,
+`debug`, `info`, `warning`, `error` and `critical`.
+
 ### pool_size
 
 default value is empty, environment var: `ADHESIVE_POOL_SIZE`.

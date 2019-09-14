@@ -2,9 +2,15 @@ import unittest
 
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
+import adhesive
+import adhesive.logging
 
 from test.adhesive.execution.check_equals import assert_equal_execution
 from test.adhesive.execution.test_tasks import adhesive
+
+
+adhesive.config.current = adhesive.config.LocalConfigReader.read_configuration()
+adhesive.logging.configure_logging(adhesive.config.current)
 
 
 class TestLoopExecution(unittest.TestCase):

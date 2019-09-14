@@ -1,15 +1,25 @@
-import adhesive
-from adhesive.config import LocalConfigReader
-import sys
-
 _globals = globals()
 _locals = locals()
 
+import logging
+
 
 def __main():
+    """
+    The main adhesive program.
+    """
+
+    # we import everything locally so we don't pollute the globals
+    import adhesive
+    from adhesive.config import LocalConfigReader
+    from adhesive.logging import configure_logging
+    import sys
+
     # read local configuration.
     adhesive.config.current = \
         LocalConfigReader.read_configuration()
+
+    configure_logging(adhesive.config)
 
     for plugin_path in adhesive.config.current.plugins:
         sys.path.append(plugin_path)
@@ -22,3 +32,4 @@ def __main():
 
 if __name__ == "__main__":
     __main()
+

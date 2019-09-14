@@ -1,5 +1,7 @@
 name: ActiveEvent
 package: .
+properties:
+  active_event: "'ActiveEvent'"
 states:
   - NEW
   - PROCESSING

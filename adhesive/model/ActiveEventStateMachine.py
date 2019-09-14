@@ -162,6 +162,8 @@ class ActiveEventStateMachine(object):
         self._currentState = None  # type: Optional[ActiveEventState]
         self._current_change_state_event = None  # type: Optional[ActiveEventStateChangeEvent]
 
+        self.active_event = None
+
     @property
     def state(self) -> ActiveEventState:
         self._ensure_state_machine_initialized()
@@ -251,7 +253,10 @@ class ActiveEventStateMachine(object):
             assert self._currentState
             return self._currentState
 
-        LOG.debug(f"Transition: {self._currentState} -> {targetState}")
+        LOG.debug(
+            f"Transition {self.active_event.token_id} "
+            f"({self.active_event.task.id}):{self.active_event.context.task_name}: "
+            f"{self._currentState} -> {targetState}")
 
         self._currentState = targetState
         self._current_change_state_event = None
