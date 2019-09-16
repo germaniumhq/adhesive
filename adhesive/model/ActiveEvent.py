@@ -4,6 +4,7 @@ from typing import Optional
 from adhesive.execution import token_utils
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine
+from adhesive.model.ActiveLoopType import ActiveLoopType
 
 
 class ActiveEvent:
@@ -29,6 +30,8 @@ class ActiveEvent:
         self.state.active_event = self
 
         self.future = None
+
+        self.loop_type: Optional[AciveLoopType] = None
 
     def __getstate__(self):
         return {

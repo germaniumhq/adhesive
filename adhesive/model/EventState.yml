@@ -29,6 +29,7 @@ transitions:
     route: ROUTING
     error: ERROR
     done_check: DONE_CHECK
+    done: DONE
   ERROR:
     route: ROUTING
     done: DONE

@@ -1,7 +1,149 @@
+from typing import Any
+import uuid
+import logging
+
+from adhesive.execution import token_utils
+from adhesive.execution.ExecutionLoop import ExecutionLoop
+from adhesive.graph import BaseTask
+
 from .ActiveEvent import ActiveEvent
+from .ActiveLoopType import ActiveLoopType
+
+LOG = logging.getLogger(__name__)
 
 
 def is_top_loop_event(event: ActiveEvent):
     return event.task.loop and (not event.context.loop or event.context.loop.task != event.task)
 
+
+def create_loop(event: ActiveEvent, clone_event, target_task: BaseTask) -> None:
+    """
+    Create a loop event.
+    """
+    new_event = clone_event(event, target_task)
+
+    loop_id = str(uuid.uuid4())
+
+    new_event.loop_type = ActiveLoopType.INITIAL
+    new_event.context.loop = ExecutionLoop(
+        loop_id=loop_id,
+        parent_loop=event.context.loop.parent_loop if event.context.loop else None,
+        task=new_event.task,
+        item=None,
+        index=-1,
+    )
+
+
+def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
+    """
+    evals the initial expression of the loop and determines its type. If the
+    expression returns a collection the loop creates all the events with a
+    COLLECTION type. If it returns a truthy, the loop creates a single
+    CONDITION event. If it's falsy, the current event changes to INITIAL_EMPTY.
+    """
+    LOG.debug(f"Loop: Evaluate a new loop: {event.task.loop.loop_expression}")
+    loop_data = evaluate_loop_expression(event)
+
+    if not loop_data:
+        LOG.debug("Loop is INITIAL_EMPTY")
+        event.loop_type = ActiveLoopType.INITIAL_EMPTY
+        return
+
+    if not is_collection(loop_data):
+        LOG.debug(f"Loop: CONDITION loop for {event.context.loop.loop_id}")
+        new_event = clone_event(event, event.task)
+        new_event.loop_type = ActiveLoopType.CONDITION
+
+        new_event.context.loop = ExecutionLoop(
+            loop_id=event.context.loop.loop_id,
+            parent_loop=event.context.loop.parent_loop,
+            task=event.task,
+            item=loop_data,
+            index=0)
+
+        new_event.context.task_name = token_utils.parse_name(
+                new_event.context,
+                new_event.context.task.name)
+
+        return
+
+    LOG.debug(f"Loop: COLLECTION loop for {event.context.loop.loop_id}")
+
+    index = 0
+    for item in loop_data:
+        new_event = clone_event(event, event.task)
+        new_event.loop_type = ActiveLoopType.COLLECTION
+
+        new_event.context.loop = ExecutionLoop(
+            loop_id=event.context.loop.loop_id,
+            parent_loop=event.context.loop.parent_loop,
+            task=event.task,
+            item=item,
+            index=index)
+
+        # if we're iterating over a map, we're going to store the
+        # values as well.
+        if isinstance(loop_data, dict):
+            new_event.context.loop._value = loop_data[item]
+
+        # FIXME: this knows way too much about how the ExecutionTokens are
+        # supposed to function
+        # FIXME: rename all event.contexts to event.token. Context is only
+        # true in the scope of an execution task.
+        new_event.context.task_name = token_utils.parse_name(
+                new_event.context,
+                new_event.context.task.name)
+
+        index += 1
+
+
+def is_conditional_loop_event(event: ActiveEvent) -> bool:
+    """
+    Checks the event if it's a conditional loop event.
+    """
+    return event.loop_type == ActiveLoopType.CONDITION
+
+
+def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
+    """
+    evals the expression of the conditional loop event, to see if should still
+    execute.
+    """
+    if event.loop_type != ActiveLoopType.CONDITION:
+        return False
+
+    result = evaluate_loop_expression(event)
+
+    if not result:
+        return False
+
+    new_event = clone_event(event, event.task)
+    new_event.loop_type = ActiveLoopType.CONDITION
+
+    new_event.context.loop = ExecutionLoop(
+        loop_id=event.context.loop.loop_id,
+        parent_loop=event.context.loop.parent_loop,
+        task=event.task,
+        item=result,
+        index=event.context.loop.index + 1)
+
+    new_event.context.task_name = token_utils.parse_name(
+            new_event.context,
+            new_event.context.task.name)
+
+    return True
+
+
+def is_collection(what: Any) -> bool:
+    return hasattr(what, "__iter__")
+
+
+def evaluate_loop_expression(event: ActiveEvent) -> Any:
+    """
+    Evaluates a loop expression.
+    """
+    eval_data = token_utils.get_eval_data(event.context)
+    result = eval(event.task.loop.loop_expression, {}, eval_data)
+
+    return result
 

@@ -345,12 +345,25 @@ def process_complex_gateway(p: Process, xml_node) -> None:
 
 def process_potential_loop(task: BaseTask, xml_node) -> BaseTask:
     loop_node = find_node(xml_node, "standardLoopCharacteristics")
+    multi_instance_loop = find_node(xml_node, "multiInstanceLoopCharacteristics")
 
-    if not loop_node:
+    if not loop_node and not multi_instance_loop:
         return task
 
-    loop_expression = find_node(loop_node, "loopCondition")
-    task.loop = Loop(loop_expression=loop_expression.text)
+    if loop_node and multi_instance_loop:
+        raise Exception(f"Both standard loop and multi instance loop were present on {xml_node}")
+
+    if loop_node:
+        loop_expression = find_node(loop_node, "loopCondition")
+        task.loop = Loop(loop_expression=loop_expression.text,
+                         parallel=True)
+    elif multi_instance_loop:
+        is_sequential = get_boolean(multi_instance_loop, "isSequential", False)
+        loop_expression = find_node(multi_instance_loop, "completionCondition")
+        task.loop = Loop(loop_expression=loop_expression.text,
+                         parallel=not is_sequential)
+    else:
+        raise Exception(f"No loop node was present, after the validation.")
 
     return task
 

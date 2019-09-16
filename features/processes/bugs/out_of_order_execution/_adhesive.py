@@ -24,6 +24,7 @@ def bob_build(context, project_name) -> None:
 
     time.sleep(1)
 
+
 @adhesive.task('tc:\ awi')
 def tc_build(context) -> None:
     pass

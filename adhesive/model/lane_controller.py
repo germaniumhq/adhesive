@@ -10,6 +10,7 @@ from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 from .AdhesiveLane import AdhesiveLane
+
 LOG = logging.getLogger(__name__)
 
 
@@ -82,11 +83,10 @@ def fill_in_lane_id(process: AdhesiveProcess,
     resides.
     """
     lane_definition = process.process.get_lane_definition(event.task.id)
-    lane_name = token_utils.parse_name(event.context, lane_definition.name)
 
     event.context.lane = ExecutionLaneId(
             lane_id=lane_definition.id,
-            lane_name=lane_name)
+            lane_name=lane_definition.name)
 
 
 def find_existing_lane_for_event(process: AdhesiveProcess,

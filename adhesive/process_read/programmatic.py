@@ -235,7 +235,7 @@ class ProcessBuilder:
         :return:
         """
         if loop is not None:
-            new_task.loop = Loop(loop)
+            new_task.loop = Loop(loop, parallel=True)
 
         if isinstance(new_task, EndEvent):
             self.process.add_end_event(new_task)

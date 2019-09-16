@@ -15,7 +15,6 @@ from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
-from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_items
@@ -44,8 +43,10 @@ from adhesive import config
 from adhesive.model import lane_controller
 from adhesive.model import loop_controller
 
-from .ActiveEvent import ActiveEvent
-from .AdhesiveProcess import AdhesiveProcess
+from adhesive.model.ActiveEventStateMachine import ActiveEventState
+from adhesive.model.ActiveLoopType import ActiveLoopType
+from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.model.AdhesiveProcess import AdhesiveProcess
 
 LOG = logging.getLogger(__name__)
 
@@ -198,18 +199,21 @@ class ProcessExecutor:
 
         root_event.state.after_enter(ActiveEventState.ERROR, raise_exception)
 
-        self.execute_process()
+        self.execute_process_event_loop()
 
         return root_event.context.data
 
-    def execute_process(self) -> None:
+    def execute_process_event_loop(self) -> None:
         """
-        Process the events in a process until no more events are available.
-        For example an event is the start of the process. The events are
-        then creating futures (i.e. actual stuff that's being processed)
-        that in turn might generate new events.
-        :return:
+        Main event loop. Processes the events from a process until no more
+        events are available.  For example an event is the start of the
+        process. The events are then creating futures (i.e. actual stuff that's
+        being processed) that in turn might generate new events.
+        :return: data from the last execution token.
         """
+        # old_done_futures = set()
+        old_pending_events = set(self.events.keys())
+
         while self.events:
             pending_events = filter(lambda e: e.state.state == ActiveEventState.NEW,
                                     self.events.values())
@@ -225,6 +229,12 @@ class ProcessExecutor:
                 return_when=concurrent.futures.FIRST_COMPLETED,
                 timeout=5)
 
+            #if old_done_futures - done_futures:
+            #    broken_futures = old_done_futures - done_futures
+            #    LOG.warn(f"Some of the old futures are still present: {broken_futures}")
+            #
+            # old_done_futures = set(done_futures)
+
             for future in done_futures:
                 token_id = self.futures[future]
                 try:
@@ -235,6 +245,8 @@ class ProcessExecutor:
                         "error": traceback.format_exc(),
                         "failed_event": self.events[token_id]
                     })
+
+            old_pending_events = set(self.events.keys())
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
@@ -437,6 +449,16 @@ class ProcessExecutor:
             return None
 
         def run_task(_event) -> None:
+            if event.loop_type == ActiveLoopType.INITIAL:
+                loop_controller.evaluate_initial_loop(event, self.clone_event)
+
+                if event.loop_type == ActiveLoopType.INITIAL_EMPTY:
+                    event.state.route(event.context)
+                else:
+                    event.state.done()
+
+                return
+
             try:
                 LOG.info(yellow("Run  ") + yellow(event.context.task_name, bold=True))
             except Exception as e:
@@ -480,6 +502,9 @@ class ProcessExecutor:
                 LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
                 return
 
+            if event.loop_type in (ActiveLoopType.INITIAL, ActiveLoopType.INITIAL_EMPTY):
+                return
+
             LOG.info(green("Done ") + green(event.context.task_name, bold=True))
 
         def error_parent_task(event, e):
@@ -515,14 +540,30 @@ class ProcessExecutor:
 
         def route_task(_event) -> None:
             try:
+                # Since we're in routing, we passed the actual running, so we need to update the
+                # context with the new execution token.
                 event.context = _event.data
+
+                # we don't route, since we have live events created from the
+                # INITIAL loop type
+                if event.loop_type == ActiveLoopType.INITIAL:
+                    event.state.done()
+                    return
+
+                if loop_controller.next_conditional_loop_iteration(event, self.clone_event):
+                    # obviously the done checks are not needed, since we're
+                    # still in the loop
+                    event.state.done()
+
+                    return
+
                 outgoing_edges = GatewayController.compute_outgoing_edges(process, event)
 
                 for outgoing_edge in outgoing_edges:
                     target_task = process.tasks[outgoing_edge.target_id]
                     if target_task.loop:
                         # we start a loop by firing the loop events, and consume this event.
-                        ExecutionLoop.create_loop(event, self.clone_event, target_task)
+                        loop_controller.create_loop(event, self.clone_event, target_task)
                     else:
                         self.clone_event(event, target_task)
 

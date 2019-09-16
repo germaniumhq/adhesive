@@ -100,11 +100,12 @@ def parent_loop_id(e: 'ActiveEvent') -> Optional[str]:
     if not e.context.loop.parent_loop:
         return None
 
-    return e.context.loop.parent_loop.loop_id
+    return f"{e.context.loop.parent_loop.loop_id}:{e.context.loop.parent_loop.index}"
 
 
 def loop_id(e: 'ActiveEvent') -> Optional[str]:
     if not e.context.loop:
         return None
 
-    return e.context.loop.loop_id
+    return f"{e.context.loop.loop_id}:{e.context.loop.index}"
+

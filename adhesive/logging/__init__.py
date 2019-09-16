@@ -1,4 +1,5 @@
 import logging
+import sys
 
 
 def configure_logging(config) -> None:
@@ -18,5 +19,6 @@ def configure_logging(config) -> None:
 
     logging.basicConfig(
             level=debug_levels[config.log_level],
+            stream=sys.stdout,
             format='%(asctime)-15s %(levelname)-8s %(message)s')
 

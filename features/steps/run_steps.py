@@ -23,7 +23,7 @@ def run_without_ui_redirection(contxt, folder):
 @step("I run adhesive on '(.*?)'")
 def run_an_adhesive_process(context, folder):
     pipes = subprocess.Popen(
-        ["adhesive"],
+        ["python", "-m", "adhesive.mainapp"],
         cwd=f"{os.getcwd()}/features/{folder}",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -69,6 +69,9 @@ def noop(context):
 @step("the '(.*?)' is executed only once")
 def task_executed_after_two_tasks(context,
                                   waiting_task: str) -> None:
+    #raise Exception(f'Run  {waiting_task}')
+    print(f'Run  {waiting_task}')
+    print(f'STDOUT: {context.process_stdout}')
     test.assertEqual(
         1,
         context.process_stdout.count(f'Run  {waiting_task}')
