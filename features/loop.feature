@@ -8,6 +8,7 @@ Scenario: Parallel loops should iterate collections in parallel
   Given I run adhesive on 'processes/loop/loop-parallel'
   Then the adhesive process has passed
 
+@manualtest
 Scenario: Serial loops should iterate collections serially
   Given I run adhesive on 'processes/loop/loop-serial'
   Then the adhesive process has passed
@@ -20,11 +21,13 @@ Scenario: Regular loops with conditions should iterate using the condition,
   Given I run adhesive on 'processes/loop/loop-default-condition'
   Then the adhesive process has passed
 
+@manualtest
 Scenario: Parallel loops should iterate conditions serially with a warning
   Given I run adhesive on 'processes/loop/loop-parallel-condition'
   Then the adhesive process has passed
   And there was a warning on the stderr regarding the parallel condition execution
 
+@manualtest
 Scenario: Serial loops should iterate collections serially using the condition,
     not the collection
   Given I run adhesive on 'processes/loop/loop-serial-condition'

@@ -2,7 +2,7 @@ Feature: BPMN lanes are supported, and allow creating workspaces
     whenever execution tokens are entering the lane. The workspaces are
     kept alive as long as there are tasks that still use them.
 
-@1
+@1 @manualtest
 Scenario: A lane can keep a docker container up for the required
     commands.
   Given I run adhesive on 'processes/lane/docker'
