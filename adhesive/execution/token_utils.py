@@ -1,6 +1,11 @@
 from typing import List, Dict, Optional
 
+import traceback
+import logging
+
 from .ExecutionToken import ExecutionToken
+
+LOG = logging.getLogger(__name__)
 
 # contains utility functions that deal with execution tokens routing providing:
 # 1. an eval context for functions executions,
@@ -17,6 +22,7 @@ def parse_name(context: ExecutionToken,
         eval_data = get_eval_data(context)
         return name.format(**eval_data)
     except Exception as e:
+        # LOG.warn(f"Failed to parse name {e}")
         return name
 
 

@@ -40,3 +40,8 @@ Scenario: An empty condition loop should continue to the next task without
   Given I run adhesive on 'processes/loop/loop-condition-empty'
   Then the adhesive process has passed
 
+Scenario: Nested loops should execute correctly
+  Given I run adhesive on 'processes/loop/loop-nested'
+  Then the adhesive process has passed
+
+

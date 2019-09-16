@@ -22,12 +22,14 @@ def create_loop(event: ActiveEvent, clone_event, target_task: BaseTask) -> None:
     """
     new_event = clone_event(event, target_task)
 
+    assert new_event.context
+
     loop_id = str(uuid.uuid4())
 
     new_event.loop_type = ActiveLoopType.INITIAL
     new_event.context.loop = ExecutionLoop(
         loop_id=loop_id,
-        parent_loop=event.context.loop.parent_loop if event.context.loop else None,
+        parent_loop=event.context.loop,
         task=new_event.task,
         item=None,
         index=-1,
@@ -54,6 +56,8 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         new_event = clone_event(event, event.task)
         new_event.loop_type = ActiveLoopType.CONDITION
 
+        assert new_event.context
+
         new_event.context.loop = ExecutionLoop(
             loop_id=event.context.loop.loop_id,
             parent_loop=event.context.loop.parent_loop,
@@ -74,6 +78,8 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         new_event = clone_event(event, event.task)
         new_event.loop_type = ActiveLoopType.COLLECTION
 
+        assert new_event.context
+
         new_event.context.loop = ExecutionLoop(
             loop_id=event.context.loop.loop_id,
             parent_loop=event.context.loop.parent_loop,
@@ -90,9 +96,12 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         # supposed to function
         # FIXME: rename all event.contexts to event.token. Context is only
         # true in the scope of an execution task.
+        LOG.debug(f"Loop value {new_event.context.loop.value}")
         new_event.context.task_name = token_utils.parse_name(
                 new_event.context,
                 new_event.context.task.name)
+
+        LOG.debug(f"Loop new task name: {new_event.context.task_name}")
 
         index += 1
 
@@ -119,6 +128,8 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
 
     new_event = clone_event(event, event.task)
     new_event.loop_type = ActiveLoopType.CONDITION
+
+    assert new_event.context
 
     new_event.context.loop = ExecutionLoop(
         loop_id=event.context.loop.loop_id,

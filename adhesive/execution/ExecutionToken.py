@@ -34,7 +34,10 @@ class ExecutionToken:
         self.data = ExecutionData(data)
         self.execution_id = execution_id
         self.token_id = token_id
-        self.task_name: Optional[str] = None
+        # we need to define it before calling token_utils.parse_name. That's
+        # since parse_name() will read this object using as_mapping(), that in
+        # turn reads the task_name
+        self.task_name = None
 
         # These are None until the task is assgined to a lane
         self.workspace: Optional[Workspace] = workspace
@@ -43,7 +46,7 @@ class ExecutionToken:
         self.lane: Optional[ExecutionLaneId] = lane
 
         self.loop: Optional[ExecutionLoop] = None
-        self.task_name = token_utils.parse_name(self, self.task.name)
+        self.task_name: Optional[str] = token_utils.parse_name(self, self.task.name)
 
     def clone(self, task: 'BaseTask') -> 'ExecutionToken':
         result = ExecutionToken(

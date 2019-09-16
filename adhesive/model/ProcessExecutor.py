@@ -74,6 +74,33 @@ PRE_RUN_STATES = {
 }
 
 
+def raise_unhandled_exception(_ev):
+    log_path = get_folder(_ev.data['failed_event'])
+
+    LOG.error(red("Process execution failed. Unhandled error."))
+
+    if logredirect.is_enabled:
+        stdout_file = os.path.join(log_path, "stdout")
+        if os.path.isfile(stdout_file):
+            with open(stdout_file) as f:
+                print(white("STDOUT:", bold=True))
+                print(white(f.read()))
+        else:
+            print(white("STDOUT:", bold=True) + white(" not found"))
+
+        stderr_file = os.path.join(log_path, "stderr")
+        if os.path.isfile(stderr_file):
+            with open(stderr_file) as f:
+                print(red("STDERR:", bold=True))
+                print(red(f.read()), file=sys.stderr)
+        else:
+            print(red("STDERR:", bold=True) + red(" not found"))
+
+    print(red("Exception:", bold=True))
+    print(red(_ev.data['error']), file=sys.stderr)
+
+    sys.exit(1)
+
 def is_predecessor(event, e) -> bool:
     if e.state.state not in ACTIVE_STATES:
         return False
@@ -169,35 +196,7 @@ class ProcessExecutor:
         fake_event.token_id = None  # FIXME: why
 
         root_event = self.clone_event(fake_event, process)
-
-        def raise_exception(_ev):
-            log_path = get_folder(_ev.data['failed_event'])
-
-            LOG.error(red("Process execution failed. Unhandled error."))
-
-            if logredirect.is_enabled:
-                stdout_file = os.path.join(log_path, "stdout")
-                if os.path.isfile(stdout_file):
-                    with open(stdout_file) as f:
-                        print(white("STDOUT:", bold=True))
-                        print(white(f.read()))
-                else:
-                    print(white("STDOUT:", bold=True) + white(" not found"))
-
-                stderr_file = os.path.join(log_path, "stderr")
-                if os.path.isfile(stderr_file):
-                    with open(stderr_file) as f:
-                        print(red("STDERR:", bold=True))
-                        print(red(f.read()), file=sys.stderr)
-                else:
-                    print(red("STDERR:", bold=True) + red(" not found"))
-
-            print(red("Exception:", bold=True))
-            print(red(_ev.data['error']), file=sys.stderr)
-
-            sys.exit(1)
-
-        root_event.state.after_enter(ActiveEventState.ERROR, raise_exception)
+        root_event.state.after_enter(ActiveEventState.ERROR, raise_unhandled_exception)
 
         self.execute_process_event_loop()
 
@@ -211,8 +210,8 @@ class ProcessExecutor:
         being processed) that in turn might generate new events.
         :return: data from the last execution token.
         """
-        # old_done_futures = set()
-        old_pending_events = set(self.events.keys())
+        old_done_futures = set()
+        #old_pending_events = set(self.events.keys())
 
         while self.events:
             pending_events = filter(lambda e: e.state.state == ActiveEventState.NEW,
@@ -233,7 +232,7 @@ class ProcessExecutor:
             #    broken_futures = old_done_futures - done_futures
             #    LOG.warn(f"Some of the old futures are still present: {broken_futures}")
             #
-            # old_done_futures = set(done_futures)
+            #old_done_futures = set(done_futures)
 
             for future in done_futures:
                 token_id = self.futures[future]
