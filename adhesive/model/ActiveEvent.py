@@ -60,7 +60,13 @@ class ActiveEvent:
         # FIXME: this probably doesn't belong here
         # FIXME: the self.task != task is probably wrong, since we want to support
         # boolean looping expressions.
-        result.context.loop = self.context.loop
+        if self.context.task.loop and self.context.loop \
+                and self.context.loop.task == self.context.task \
+                and self.context.task != task \
+                and parent_id == self.parent_id:
+            result.context.loop = self.context.loop.parent_loop
+        else:
+            result.context.loop = self.context.loop
 
         result.context.task_name = token_utils.parse_name(
                 result.context,

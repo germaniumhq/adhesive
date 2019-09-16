@@ -7,7 +7,7 @@ test = unittest.TestCase()
 
 def assert_equal_execution(expected: Dict[str, int],
                            actual: Dict[str, Set[str]]) -> None:
-    test.assertEqual(expected.keys(), actual.keys())
+    test.assertSetEqual(set(expected.keys()), set(actual.keys()))
     actual_dict = dict()
 
     for k, v in actual.items():

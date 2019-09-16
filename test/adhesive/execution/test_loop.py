@@ -38,6 +38,7 @@ class TestLoopExecution(unittest.TestCase):
             'Test Browser edge on mac': 1,
             'Test Browser ie on mac': 1,
         }, data.executions)
+
         self.assertFalse(process_executor.events)
 
     def test_loop_execution_no_wait(self):
@@ -63,6 +64,7 @@ class TestLoopExecution(unittest.TestCase):
             'Test Browser edge on mac': 1,
             'Test Browser ie on mac': 1,
         }, data.executions)
+
         self.assertFalse(process_executor.events)
 
 
