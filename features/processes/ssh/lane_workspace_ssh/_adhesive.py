@@ -33,14 +33,7 @@ def start_ssh_server(context):
     print("[OK] started server")
 
 
-@adhesive.task('Shutdown Server')
-def shutdown_server(context):
-    print("shutting down server...")
-    context.workspace.run(f"docker rm -f {context.data.container_id}")
-    print("[OK] server was shutdown")
-
-
-@adhesive.task('Task')
+@adhesive.task('Task', lane="ssh", loop="items")
 def run_ls_in_ssh(context):
     print(context.workspace)
     context.workspace.run(f"""
@@ -48,8 +41,13 @@ def run_ls_in_ssh(context):
         ls -la
     """)
 
+@adhesive.task('Shutdown Server')
+def shutdown_server(context):
+    print("shutting down server...")
+    context.workspace.run(f"docker rm -f {context.data.container_id}")
+    print("[OK] server was shutdown")
 
-adhesive.bpmn_build("lane-ssh.bpmn", initial_data={
-    "items": list(range(10)),
+
+adhesive.build(initial_data={
+    "items": range(10),
 })
-

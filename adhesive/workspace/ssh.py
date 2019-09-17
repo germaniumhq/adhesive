@@ -28,10 +28,10 @@ class SshWorkspace(Workspace):
 
         if ssh_connection:
             self.ssh = ssh_connection
-
-        self.ssh = paramiko.client.SSHClient()
-        self.ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
-        self.ssh.connect(ssh, **kw)
+        else:
+            self.ssh = paramiko.client.SSHClient()
+            self.ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
+            self.ssh.connect(ssh, **kw)
 
         self._sftp = None
 
@@ -101,14 +101,12 @@ class SshWorkspace(Workspace):
                         to_path: str):
         raise Exception("not implemented")
 
-    def clone(self):
-        result = SshWorkspace(self,
-                              execution_id=self.execution_id,
+    def clone(self) -> 'SshWorkspace':
+        result = SshWorkspace(execution_id=self.execution_id,
                               token_id=self.token_id,
                               ssh=self._ssh,
                               pwd=self.pwd,
-                              ssh_connection=self.ssh,
-                              **self._kw)
+                              ssh_connection=self.ssh)
 
         return result
 

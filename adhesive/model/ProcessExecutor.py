@@ -123,11 +123,22 @@ def is_predecessor(event, e) -> bool:
     return True
 
 
-def deep_copy_event(e: T) -> T:
-    return copy.deepcopy(e)
+def deep_copy_event(e: ActiveEvent) -> ActiveEvent:
+    """
+    We deepcopy everything except the workspace.
+    :param e:
+    :return:
+    """
+    workspace = e.context.workspace
+    e.context.workspace = None
+    result = copy.deepcopy(e)
+
+    result.context.workspace = workspace
+
+    return result
 
 
-def noop_copy_event(e: T) -> T:
+def noop_copy_event(e: ActiveEvent) -> ActiveEvent:
     return e
 
 
