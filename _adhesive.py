@@ -53,8 +53,8 @@ def gbs_test_lin64(context) -> None:
         w.run(command)
 
 
-@adhesive.task('GBS Integration Test .*?\: lin64')
-def gbs_integration_test_lin64(context) -> None:
+@adhesive.task('GBS Integration Test (.*?)\: lin64')
+def gbs_integration_test_lin64(context, parallel_processing: str) -> None:
     image_name = gbs.test(
         workspace=context.workspace,
         platform="python:3.7",
@@ -62,7 +62,7 @@ def gbs_integration_test_lin64(context) -> None:
 
     command = f"ADHESIVE_PARALLEL_PROCESSING={context.data.parallel_processing} " \
               f"ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test " \
-              f"behave -t ~@manualtest"
+              f"behave -t ~@manualtest -t ~@no{parallel_processing}"
 
     with docker.inside(
             context.workspace,

@@ -14,7 +14,7 @@ def find_open_port() -> int:
 @adhesive.lane("ssh")
 def lane_ssh(context):
     with ssh.inside(context.workspace,
-            "localhost", # "172.17.0.1",
+            "172.17.0.1",
             username="root",
             password="root",
             port=context.data.ssh_port) as w:
