@@ -1,5 +1,5 @@
 import re
-from typing import Tuple
+from typing import Tuple, Optional
 from xml.etree import ElementTree
 
 from adhesive.graph.BaseTask import BaseTask
@@ -42,7 +42,7 @@ def read_bpmn_file(file_name: str) -> Process:
     root_node = ElementTree.parse(file_name).getroot()
     process = find_node(root_node, 'process')
 
-    return read_process(process)
+    return read_process(None, process)
 
 
 def find_node(parent_node, name: str):
@@ -68,13 +68,20 @@ def get_boolean(parent_node, attr: str, default_value: bool) -> bool:
     raise Exception(f"Not a boolean value for {attr}: {attr_value}")
 
 
-def read_process(process) -> Process:
+def read_process(parent_process: Optional[Process], process) -> Process:
     node_ns, node_name = parse_tag(process)
 
     if "process" == node_name:
-        result = Process(process.get('id'))
+        result = Process(
+            parent_process=parent_process,
+            id=process.get('id')
+        )
     elif "subProcess" == node_name:
-        result = SubProcess(process.get('id'), normalize_name(process.get('name')))
+        result = SubProcess(
+            parent_process=parent_process,
+            id=process.get('id'),
+            name=normalize_name(process.get('name'))
+        )
     else:
         raise Exception(f"Unknown process node: {process.tag}")
 
@@ -300,7 +307,7 @@ def process_node_end_event(p: Process, xml_node) -> None:
 
 
 def process_node_sub_process(p: Process, xml_node) -> None:
-    task = read_process(xml_node)
+    task = read_process(p, xml_node)
     task = process_potential_loop(task, xml_node)
 
     p.add_task(task)

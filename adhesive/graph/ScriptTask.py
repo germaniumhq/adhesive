@@ -1,13 +1,23 @@
+from typing import Optional
+
 from adhesive.graph.BaseTask import BaseTask
 
 
 class ScriptTask(BaseTask):
     def __init__(self,
-                 _id: str,
+                 *args,
+                 parent_process: Optional['Process'],
+                 id: str,
                  name: str,
                  language: str,
                  script: str) -> None:
-        super(ScriptTask, self).__init__(_id, name)
+        if args:
+            raise Exception("You need to use named parameters")
+
+        super(ScriptTask, self).__init__(
+            parent_process=parent_process,
+            id=id,
+            name=name)
 
         self.language = language
         self.script = script

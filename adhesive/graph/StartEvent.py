@@ -1,3 +1,5 @@
+from typing import Optional
+
 from .BaseTask import BaseTask
 
 
@@ -6,7 +8,15 @@ class StartEvent(BaseTask):
     StartEvent documentation.
     """
     def __init__(self,
-                 _id: str,
+                 *args,
+                 parent_process: Optional['Process'],
+                 id: str,
                  name: str) -> None:
-        super(StartEvent, self).__init__(_id, name)
+        if args:
+            raise Exception("You need to use named args")
+
+        super(StartEvent, self).__init__(
+            parent_process=parent_process,
+            id=id,
+            name=name)
 

@@ -15,9 +15,13 @@ class Process(BaseTask):
     A process for the build
     """
     def __init__(self,
+                 parent_process: Optional['Process'],
                  id: str,
                  name: str = '[root process]') -> None:
-        super(Process, self).__init__(id, name)
+        super(Process, self).__init__(
+            parent_process=parent_process,
+            id=id,
+            name=name)
 
         self._start_events: Dict[str, StartEvent] = dict()
         self._tasks: Dict[str, BaseTask] = dict()

@@ -2,6 +2,7 @@ import adhesive
 from typing import Optional
 import logging
 
+from adhesive.graph.Process import Process
 from adhesive.workspace.Workspace import Workspace
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLaneId import ExecutionLaneId
@@ -39,9 +40,6 @@ def allocate_workspace(process: AdhesiveProcess,
     """
     LOG.debug(f"Lane allocate workspace check for {event}")
 
-    if event.loop_type == ActiveLoopType.INITIAL:
-        return
-
     original_execution_lane_id = event.context.lane
     fill_in_lane_id(process, event)
 
@@ -63,9 +61,6 @@ def deallocate_workspace(process: AdhesiveProcess,
     to destroy workspaces (including parent ones)
     """
     LOG.debug(f"Lane deallocate workspace check for {event}")
-
-    if event.loop_type == ActiveLoopType.INITIAL:
-        return
 
     lane = find_existing_lane_for_event(process, event)
 
@@ -89,7 +84,12 @@ def fill_in_lane_id(process: AdhesiveProcess,
     Ensures the lane_id is not the cloned one, but the one where the task
     resides.
     """
-    lane_definition = process.process.get_lane_definition(event.task.id)
+    parent_process = event.task.parent_process
+
+    if not parent_process and isinstance(event.task, Process):
+        parent_process = event.task
+
+    lane_definition = parent_process.get_lane_definition(event.task.id)
 
     event.context.lane = ExecutionLaneId(
             lane_id=lane_definition.id,

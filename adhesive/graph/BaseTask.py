@@ -10,9 +10,18 @@ class BaseTask:
     to be executed.
     """
     def __init__(self,
-                 _id: str,
+                 *args,
+                 parent_process: Optional['Process'],
+                 id: str,
                  name: str) -> None:
-        self.id = _id
+        if args:
+            raise Exception("You need to use named parameters")
+
+        if isinstance(parent_process, tuple):
+            raise Exception("what")
+
+        self.parent_process=parent_process
+        self.id = id
         self.name = name
         self.error_task: Optional['ErrorBoundaryEvent'] = None
         self.loop: Optional[Loop] = None

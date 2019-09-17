@@ -128,8 +128,16 @@ class ProcessBuilder:
                  name: Optional[str] = None):
         self.parent_builder = parent_builder
 
-        self.process = desired_type(next_id(), name="<process>" if name is None else name)
-        self.current_task = StartEvent(next_id(), "<start>")
+        self.process = desired_type(
+            parent_process=parent_builder.process if parent_builder else None,
+            id=next_id(),
+            name="<process>" if name is None else name)
+
+        self.current_task = StartEvent(
+            parent_process=self.process,
+            id=next_id(),
+            name="<start>")
+
         self.process.add_start_event(self.current_task)
 
         self.nested_branches: List[BranchGroup] = list()
@@ -167,11 +175,19 @@ class ProcessBuilder:
         :param lane:
         :return:
         """
-        new_task = Task(next_id(), name)
+        new_task = Task(
+            parent_process=self.process,
+            id=next_id(),
+            name=name)
+
         return self._wire_task(new_task, loop=loop, when=when, lane=lane)
 
     def process_end(self) -> 'ProcessBuilder':
-        new_task = EndEvent(next_id(), name="<end-event>")
+        new_task = EndEvent(
+            parent_process=self.process,
+            id=next_id(),
+            name="<end-event>")
+
         return self._wire_task(new_task)
 
     def sub_process_start(self,

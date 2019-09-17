@@ -80,6 +80,8 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
 
         assert new_event.context
 
+        LOG.debug(f"Loop: parent loop {event.context.loop.parent_loop}")
+
         new_event.context.loop = ExecutionLoop(
             loop_id=event.context.loop.loop_id,
             parent_loop=event.context.loop.parent_loop,
