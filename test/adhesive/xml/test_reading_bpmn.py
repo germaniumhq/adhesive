@@ -116,7 +116,7 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(process.start_tasks))
         self.assertEqual(1, len(process.end_events))
 
-        boundary_event: ErrorBoundaryEvent = process.tasks["_6"]
+        boundary_event: ErrorBoundaryEvent = cast(ErrorBoundaryEvent, process.tasks["_6"])
         self.assertTrue(isinstance(
             process.tasks["_6"],
             ErrorBoundaryEvent
@@ -125,7 +125,7 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertTrue(boundary_event.cancel_activity)
         self.assertFalse(boundary_event.parallel_multiple)
 
-        parent_event: Task = process.tasks['_3']
+        parent_event: Task = cast(Task, process.tasks['_3'])
         self.assertEqual(parent_event.error_task, boundary_event)
 
     def test_reading_human_task(self) -> None:
@@ -154,7 +154,7 @@ class TestReadingBpmn(unittest.TestCase):
             ScriptTask
         ))
 
-        script_task: ScriptTask = process.tasks["_3"]
+        script_task: ScriptTask = cast(ScriptTask, process.tasks["_3"])
         self.assertEqual("text/python", script_task.language)
         self.assertEqual(textwrap.dedent("""\
             import uuid

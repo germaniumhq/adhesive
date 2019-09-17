@@ -7,7 +7,6 @@ from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Process import Process
 from adhesive.model.ActiveEvent import ActiveEvent
 
-from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution import token_utils
 
 

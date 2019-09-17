@@ -1,7 +1,5 @@
-from typing import Callable, List, Optional
+from typing import Callable, Optional
 
-from adhesive.graph.BaseTask import BaseTask
-from adhesive.graph.Task import Task
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.execution import token_utils

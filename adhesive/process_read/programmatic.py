@@ -63,7 +63,10 @@ class BranchEndBuilder:
         :param lane:
         :return:
         """
-        new_task = Task(next_id(), name)
+        new_task = Task(
+            parent_process=self.process_builder.process,
+            id=next_id(),
+            name=name)
         return self._wire_task_list(new_task, when=when, loop=loop, lane=lane)
 
     def user_task(self,
@@ -77,19 +80,18 @@ class BranchEndBuilder:
         :param loop:
         :return:
         """
-        new_task = UserTask(next_id(), name)
+        new_task = UserTask(
+            parent_process=self.process_builder.process,
+            id=next_id(),
+            name=name)
         return self._wire_task_list(new_task, when=when, loop=loop)
 
     def sub_process_start(self,
                   name: str,
-                  when: Optional[str] = None,
-                  loop: Optional[str] = None,
                   lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         We start a sub process.
         :param name:
-        :param when:
-        :param loop:
         :return:
         """
         sub_process_builder = ProcessBuilder(
@@ -103,8 +105,12 @@ class BranchEndBuilder:
 
         return sub_process_builder
 
-    def process_end(self) -> 'ProcessBuilder':
-        new_task = EndEvent(next_id(), name="<end-event>")
+    def process_end(self, lane: Optional[str] = None) -> 'ProcessBuilder':
+        new_task = EndEvent(
+            parent_process=self.process_builder.process,
+            id=next_id(),
+            name="<end-event>")
+
         return self._wire_task_list(new_task, lane=lane)
 
     def _wire_task_list(self,
@@ -117,7 +123,12 @@ class BranchEndBuilder:
 
         self.process_builder.nested_branches.pop()
 
-        return self.process_builder._wire_task_list(last_tasks, new_task, when=when, loop=loop)
+        return self.process_builder._wire_task_list(
+            last_tasks,
+            new_task,
+            when=when,
+            loop=loop,
+            lane=lane)
 
 
 class ProcessBuilder:
@@ -234,7 +245,10 @@ class ProcessBuilder:
                   name: str,
                   when: Optional[str] = None,
                   loop: Optional[str] = None):
-        new_task = UserTask(next_id(), name)
+        new_task = UserTask(
+            parent_process=self.process,
+            id=next_id(),
+            name=name)
         self._wire_task(new_task, when=when, loop=loop)
 
         return self

@@ -224,7 +224,10 @@ def process_lane_task(
 def process_node_task(p: Process, xml_node) -> None:
     """ Create a Task element from the process """
     node_name = normalize_name(xml_node.get("name"))
-    task = Task(xml_node.get("id"), node_name)
+    task = Task(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name)
 
     task = process_potential_loop(task, xml_node)
 
@@ -234,7 +237,10 @@ def process_node_task(p: Process, xml_node) -> None:
 def process_user_task(p: Process, xml_node) -> None:
     """ Create a HumanTask element from the process """
     node_name = normalize_name(xml_node.get("name"))
-    task = UserTask(xml_node.get("id"), node_name)
+    task = UserTask(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name)
 
     task = process_potential_loop(task, xml_node)
 
@@ -249,8 +255,9 @@ def process_script_task(p: Process, xml_node) -> None:
     script_node = find_node(xml_node, "script")
 
     task = ScriptTask(
-        xml_node.get("id"),
-        node_name,
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name,
         language=language,
         script=script_node.text)
 
@@ -273,8 +280,9 @@ def process_boundary_task(p: Process, xml_node) -> None:
 
         if node_name == "errorEventDefinition":
             boundary_task = ErrorBoundaryEvent(
-                xml_node.get("id"),
-                task_name)
+                parent_process=p,
+                id=xml_node.get("id"),
+                name=task_name)
 
             boundary_task.attached_task_id = xml_node.get(
                 "attachedToRef", default="not attached")
@@ -295,14 +303,24 @@ def process_boundary_task(p: Process, xml_node) -> None:
 def process_node_start_event(p: Process, xml_node) -> None:
     """ Create a start event from the process """
     node_name = normalize_name(xml_node.get("name"))
-    task = StartEvent(xml_node.get("id"), node_name)
+
+    task = StartEvent(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name)
+
     p.add_start_event(task)
 
 
 def process_node_end_event(p: Process, xml_node) -> None:
     """ Create an end event from the process """
     node_name = normalize_name(xml_node.get("name"))
-    task = EndEvent(xml_node.get("id"), node_name)
+
+    task = EndEvent(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name)
+
     p.add_end_event(task)
 
 
@@ -329,7 +347,10 @@ def process_node_sequence_flow(p: Process, xml_node) -> None:
 def process_exclusive_gateway(p: Process, xml_node) -> None:
     """ Create an exclusive gateway from the process """
     node_name = normalize_name(xml_node.get("name"))
-    task = ExclusiveGateway(xml_node.get("id"), node_name)
+    task = ExclusiveGateway(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name)
 
     p.add_task(task)
 
@@ -337,7 +358,10 @@ def process_exclusive_gateway(p: Process, xml_node) -> None:
 def process_parallel_gateway(p: Process, xml_node) -> None:
     """ Create an end event from the process """
     node_name = normalize_name(xml_node.get("name"))
-    task = ParallelGateway(xml_node.get("id"), node_name)
+    task = ParallelGateway(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name)
 
     p.add_task(task)
 
@@ -345,7 +369,11 @@ def process_parallel_gateway(p: Process, xml_node) -> None:
 def process_complex_gateway(p: Process, xml_node) -> None:
     """ Create an end event from the process """
     node_name = normalize_name(xml_node.get("name"))
-    task = ComplexGateway(xml_node.get("id"), node_name)
+
+    task = ComplexGateway(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=node_name)
 
     p.add_task(task)
 
