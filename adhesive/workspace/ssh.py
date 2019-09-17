@@ -14,6 +14,7 @@ class SshWorkspace(Workspace):
                  token_id: str,
                  ssh: str,
                  pwd: Optional[str] = None,
+                 ssh_connection=None,
                  **kw: Dict[str, Any]) -> None:
         super(SshWorkspace, self).__init__(
             execution_id=execution_id,
@@ -25,11 +26,21 @@ class SshWorkspace(Workspace):
         self._ssh = ssh
         self._kw = kw
 
+        if ssh_connection:
+            self.ssh = ssh_connection
+
         self.ssh = paramiko.client.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
         self.ssh.connect(ssh, **kw)
 
-        self.sftp = self.ssh.open_sftp()
+        self._sftp = None
+
+    @property
+    def sftp(self):
+        if not self._sftp:
+            self._sftp = self.ssh.open_sftp()
+
+        return self._sftp
 
     def run(self,
             command: str,
@@ -96,12 +107,14 @@ class SshWorkspace(Workspace):
                               token_id=self.token_id,
                               ssh=self._ssh,
                               pwd=self.pwd,
+                              ssh_connection=self.ssh,
                               **self._kw)
 
         return result
 
     def _destroy(self) -> None:
-        self.sftp.close()
+        if self._sftp:
+            self._sftp.close()
         self.ssh.close()
 
 # TypeError: Can't instantiate abstract class SshWorkspace with abstract methods clone, copy_from_agent, copy_to_agent, mkdir, rm, write_file

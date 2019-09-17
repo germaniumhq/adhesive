@@ -21,9 +21,10 @@ process = AdhesiveProcess('_root')
 
 def task(*task_names: str,
          loop: Optional[str] = None,
-         when: Optional[str] = None) -> Callable[..., Callable[..., T]]:
+         when: Optional[str] = None,
+         lane: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.task_definitions.append(ExecutionTask(f, *task_names, loop=loop, when=when))
+        process.task_definitions.append(ExecutionTask(f, *task_names, loop=loop, when=when, lane=lane))
         return f
 
     return wrapper_builder

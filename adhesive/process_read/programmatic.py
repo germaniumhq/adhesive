@@ -7,6 +7,7 @@ from adhesive.graph.Loop import Loop
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
+from adhesive.graph.Lane import Lane
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Process import Process
 
@@ -52,16 +53,18 @@ class BranchEndBuilder:
     def task(self,
              name: str,
              when: Optional[str] = None,
-             loop: Optional[str] = None) -> 'ProcessBuilder':
+             loop: Optional[str] = None,
+             lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         The branching is done now, we need to close a branch level.
         :param name:
         :param when:
         :param loop:
+        :param lane:
         :return:
         """
         new_task = Task(next_id(), name)
-        return self._wire_task_list(new_task, when=when, loop=loop)
+        return self._wire_task_list(new_task, when=when, loop=loop, lane=lane)
 
     def user_task(self,
                   name: str,
@@ -80,7 +83,8 @@ class BranchEndBuilder:
     def sub_process_start(self,
                   name: str,
                   when: Optional[str] = None,
-                  loop: Optional[str] = None) -> 'ProcessBuilder':
+                  loop: Optional[str] = None,
+                  lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         We start a sub process.
         :param name:
@@ -95,21 +99,19 @@ class BranchEndBuilder:
         )
 
         self._wire_task_list(sub_process_builder.process,
-                        loop=loop,
-                        when=when)
+                        lane=lane)
 
         return sub_process_builder
 
-    def process_end(self,
-             when: Optional[str] = None,
-             loop: Optional[str] = None) -> 'ProcessBuilder':
+    def process_end(self) -> 'ProcessBuilder':
         new_task = EndEvent(next_id(), name="<end-event>")
-        return self._wire_task_list(new_task, when=when, loop=loop)
+        return self._wire_task_list(new_task, lane=lane)
 
     def _wire_task_list(self,
                         new_task: BaseTask,
                         when: Optional[str] = None,
-                        loop: Optional[str] = None):
+                        loop: Optional[str] = None,
+                        lane: Optional[str] = None):
         branch_group = self.process_builder.nested_branches[-1]
         last_tasks = [branch.last_task for branch in branch_group.branches]
 
@@ -155,16 +157,18 @@ class ProcessBuilder:
     def task(self,
              name: str,
              when: Optional[str] = None,
-             loop: Optional[str] = None) -> 'ProcessBuilder':
+             loop: Optional[str] = None,
+             lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         We add a regular task in the process.
         :param name:
         :param when:
         :param loop:
+        :param lane:
         :return:
         """
         new_task = Task(next_id(), name)
-        return self._wire_task(new_task, loop=loop, when=when)
+        return self._wire_task(new_task, loop=loop, when=when, lane=lane)
 
     def process_end(self) -> 'ProcessBuilder':
         new_task = EndEvent(next_id(), name="<end-event>")
@@ -173,12 +177,14 @@ class ProcessBuilder:
     def sub_process_start(self,
                           name: Optional[str] = None,
                           when: Optional[str] = None,
-                          loop: Optional[str] = None) -> 'ProcessBuilder':
+                          loop: Optional[str] = None,
+                          lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         We start a subprocess. Subprocesses can also loop over the whole subprocess.
         :param name:
         :param when:
         :param loop:
+        :param lane:
         :return:
         """
         sub_process_builder = ProcessBuilder(
@@ -189,7 +195,8 @@ class ProcessBuilder:
 
         self._wire_task(sub_process_builder.process,
                         loop=loop,
-                        when=when)
+                        when=when,
+                        lane=lane)
 
         return sub_process_builder
 
@@ -226,7 +233,8 @@ class ProcessBuilder:
     def _wire_task(self,
                    new_task: BaseTask,
                    when: Optional[str] = None,
-                   loop: Optional[str] = None) -> 'ProcessBuilder':
+                   loop: Optional[str] = None,
+                   lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         Wire the given task in the process.
         :param new_task:
@@ -254,18 +262,32 @@ class ProcessBuilder:
         self.current_task = new_task
         self.process.add_edge(new_edge)
 
+        if lane is None:
+            return self
+
+        # we have a lane to consider
+        lane_element = self.process.lanes.get(lane, None)
+
+        if not lane_element:
+            lane_element = Lane(next_id(), lane)
+            self.process.add_lane(lane_element)
+
+        self.process.add_task_to_lane(lane_element, new_task.id)
+
         return self
 
     def _wire_task_list(self,
                         previous_tasks: List[BaseTask],
                         new_task: BaseTask,
                         when: Optional[str] = None,
-                        loop: Optional[str] = None) -> 'ProcessBuilder':
+                        loop: Optional[str] = None,
+                        lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         Wire the given task in the process.
         :param new_task:
         :param when:
         :param loop:
+        :param lane:
         :return:
         """
         if loop is not None:
@@ -286,6 +308,18 @@ class ProcessBuilder:
                 when)
 
             self.process.add_edge(new_edge)
+
+        if lane is None:
+            return self
+
+        # we have a lane to consider
+        lane_element = self.process.lanes.get(lane, None)
+
+        if not lane_element:
+            lane_element = Lane(next_id(), lane)
+            self.process.add_lane(lane_element)
+
+        self.process.add_task_to_lane(lane_element, new_task.id)
 
         return self
 

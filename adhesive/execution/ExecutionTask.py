@@ -17,9 +17,10 @@ class ExecutionTask(ExecutionBaseTask):
                  code: Callable,
                  *expressions: str,
                  loop: Optional[str] = None,
-                 when: Optional[str] = None) -> None:
+                 when: Optional[str] = None,
+                 lane: Optional[str] = None) -> None:
         """
-        Create a new adhesive task. The `loop` and `when` are only
+        Create a new adhesive task. The `loop`, `when` and `lane` are only
         available when doing a programmatic API.
         :param code:
         :param expressions:
@@ -30,6 +31,7 @@ class ExecutionTask(ExecutionBaseTask):
 
         self.loop = loop
         self.when = when
+        self.lane = lane
 
     def invoke(
             self,

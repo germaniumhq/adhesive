@@ -10,6 +10,7 @@ from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
 from .ActiveEvent import ActiveEvent
 from .AdhesiveProcess import AdhesiveProcess
 from .AdhesiveLane import AdhesiveLane
+from .ActiveLoopType import ActiveLoopType
 
 LOG = logging.getLogger(__name__)
 
@@ -38,6 +39,9 @@ def allocate_workspace(process: AdhesiveProcess,
     """
     LOG.debug(f"Lane allocate workspace check for {event}")
 
+    if event.loop_type == ActiveLoopType.INITIAL:
+        return
+
     original_execution_lane_id = event.context.lane
     fill_in_lane_id(process, event)
 
@@ -59,6 +63,9 @@ def deallocate_workspace(process: AdhesiveProcess,
     to destroy workspaces (including parent ones)
     """
     LOG.debug(f"Lane deallocate workspace check for {event}")
+
+    if event.loop_type == ActiveLoopType.INITIAL:
+        return
 
     lane = find_existing_lane_for_event(process, event)
 
