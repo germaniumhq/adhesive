@@ -102,21 +102,4 @@ def _build(ut_provider: Optional['UserTaskProvider'] = None,
         wait_tasks=wait_tasks).execute(initial_data=initial_data)
 
 
-def bpmn_build_async(
-        file_name: str,
-        ut_provider: Optional['UserTaskProvider'] = None,
-        wait_tasks: bool = True,
-        initial_data = None):
-    """ Start a build that was described in BPMN """
-    process.process = read_bpmn_file(file_name)
-
-    if ut_provider is None:
-        ut_provider = ConsoleUserTaskProvider()
-
-    return ProcessExecutor(
-        process,
-        ut_provider=ut_provider,
-        wait_tasks=wait_tasks).execute(initial_data=initial_data)
-
-
 from adhesive.model.UserTaskProvider import UserTaskProvider
