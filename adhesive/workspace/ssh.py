@@ -45,15 +45,33 @@ class SshWorkspace(Workspace):
     def run(self,
             command: str,
             capture_stdout: bool = False) -> Union[str, None]:
-        stdin, stdout, stderr = self.ssh.exec_command(f"cd {shlex.quote(self.pwd)};{command}")
-        channel = stdout.channel
 
-        if capture_stdout:
-            result = bytes()
+        channel = None
+
+        try:
+            stdin, stdout, stderr = self.ssh.exec_command(f"cd {shlex.quote(self.pwd)};{command}")
+            channel = stdout.channel
+
+            if capture_stdout:
+                result = bytes()
+
+                while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
+                    while channel.recv_ready():
+                        result += channel.recv(1024)
+
+                    while channel.recv_stderr_ready():
+                        os.write(sys.stderr.fileno(), channel.recv_stderr(1024))
+
+                exit_status = channel.recv_exit_status()
+
+                if exit_status != 0:
+                    raise Exception(f"Exit status is not zero, instead is {exit_status}")
+
+                return result.decode('utf-8')
 
             while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
                 while channel.recv_ready():
-                    result += channel.recv(1024)
+                    os.write(sys.stdout.fileno(), channel.recv(1024))
 
                 while channel.recv_stderr_ready():
                     os.write(sys.stderr.fileno(), channel.recv_stderr(1024))
@@ -62,20 +80,9 @@ class SshWorkspace(Workspace):
 
             if exit_status != 0:
                 raise Exception(f"Exit status is not zero, instead is {exit_status}")
-
-            return result.decode('utf-8')
-
-        while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
-            while channel.recv_ready():
-                os.write(sys.stdout.fileno(), channel.recv(1024))
-
-            while channel.recv_stderr_ready():
-                os.write(sys.stderr.fileno(), channel.recv_stderr(1024))
-
-        exit_status = channel.recv_exit_status()
-
-        if exit_status != 0:
-            raise Exception(f"Exit status is not zero, instead is {exit_status}")
+        finally:
+            if channel:
+                channel.close()
 
     def write_file(
             self,

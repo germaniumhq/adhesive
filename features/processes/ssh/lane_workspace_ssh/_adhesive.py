@@ -47,7 +47,9 @@ def shutdown_server(context):
     context.workspace.run(f"docker rm -f {context.data.container_id}")
     print("[OK] server was shutdown")
 
-
+# We need to create more than the number of available channels, to see if we leak
+# channels with executions. Another limit is the amount of parallel connections.
+# For that we configure the pool_size in the `.adhesive/config.yml` in this folder.
 adhesive.build(initial_data={
-    "items": range(10),
+    "items": range(40),
 })
