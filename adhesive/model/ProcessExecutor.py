@@ -101,6 +101,7 @@ def raise_unhandled_exception(_ev):
 
     sys.exit(1)
 
+
 def is_predecessor(event, e) -> bool:
     if e.state.state not in ACTIVE_STATES:
         return False

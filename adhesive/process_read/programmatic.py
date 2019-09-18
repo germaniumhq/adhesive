@@ -72,7 +72,8 @@ class BranchEndBuilder:
     def user_task(self,
                   name: str,
                   when: Optional[str] = None,
-                  loop: Optional[str] = None) -> 'ProcessBuilder':
+                  loop: Optional[str] = None,
+                  lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         The branching is done now, we need to close a branch level.
         :param name:
@@ -84,7 +85,7 @@ class BranchEndBuilder:
             parent_process=self.process_builder.process,
             id=next_id(),
             name=name)
-        return self._wire_task_list(new_task, when=when, loop=loop)
+        return self._wire_task_list(new_task, when=when, loop=loop, lane=lane)
 
     def sub_process_start(self,
                   name: str,
@@ -244,12 +245,13 @@ class ProcessBuilder:
     def user_task(self,
                   name: str,
                   when: Optional[str] = None,
-                  loop: Optional[str] = None):
+                  loop: Optional[str] = None,
+                  lane: Optional[str] = None):
         new_task = UserTask(
             parent_process=self.process,
             id=next_id(),
             name=name)
-        self._wire_task(new_task, when=when, loop=loop)
+        self._wire_task(new_task, when=when, loop=loop, lane=lane)
 
         return self
 

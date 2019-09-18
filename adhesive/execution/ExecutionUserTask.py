@@ -17,11 +17,13 @@ class ExecutionUserTask(ExecutionBaseTask):
                  code: Callable,
                  *expressions: str,
                  loop: Optional[str] = None,
-                 when: Optional[str] = None) -> None:
+                 when: Optional[str] = None,
+                 lane: Optional[str] = None) -> None:
         super(ExecutionUserTask, self).__init__(code, *expressions)
 
         self.loop = loop
         self.when = when
+        self.lane = lane
 
     def invoke_user_task(
             self,

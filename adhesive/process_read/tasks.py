@@ -26,7 +26,8 @@ def generate_from_tasks(process: AdhesiveProcess) -> Process:
         elif isinstance(task, ExecutionUserTask):
             builder.user_task(expression,
                               when=task.when,
-                              loop=task.loop)
+                              loop=task.loop,
+                              lane=task.lane)
         else:
             raise Exception(f"Unsupported task {task}")
 

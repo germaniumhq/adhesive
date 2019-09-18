@@ -35,9 +35,11 @@ gateway = task
 
 def usertask(*task_names: str,
              loop: Optional[str] = None,
-             when: Optional[str] = None) -> Callable[..., Callable[..., T]]:
+             when: Optional[str] = None,
+             lane: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.task_definitions.append(ExecutionUserTask(f, *task_names, loop=loop, when=when))
+        user_task = ExecutionUserTask(f, *task_names, loop=loop, when=when, lane=lane)
+        process.task_definitions.append(user_task)
         return f
 
     return wrapper_builder
