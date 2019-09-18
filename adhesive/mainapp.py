@@ -1,8 +1,6 @@
 _globals = globals()
 _locals = locals()
 
-import logging
-
 
 def __main():
     """
@@ -11,14 +9,10 @@ def __main():
 
     # we import everything locally so we don't pollute the globals
     import adhesive
-    from adhesive.config import LocalConfigReader
     from adhesive.logging import configure_logging
     import sys
 
-    # read local configuration.
-    adhesive.config.current = \
-        LocalConfigReader.read_configuration()
-
+    # configure the logging
     configure_logging(adhesive.config.current)
 
     for plugin_path in adhesive.config.current.plugins:
@@ -32,4 +26,3 @@ def __main():
 
 if __name__ == "__main__":
     __main()
-

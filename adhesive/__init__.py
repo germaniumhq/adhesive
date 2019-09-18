@@ -1,4 +1,3 @@
-import functools
 from typing import Callable, TypeVar, Optional
 from contextlib import contextmanager
 
@@ -11,7 +10,8 @@ from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.process_read.bpmn import read_bpmn_file
 from adhesive.process_read.tasks import generate_from_tasks
 from adhesive.process_read.programmatic import generate_from_calls
-
+from adhesive import config
+from adhesive.logging import configure_logging
 
 T = TypeVar('T')
 process = AdhesiveProcess('_root')
@@ -92,6 +92,8 @@ def bpmn_build(file_name: str,
 def _build(ut_provider: Optional['UserTaskProvider'] = None,
            wait_tasks: bool = True,
            initial_data=None):
+
+    configure_logging(config.current)
 
     if ut_provider is None:
         ut_provider = ConsoleUserTaskProvider()
