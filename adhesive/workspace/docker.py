@@ -4,9 +4,12 @@ import sys
 from contextlib import contextmanager
 from typing import Optional, Union, Iterable
 from uuid import uuid4
+import logging
 
-from adhesive.storage.ensure_folder import ensure_folder
+from adhesive.storage.ensure_folder import get_folder
 from .Workspace import Workspace
+
+LOG = logging.getLogger(__name__)
 
 
 class DockerWorkspace(Workspace):
@@ -29,9 +32,10 @@ class DockerWorkspace(Workspace):
             return
 
         pwd = workspace.pwd
-        uid = os.getuid()
-        gid = os.getgid()
-        groups = os.getgroups()
+
+        uid = workspace.run("id -u", capture_stdout=True).strip()
+        gid = workspace.run("id -g", capture_stdout=True).strip()
+        groups = workspace.run("id -G", capture_stdout=True).strip().split(" ")
 
         if groups:
             groups_str = ""
@@ -40,21 +44,29 @@ class DockerWorkspace(Workspace):
         else:
             groups_str = ""
 
+        command = "docker run -t "
+
+        if pwd and pwd != "/":
+            command += f"-v {pwd}:{pwd} "
+
+        command += "-d "
+        command += "--entrypoint cat "
+        command += f"-u {uid}:{gid} "
+        command += f"{groups_str} "
+        command += f"{extra_docker_params} "
+        command += f"{shlex.quote(image_name)}"
+
         self.container_id = workspace.run(
-            f"docker run -t "
-            f"-v {pwd}:{pwd} "
-            f"-d "
-            f"--entrypoint cat "
-            f"-u {uid}:{gid} "
-            f"{groups_str} "
-            f"{extra_docker_params} "
-            f"{shlex.quote(image_name)}",
+            command,
             capture_stdout=True
         ).strip()
 
     def run(self,
             command: str,
             capture_stdout: bool = False) -> Union[str, None]:
+
+        LOG.debug(f"Workspace: docker({self.id}).run: {command}")
+
         return self.parent_workspace.run(
                 f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} /bin/sh -c {shlex.quote(command)}",
                 capture_stdout=capture_stdout)
@@ -72,13 +84,12 @@ class DockerWorkspace(Workspace):
         :return:
         """
         try:
-            tmp_folder = ensure_folder(self)
-            tmp_file = os.path.join(tmp_folder, str(uuid4()))
-            with open(tmp_file, "wt") as f:
-                f.write(content)
+            self.parent_workspace.mkdir(get_folder(self))
+            tmp_file = os.path.join(get_folder(self), str(uuid4()))
+            self.parent_workspace.write_file(tmp_file, content)
             self.copy_to_agent(tmp_file, file_name)
         finally:
-            os.remove(tmp_file)
+            self.parent_workspace.rm(tmp_file)
 
     def rm(self, path: Optional[str]=None) -> None:
         """

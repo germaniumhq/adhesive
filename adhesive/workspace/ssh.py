@@ -4,8 +4,11 @@ from contextlib import contextmanager
 import paramiko
 import sys
 import os
+import logging
 
 from .Workspace import Workspace
+
+LOG = logging.getLogger(__name__)
 
 
 class SshWorkspace(Workspace):
@@ -49,7 +52,11 @@ class SshWorkspace(Workspace):
         channel = None
 
         try:
-            stdin, stdout, stderr = self.ssh.exec_command(f"cd {shlex.quote(self.pwd)};{command}")
+            parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
+
+            LOG.debug(f"Workspace: ssh({self.id}).run: {parsed_command}")
+
+            stdin, stdout, stderr = self.ssh.exec_command(parsed_command)
             channel = stdout.channel
 
             if capture_stdout:
@@ -93,14 +100,14 @@ class SshWorkspace(Workspace):
             f.write(content)
 
     def rm(self, path: Optional[str]=None) -> None:
-        self.run('rm -fr {path}')
+        self.run(f'rm -fr {path}')
 
     def mkdir(self, path: str = None) -> None:
-        self.run('mkdir -p {shlex.quote(path)}')
+        self.run(f'mkdir -p {shlex.quote(path)}')
 
     def copy_to_agent(self,
                       from_path: str,
-                      tdo_path: str):
+                      to_path: str):
         raise Exception("not implemented")
 
     def copy_from_agent(self,

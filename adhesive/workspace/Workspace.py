@@ -136,3 +136,8 @@ class Workspace(ABC):
         """
         pass
 
+    @property
+    def id(self) -> str:
+        return f"{self.execution_id}:{self.token_id}"
+
+
