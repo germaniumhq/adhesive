@@ -307,7 +307,8 @@ class ProcessExecutor:
         return parent
 
     def _validate_tasks(self,
-                        process: Process) -> None:
+                        process: Process,
+                        missing_dict: Optional[Dict[str, Union[BaseTask, Lane]]]=None) -> None:
         """
         Recursively traverse the graph, and print to the user if it needs to implement
         some tasks.
@@ -315,11 +316,14 @@ class ProcessExecutor:
         :param process:
         :return:
         """
-        unmatched_items: Set[Union[BaseTask, Lane]] = set()
+        if missing_dict:
+            unmatched_items = missing_dict
+        else:
+            unmatched_items: Dict[str, Union[BaseTask, Lane]] = dict()
 
         for task_id, task in process.tasks.items():
             if isinstance(task, SubProcess):
-                self._validate_tasks(task)
+                self._validate_tasks(task, unmatched_items)
                 continue
 
             # gateways don't have associated tasks with them.
@@ -338,19 +342,20 @@ class ProcessExecutor:
 
             adhesive_task = self._match_task(task)
 
-            self.tasks_impl[task_id] = adhesive_task
-
             if not adhesive_task:
-                unmatched_items.add(task)
+                unmatched_items[f"task:{task.name}"] = task
+                continue
+
+            self.tasks_impl[task_id] = adhesive_task
 
         for lane_id, lane in process.lanes.items():
             lane_definition = self._match_lane(lane)
 
             if not lane_definition:
-                unmatched_items.add(lane)
+                unmatched_items[f"lane:{lane.name}"] = lane
 
-        if unmatched_items:
-            display_unmatched_items(unmatched_items)
+        if unmatched_items and missing_dict is None:  # we're the root call
+            display_unmatched_items(unmatched_items.values())
             sys.exit(1)
 
     def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:

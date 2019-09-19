@@ -2,6 +2,7 @@ from typing import Iterable, Union
 
 import re
 
+from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Lane import Lane
@@ -45,7 +46,11 @@ def display_unmatched_items(unmatched_items: Iterable[Union[BaseTask, Lane]]) ->
             print(f"def lane_{generate_task_name(unmatched_item.name)}(context):")
             print("    yield context.workspace.clone()\n\n")
             continue
-        print(f"@adhesive.task('{generate_matching_re(unmatched_item.name)}')")
+
+        if isinstance(unmatched_item, ComplexGateway):
+            print(f"@adhesive.gateway('{generate_matching_re(unmatched_item.name)}')")
+        else:
+            print(f"@adhesive.task('{generate_matching_re(unmatched_item.name)}')")
+
         print(f"def {generate_task_name(unmatched_item.name)}(context):")
         print("    pass\n\n")
-
