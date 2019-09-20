@@ -316,7 +316,7 @@ class ProcessExecutor:
         :param process:
         :return:
         """
-        if missing_dict:
+        if missing_dict is not None:
             unmatched_items = missing_dict
         else:
             unmatched_items: Dict[str, Union[BaseTask, Lane]] = dict()
@@ -487,6 +487,13 @@ class ProcessExecutor:
                 return
 
             if isinstance(event.task, Task):
+                if event.task.id not in self.tasks_impl:
+                    error_message = f"BUG: Task id {event.task.id} ({event.task.name}) " \
+                                    f"not found in implementations {self.tasks_impl}"
+
+                    LOG.fatal(red(error_message, bold=True))
+                    raise Exception(error_message)
+
                 future = ProcessExecutor.pool.submit(
                     self.tasks_impl[event.task.id].invoke,
                     copy_event(event))

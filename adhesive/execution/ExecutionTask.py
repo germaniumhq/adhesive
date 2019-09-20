@@ -42,3 +42,5 @@ class ExecutionTask(ExecutionBaseTask):
 
             return event.context
 
+    def __repr__(self) -> str:
+        return f"ExecutionTask(expressions={self.expressions})"
