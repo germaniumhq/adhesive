@@ -5,6 +5,7 @@ from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 
 from adhesive.graph.Process import Process
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
+from adhesive.model.generate_methods import generate_matching_re
 from adhesive.process_read.programmatic import generate_from_calls
 
 
@@ -44,7 +45,8 @@ def _escape_execution_task_expression(task: ExecutionBaseTask) -> str:
     :return:
     """
     expression = task.expressions[0]
-    re_expression = re.escape(expression)
+    re_expression = generate_matching_re(expression)
+
     task.expressions = (re_expression,)
     task.re_expressions = (re.compile(re_expression),)
 
