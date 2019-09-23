@@ -22,14 +22,14 @@ class YamlDictNavigatorTest(unittest.TestCase):
         })
 
         self.assertEqual(1, p.y.key)
-        self.assertEqual([1, 2, 3], p.y.list._raw())
+        self.assertEqual([1, 2, 3], p.y.list._raw)
 
     def test_read_via_get(self):
         p = YamlDictNavigator({
             "items": [1, 2, 3]
         })
 
-        self.assertEqual([1,2,3], p["items"]._raw())
+        self.assertEqual([1,2,3], p["items"]._raw)
 
     def test_write_with_property(self):
         p = YamlDictNavigator({
@@ -96,7 +96,7 @@ class YamlDictNavigatorTest(unittest.TestCase):
         x.y2 = "y2"
         p.y = "y"
 
-        self.assertEqual({'x': {'y1': 'y1', 'y2': 'y2'}, 'y': 'y'}, p._raw())
+        self.assertEqual({'x': {'y1': 'y1', 'y2': 'y2'}, 'y': 'y'}, p._raw)
 
     def test_deep_copy_really_deep_copies(self):
         dict = {"x": 1}
@@ -110,5 +110,17 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertEqual(1, p.x)
 
     def test_len(self):
-        d =YamlDictNavigator({"x": 1, "y": 2, "z": 3})
+        d = YamlDictNavigator({"x": 1, "y": 2, "z": 3})
         self.assertEqual(3, len(d))
+
+    def test_removal_attribute(self):
+        d = YamlDictNavigator({"x": 1, "y": 2, "z": 3})
+        del d.x
+
+        self.assertEqual({"y": 2, "z": 3}, d._raw)
+
+    def test_removal_item(self):
+        d = YamlDictNavigator({"x": 1, "y": 2, "z": 3})
+        del d["x"]
+
+        self.assertEqual({"y": 2, "z": 3}, d._raw)

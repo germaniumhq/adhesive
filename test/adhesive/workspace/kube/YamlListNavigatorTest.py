@@ -25,7 +25,7 @@ class YamlListNavigatorTest(unittest.TestCase):
         })
 
         self.assertEqual(1, p.y.key)
-        self.assertEqual(["nested"], p.y.list[1].more[1].nested._raw())
+        self.assertEqual(["nested"], p.y.list[1].more[1].nested._raw)
 
     def test_read_via_get(self):
         p = YamlListNavigator([ [1, 2, 3] ])
@@ -92,3 +92,9 @@ class YamlListNavigatorTest(unittest.TestCase):
 
         p = YamlListNavigator([])
         self.assertFalse(p)
+
+    def test_removal(self):
+        p = YamlListNavigator([1, 2, 3])
+        del p[0]
+
+        self.assertEqual([2, 3], p._raw)

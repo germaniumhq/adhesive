@@ -59,6 +59,12 @@ class YamlDictNavigator:
 
         self.__content[key] = value
 
+    def __delattr__(self, item):
+        self.__content.__delitem__(item)
+
+    def __delitem__(self, key):
+        self.__content.__delitem__(key)
+
     def __iter__(self):
         return self.__content.__iter__()
 
@@ -68,6 +74,7 @@ class YamlDictNavigator:
     def _items(self):
         return self.__content.items()
 
+    @property
     def _raw(self):
         """
         Get access to the underlying collection.
