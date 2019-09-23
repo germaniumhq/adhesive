@@ -40,6 +40,9 @@ class YamlListNavigator:
     def __iter__(self):
         return self.__content.__iter__()
 
+    def __len__(self):
+        return len(self.__content)
+
     def _raw(self):
         """
         Get access to the underlying collection.

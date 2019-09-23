@@ -74,3 +74,21 @@ class YamlListNavigatorTest(unittest.TestCase):
         self.assertEqual(0, p_copy[0])
         self.assertEqual(1, items[0])
         self.assertEqual(1, p[0])
+
+    def test_len_works(self):
+        items = [1, 2, 3]
+        p = YamlListNavigator(items)
+
+        self.assertEqual(3, len(items))
+
+    def test_is_empty(self):
+        items = [1, 2, 3]
+
+        p = YamlListNavigator(items)
+        self.assertTrue(p)
+
+        p = YamlListNavigator()
+        self.assertFalse(p)
+
+        p = YamlListNavigator([])
+        self.assertFalse(p)

@@ -108,3 +108,7 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertEqual(2, p_copy.x)
         self.assertEqual(1, dict["x"])
         self.assertEqual(1, p.x)
+
+    def test_len(self):
+        d =YamlDictNavigator({"x": 1, "y": 2, "z": 3})
+        self.assertEqual(3, len(d))

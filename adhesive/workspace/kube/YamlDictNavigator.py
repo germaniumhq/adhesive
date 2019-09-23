@@ -62,6 +62,9 @@ class YamlDictNavigator:
     def __iter__(self):
         return self.__content.__iter__()
 
+    def __len__(self):
+        return len(self.__content)
+
     def _items(self):
         return self.__content.items()
 
