@@ -30,7 +30,7 @@ class YamlListNavigatorTest(unittest.TestCase):
     def test_read_via_get(self):
         p = YamlListNavigator([ [1, 2, 3] ])
 
-        self.assertEqual([1,2,3], p[0])
+        self.assertEqual([1,2,3], p[0]._raw)
 
     def test_write_with_set(self):
         p = YamlListNavigator(["original"])
@@ -48,22 +48,6 @@ class YamlListNavigatorTest(unittest.TestCase):
 
         self.assertSetEqual({"x", "y", "z"}, items)
 
-    def test_set_nested_property_navigator(self):
-        """
-        The `__content` should always be kept as objects pointing to each other,
-        not property navigators.
-        :return:
-        """
-        p = YamlListNavigator()
-        x = YamlListNavigator()
-
-        p.x = x
-        p.x.y1 = "y1"
-        x.y2 = "y2"
-        p.y = "y"
-
-        self.assertEqual(p, {'x': {'y1': 'y1', 'y2': 'y2'}, 'y': 'y'})
-
     def test_deep_copy_really_deep_copies(self):
         items = [1, 2, 3]
         p = YamlListNavigator(items)
@@ -79,7 +63,7 @@ class YamlListNavigatorTest(unittest.TestCase):
         items = [1, 2, 3]
         p = YamlListNavigator(items)
 
-        self.assertEqual(3, len(items))
+        self.assertEqual(3, len(p))
 
     def test_is_empty(self):
         items = [1, 2, 3]
@@ -98,3 +82,7 @@ class YamlListNavigatorTest(unittest.TestCase):
         del p[0]
 
         self.assertEqual([2, 3], p._raw)
+
+
+if __name__ == '__main__':
+    unittest.main()

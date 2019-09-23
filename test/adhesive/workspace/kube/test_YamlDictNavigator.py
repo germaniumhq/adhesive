@@ -124,3 +124,7 @@ class YamlDictNavigatorTest(unittest.TestCase):
         del d["x"]
 
         self.assertEqual({"y": 2, "z": 3}, d._raw)
+
+
+if __name__ == '__main__':
+    unittest.main()
