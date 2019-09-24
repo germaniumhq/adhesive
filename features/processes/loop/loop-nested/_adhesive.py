@@ -5,9 +5,9 @@ import unittest
 test = unittest.TestCase()
 
 
-@adhesive.task('Running (.*) on (.*)')
-def run_simple_task(context, task_name, platform):
-    print(f"Running {task_name} on {platform}")
+@adhesive.task('Running {loop.value} on {loop.parent_loop.value}')
+def run_simple_task(context):
+    print(f"{context.task_name}")
     context.data.execution_count.add(str(uuid.uuid4()))
 
 

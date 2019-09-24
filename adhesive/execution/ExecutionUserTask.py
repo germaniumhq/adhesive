@@ -1,4 +1,4 @@
-from typing import Callable, Any, List, Optional
+from typing import Callable, Any, List, Optional, Tuple, Union
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.UserTask import UserTask
@@ -14,12 +14,20 @@ class ExecutionUserTask(ExecutionBaseTask):
     A task implementation.
     """
     def __init__(self,
+                 *args,
                  code: Callable,
-                 *expressions: str,
+                 expressions: Union[List[str], Tuple[str,...]],
+                 regex_expressions: Optional[Union[str, List[str]]],
                  loop: Optional[str] = None,
                  when: Optional[str] = None,
                  lane: Optional[str] = None) -> None:
-        super(ExecutionUserTask, self).__init__(code, *expressions)
+        if args:
+            raise Exception("You need to pass in the arguments by name")
+
+        super(ExecutionUserTask, self).__init__(
+            code=code,
+            expressions=expressions,
+            regex_expressions=regex_expressions)
 
         self.loop = loop
         self.when = when
@@ -38,3 +46,5 @@ class ExecutionUserTask(ExecutionBaseTask):
 
             return event.context
 
+    def __repr__(self) -> str:
+        return f"ExecutionUserTask(expressions={self.expressions})"

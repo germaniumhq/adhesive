@@ -33,6 +33,7 @@ def create_loop(event: ActiveEvent, clone_event, target_task: BaseTask) -> None:
         task=new_event.task,
         item=None,
         index=-1,
+        expression=target_task.loop.loop_expression
     )
 
 
@@ -63,7 +64,8 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
             parent_loop=event.context.loop.parent_loop,
             task=event.task,
             item=loop_data,
-            index=0)
+            index=0,
+            expression=event.context.task.loop.loop_expression)
 
         new_event.context.task_name = token_utils.parse_name(
                 new_event.context,
@@ -87,7 +89,8 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
             parent_loop=event.context.loop.parent_loop,
             task=event.task,
             item=item,
-            index=index)
+            index=index,
+            expression=event.context.task.loop.loop_expression)
 
         # if we're iterating over a map, we're going to store the
         # values as well.
@@ -138,7 +141,8 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
         parent_loop=event.context.loop.parent_loop,
         task=event.task,
         item=result,
-        index=event.context.loop.index + 1)
+        index=event.context.loop.index + 1,
+        expression=event.context.loop.expression)
 
     new_event.context.task_name = token_utils.parse_name(
             new_event.context,

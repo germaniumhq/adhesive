@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, List, Union, Tuple
 
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
@@ -12,8 +12,10 @@ class ExecutionTask(ExecutionBaseTask):
     A task implementation.
     """
     def __init__(self,
+                 *args,
                  code: Callable,
-                 *expressions: str,
+                 expressions: Union[List[str], Tuple[str,...]],
+                 regex_expressions: Optional[Union[str, List[str]]],
                  loop: Optional[str] = None,
                  when: Optional[str] = None,
                  lane: Optional[str] = None) -> None:
@@ -22,10 +24,18 @@ class ExecutionTask(ExecutionBaseTask):
         available when doing a programmatic API.
         :param code:
         :param expressions:
+        :param regex_expressions:
         :param loop:
         :param when:
+        :param lane:
         """
-        super(ExecutionTask, self).__init__(code, *expressions)
+        if args:
+            raise Exception("You need to pass in the arguments by name")
+
+        super(ExecutionTask, self).__init__(
+            code=code,
+            expressions=expressions,
+            regex_expressions=regex_expressions)
 
         self.loop = loop
         self.when = when

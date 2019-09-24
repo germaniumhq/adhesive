@@ -15,12 +15,12 @@ def read_parameters(context) -> None:
     context.data.test_integration = True
 
 
-@adhesive.task(r"^Ensure Tooling:\s+(.+)$")
+@adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
 def gbs_ensure_tooling(context, tool_name) -> None:
     ge_tooling.ensure_tooling(context, tool_name)
 
 
-@adhesive.task("^Run tool: (.*?)$")
+@adhesive.task(re="^Run tool: (.*?)$")
 def gbs_run_tool(context, command: str) -> None:
     ge_tooling.run_tool(context, command)
 
@@ -38,7 +38,7 @@ def gbs_build_lin64(context) -> None:
               gbs_prefix=f"/_gbs/lin64/")
 
 
-@adhesive.task('GBS Test .*?\: lin64')
+@adhesive.task('GBS Test {parallel_processing}: lin64')
 def gbs_test_lin64(context) -> None:
     image_name = gbs.test(
         workspace=context.workspace,
@@ -53,8 +53,8 @@ def gbs_test_lin64(context) -> None:
         w.run(command)
 
 
-@adhesive.task('GBS Integration Test (.*?)\: lin64')
-def gbs_integration_test_lin64(context, parallel_processing: str) -> None:
+@adhesive.task('GBS Integration Test {parallel_processing}: lin64')
+def gbs_integration_test_lin64(context) -> None:
     image_name = gbs.test(
         workspace=context.workspace,
         platform="python:3.7",
@@ -62,7 +62,7 @@ def gbs_integration_test_lin64(context, parallel_processing: str) -> None:
 
     command = f"ADHESIVE_PARALLEL_PROCESSING={context.data.parallel_processing} " \
               f"ADHESIVE_TEMP_FOLDER=/tmp/adhesive-test " \
-              f"behave -t ~@manualtest -t ~@no{parallel_processing}"
+              f"behave -t ~@manualtest -t ~@no{context.data.parallel_processing}"
 
     with docker.inside(
             context.workspace,
@@ -80,7 +80,7 @@ def gbs_build_win32(context) -> None:
     #          gbs_prefix=f"/_gbs/win32/")
 
 
-@adhesive.gateway('Is\ Release\ Version\?')
+@adhesive.gateway('Is Release Version?')
 def is_release_version(context):
     current_version = ge_tooling.run_tool(
         context,
@@ -91,7 +91,7 @@ def is_release_version(context):
         context.data.release_version = True
 
 
-@adhesive.usertask('Publish to PyPI\?')
+@adhesive.usertask('Publish to PyPI?')
 def publish_to_pypi_confirm(context, ui):
     ui.add_checkbox_group(
         "publish",
@@ -105,7 +105,7 @@ def publish_to_pypi_confirm(context, ui):
     )
 
 
-@adhesive.task('^PyPI publish to (.+?)$')
+@adhesive.task(re='^PyPI publish to (.+?)$')
 def publish_to_pypi(context, registry):
     with docker.inside(context.workspace, context.data.gbs_build_image_name) as w:
         with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pypirc"):

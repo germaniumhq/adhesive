@@ -2,9 +2,12 @@ import adhesive
 import time
 import uuid
 
+import unittest
+
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.workspace import Workspace
-from adhesive.workspace import docker
+
+test = unittest.TestCase()
 
 
 @adhesive.lane("docker: (.*)")
@@ -14,11 +17,6 @@ def docker_lane(context, image_name) -> Workspace:
 
     result = context.workspace.clone()
 
-    # FIXME: reference counting should be implemented for nested workspaces
-    # for example having a three lanes that go
-    # default -> ssh -> docker
-    # even if we have no task actively running in the `ssh` lane, we still
-    # need to keep the lane open until docker finishes.
     yield result
 
 
@@ -35,14 +33,22 @@ def docker_lane(context, image_name) -> Workspace:
     'Cleanup Broken Tasks',
     'Error Was Caught',
     'Error Was Not Caught',
-    '^Cleanup Platform .*?$',
-    '^Test Browser .*? on .*?$'
+    re=[
+        '^Cleanup Platform .*?$',
+        '^Test Browser .*? on .*?$',
+    ]
 )
 def basic_task(context) -> None:
+    # small sanity check for loops. If we have a loop on the task in the graph,
+    # we must also have a loop in the token.
+    if context.task.loop:
+        test.assertTrue(context.loop.expression)
+        test.assertEqual(context.loop.expression, context.task.loop.loop_expression)
+
     add_current_task(context)
 
 
-@adhesive.task(r'^Parallel \d+$')
+@adhesive.task(re=r'^Parallel \d+$')
 def parallel_task(context) -> None:
     time.sleep(1)
     if not context.data.executions:
@@ -52,7 +58,7 @@ def parallel_task(context) -> None:
 
 
 @adhesive.task(
-    r'^Throw Some Exception$',
+    'Throw Some Exception',
     'Throw Some Error',
 )
 def throw_some_exception(context) -> None:
@@ -78,7 +84,7 @@ def store_current_execution_id(context: ExecutionToken):
     context.data.execution_id = context.execution_id
 
 
-@adhesive.task('^sh:(.*)$')
+@adhesive.task(re='^sh:(.*)$')
 def execute_sh_command(context: ExecutionToken, command: str):
     add_current_task(context)
     context.workspace.run(command)
