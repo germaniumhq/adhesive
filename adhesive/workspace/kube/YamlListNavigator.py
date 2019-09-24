@@ -13,22 +13,33 @@ class YamlListNavigator(YamlNavigator):
     correctly wraps potentially nested dictionaries.
     """
     def __init__(self,
-                 content: Optional[List]=None):
+                 *args,
+                 content: Optional[List]=None,
+                 property_name: str=""):
+        if args:
+            raise Exception("You need to pass the argument names")
+
         super(YamlListNavigator, self).__init__()
 
         self.__content = content if content is not None else list()
+        self.__property_name = property_name
 
     def __deepcopy__(self, memodict={}):
-        return YamlListNavigator(copy.deepcopy(self.__content))
+        return YamlListNavigator(property_name=self.__property_name,
+                                 content=copy.deepcopy(self.__content))
 
     def __getitem__(self, item):
         result = self.__content[item]
 
         if isinstance(result, dict):
-            return YamlDictNavigator(result)
+            return YamlDictNavigator(
+                property_name=f"{self.__property_name}.{item}",
+                content=result)
 
         if isinstance(result, list):
-            return YamlListNavigator(result)
+            return YamlListNavigator(
+                property_name=f"{self.__property_name}.{item}",
+                content=result)
 
         return result
 
@@ -54,3 +65,6 @@ class YamlListNavigator(YamlNavigator):
         :return:
         """
         return self.__content
+
+    def __repr__(self):
+        return f"YamlListNavigator({self.__property_name}) {self.__content}"

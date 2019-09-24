@@ -13,8 +13,8 @@ class YamlDictNavigator(YamlNavigator):
     properties.
     """
     def __init__(self,
-                 content: Optional[Dict]=None,
                  *args,
+                 content: Optional[Dict]=None,
                  property_name: Optional[str]=""):
         if args:
             raise Exception("You need to pass the named arguments")
@@ -43,9 +43,13 @@ class YamlDictNavigator(YamlNavigator):
         result = self.__content[item]
 
         if isinstance(result, dict):
-            return YamlDictNavigator(result)
+            return YamlDictNavigator(
+                property_name=f"{self.__property_name}.{item}",
+                content=result)
         elif isinstance(result, list):
-            return YamlListNavigator(result)
+            return YamlListNavigator(
+                property_name=f"{self.__property_name}.{item}",
+                content=result)
 
         return result
 
@@ -53,9 +57,13 @@ class YamlDictNavigator(YamlNavigator):
         result = self.__content[item]
 
         if isinstance(result, dict):
-            return YamlDictNavigator(result)
+            return YamlDictNavigator(
+                property_name=f"{self.__property_name}.[{item}]",
+                content=result)
         elif isinstance(result, list):
-            return YamlListNavigator(result)
+            return YamlListNavigator(
+                property_name=f"{self.__property_name}.[{item}]",
+                content=result)
 
         return result
 
