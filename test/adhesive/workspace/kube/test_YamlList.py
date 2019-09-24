@@ -109,5 +109,6 @@ class YamlListTest(unittest.TestCase):
         representation = f"{p.x[0].z}"
         self.assertEqual("YamlMissing(a.b.x.0.z)", representation)
 
+
 if __name__ == '__main__':
     unittest.main()

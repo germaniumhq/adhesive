@@ -30,3 +30,6 @@ class YamlMissing(YamlNavigator):
 
     def __repr__(self):
         return f"YamlMissing({self.__property_name})"
+
+    def __deepcopy__(self, memodict={}):
+        return YamlMissing(property_name=self.__property_name)
