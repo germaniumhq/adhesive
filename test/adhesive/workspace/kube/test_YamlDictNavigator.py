@@ -134,5 +134,33 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertTrue("a" not in d)
         self.assertTrue("b" not in d.a)
 
+    def test_repr_dict(self):
+        d = YamlDictNavigator(
+            property_name="a.b",
+            content={"x": 1})
+
+        representation = f"{d}"
+
+        self.assertEqual("YamlDictNavigator(a.b) {'x': 1}", representation)
+
+    def test_repr_missing(self):
+        d = YamlDictNavigator(
+            property_name="a.b",
+            content={"c": 1})
+
+        representation = f"{d.x}"
+
+        self.assertEqual("YamlNoopNavigator(a.b.x)", representation)
+
+    def test_repr_missing_nested(self):
+        d = YamlDictNavigator(
+            property_name="a.b",
+            content={"c": 1})
+
+        representation = f"{d.x.y}"
+
+        self.assertEqual("YamlNoopNavigator(a.b.x.y)", representation)
+
+
 if __name__ == '__main__':
     unittest.main()

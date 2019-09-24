@@ -13,20 +13,32 @@ class YamlDictNavigator(YamlNavigator):
     properties.
     """
     def __init__(self,
-                 content: Optional[Dict]=None):
+                 content: Optional[Dict]=None,
+                 *args,
+                 property_name: Optional[str]=""):
+        if args:
+            raise Exception("You need to pass the named arguments")
+
         super(YamlDictNavigator, self).__init__()
 
         self.__content = content if content is not None else dict()
+        self.__property_name = property_name
 
     def __deepcopy__(self, memodict={}):
-        return YamlDictNavigator(copy.deepcopy(self._raw))
+        return YamlDictNavigator(
+            property_name=self.__property_name,
+            content=copy.deepcopy(self._raw))
 
     def __getattr__(self, item):
         if item == '_YamlDictNavigator__content':
             return self.__content
 
+        if item == '_YamlDictNavigator__property_name':
+            return self.__property_name
+
         if item not in self.__content:
-            return YamlNoopNavigator()
+            return YamlNoopNavigator(
+                property_name=f"{self.__property_name}.{item}")
 
         result = self.__content[item]
 
@@ -52,6 +64,10 @@ class YamlDictNavigator(YamlNavigator):
             value = value._raw
 
         if "_YamlDictNavigator__content" == key:
+            super(YamlDictNavigator, self).__setattr__(key, value)
+            return
+
+        if "_YamlDictNavigator__property_name" == key:
             super(YamlDictNavigator, self).__setattr__(key, value)
             return
 
@@ -86,6 +102,9 @@ class YamlDictNavigator(YamlNavigator):
         :return:
         """
         return self.__content
+
+    def __repr__(self) -> str:
+        return f"YamlDictNavigator({self.__property_name}) {self.__content}"
 
 
 from adhesive.workspace.kube.YamlListNavigator import YamlListNavigator
