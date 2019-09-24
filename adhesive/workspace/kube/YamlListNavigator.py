@@ -4,9 +4,10 @@ import copy
 
 # FIXME: move this to its own library: YamlDict seems a good name
 from adhesive.workspace.kube.YamlDictNavigator import YamlDictNavigator
+from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
-class YamlListNavigator:
+class YamlListNavigator(YamlNavigator):
     """
     A property navigator that allows accessing a list and
     correctly wraps potentially nested dictionaries.
@@ -30,10 +31,8 @@ class YamlListNavigator:
         return result
 
     def __setitem__(self, key, value):
-        if isinstance(value, YamlDictNavigator):
-            value = value.__content
-        elif isinstance(value, YamlListNavigator):
-            value = value.__content
+        if isinstance(value, YamlNavigator):
+            value = value._raw
 
         self.__content[key] = value
 
@@ -43,11 +42,11 @@ class YamlListNavigator:
     def __iter__(self):
         return self.__content.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__content)
 
     @property
-    def _raw(self):
+    def _raw(self) -> List:
         """
         Get access to the underlying collection.
         :return:

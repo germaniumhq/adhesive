@@ -3,9 +3,10 @@ import copy
 
 
 # FIXME: move this to its own library: YamlDict seems a good name
+from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
-class YamlDictNavigator:
+class YamlDictNavigator(YamlNavigator):
     """
     A property navigator that allows accessing a dictionary via
     properties.
@@ -15,7 +16,7 @@ class YamlDictNavigator:
         self.__content = content if content is not None else dict()
 
     def __deepcopy__(self, memodict={}):
-        return YamlDictNavigator(copy.deepcopy(self.__content))
+        return YamlDictNavigator(copy.deepcopy(self._raw))
 
     def __getattr__(self, item):
         if item == '_YamlDictNavigator__content':
@@ -41,9 +42,7 @@ class YamlDictNavigator:
         return result
 
     def __setattr__(self, key, value):
-        if isinstance(value, YamlDictNavigator):
-            value = value.__content
-        elif isinstance(value, YamlListNavigator):
+        if isinstance(value, YamlNavigator):
             value = value.__content
 
         if "_YamlDictNavigator__content" == key:
@@ -53,8 +52,8 @@ class YamlDictNavigator:
         self.__content[key] = value
 
     def __setitem__(self, key, value):
-        if isinstance(value, YamlDictNavigator):
-            self.__content[key] = value.__content
+        if isinstance(value, YamlNavigator):
+            self.__content[key] = value._raw
             return
 
         self.__content[key] = value
@@ -68,16 +67,16 @@ class YamlDictNavigator:
     def __iter__(self):
         return self.__content.__iter__()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.__content)
 
     def _items(self):
         return self.__content.items()
 
     @property
-    def _raw(self):
+    def _raw(self) -> Dict:
         """
-        Get access to the underlying collection.
+        Gets access to the underlying collection.
         :return:
         """
         return self.__content
