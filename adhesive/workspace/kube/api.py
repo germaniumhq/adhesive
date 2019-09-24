@@ -9,8 +9,11 @@ from adhesive.workspace.kube.YamlList import YamlList
 
 
 class KubeApi():
-    def __init__(self, workspace: Workspace) -> None:
+    def __init__(self,
+                 workspace: Workspace,
+                 namespace: str = "default") -> None:
         self._workspace = workspace
+        self._namespace = namespace
 
     def get(self,
             *args,
@@ -32,6 +35,8 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
+        else:
+            command += f" --namespace={self._namespace}"
 
         object_data = self._workspace.run(
             command,
@@ -64,6 +69,8 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
+        else:
+            command += f" --namespace={self._namespace}"
 
         object_data = self._workspace.run(
             command,
@@ -99,6 +106,8 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
+        else:
+            command += f" --namespace={self._namespace}"
 
         try:
             self._workspace.run(command)
@@ -127,6 +136,8 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
+        else:
+            command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
 
@@ -151,6 +162,35 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
+        else:
+            command += f" --namespace={self._namespace}"
+
+        self._workspace.run(command)
+
+    def scale(self,
+              *args,
+              kind: str,
+              name: str,
+              replicas: int,
+              namespace: Optional[str] = None) -> None:
+        """
+        Delete an object
+        :param args:
+        :param kind:
+        :param name:
+        :param namespace:
+        :return:
+        """
+
+        if args:
+            raise Exception("You need to use named arguments.")
+
+        command = f"kubectl scale {kind} {name} --replicas={replicas}"
+
+        if namespace:
+            command += f" --namespace={namespace}"
+        else:
+            command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
 
@@ -167,6 +207,8 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace {namespace}"
+        else:
+            command += f" --namespace={self._namespace}"
 
         try:
             self._workspace.write_file(file_name, content)
