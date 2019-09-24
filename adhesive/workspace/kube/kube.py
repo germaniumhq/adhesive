@@ -15,7 +15,8 @@ class KubeWorkspace(Workspace):
     def __init__(self,
                  workspace: Workspace,
                  pwd: Optional[str] = None,
-                 pod_name: Optional[str] = None) -> None:
+                 pod_name: Optional[str] = None,
+                 namespace: Optional[str] = "default") -> None:
         super(KubeWorkspace, self).__init__(
             execution_id=workspace.execution_id,
             token_id=workspace.token_id,
@@ -27,6 +28,7 @@ class KubeWorkspace(Workspace):
             raise Exception("You need to pass the pod name")
 
         self.pod_name = pod_name
+        self.namespace = namespace
 
     def run(self,
             command: str,
@@ -36,7 +38,9 @@ class KubeWorkspace(Workspace):
         parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
 
         return self.parent_workspace.run(
-                f"kubectl exec {shlex.quote(self.pod_name)} -- /bin/sh -c {shlex.quote(parsed_command)}",
+                f"kubectl exec {shlex.quote(self.pod_name)} "
+                f"--namespace {shlex.quote(self.namespace)} "
+                f"-- /bin/sh -c {shlex.quote(parsed_command)}",
                 capture_stdout=capture_stdout)
 
     def write_file(
@@ -79,13 +83,15 @@ class KubeWorkspace(Workspace):
                       from_path: str,
                       to_path: str):
         self.parent_workspace.run(
-                f"kubectl cp {from_path} {self.pod_name}:{to_path}")
+                f"kubectl cp --namespace {shlex.quote(self.namespace)} "
+                f"{from_path} {self.pod_name}:{to_path}")
 
     def copy_from_agent(self,
                         from_path: str,
                         to_path: str):
         self.parent_workspace.run(
-                f"kubectl cp {self.pod_name}:{from_path} {to_path}")
+                f"kubectl cp --namespace {shlex.quote(self.namespace)} "
+                f"{self.pod_name}:{from_path} {to_path}")
 
     def clone(self) -> 'KubeWorkspace':
         # FIXME: should return the parent workspace somehow
@@ -93,22 +99,27 @@ class KubeWorkspace(Workspace):
             workspace=self.parent_workspace,
             pod_name=self.pod_name,
             pwd=self.pwd,
+            namespace=self.namespace,
         )
 
     def _destroy(self):
         self.parent_workspace.run(
-                f"kubectl rm -f {self.pod_name}")
+                f"kubectl rm "
+                f"--namespace {shlex.quote(self.namespace)} "
+                f"-f {self.pod_name}")
 
 
 @contextmanager
 def inside(workspace: Workspace,
-           pod_name: str):
+           pod_name: str,
+           namespace: Optional[str] = "default"):
     w = None
 
     try:
         w = KubeWorkspace(workspace=workspace,
                           pod_name=pod_name,
-                          pwd="/")
+                          pwd="/",
+                          namespace=namespace)
         yield w
     finally:
         pass
