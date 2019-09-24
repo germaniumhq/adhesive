@@ -2,9 +2,12 @@ import adhesive
 import time
 import uuid
 
+import unittest
+
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.workspace import Workspace
-from adhesive.workspace import docker
+
+test = unittest.TestCase()
 
 
 @adhesive.lane("docker: (.*)")
@@ -14,11 +17,6 @@ def docker_lane(context, image_name) -> Workspace:
 
     result = context.workspace.clone()
 
-    # FIXME: reference counting should be implemented for nested workspaces
-    # for example having a three lanes that go
-    # default -> ssh -> docker
-    # even if we have no task actively running in the `ssh` lane, we still
-    # need to keep the lane open until docker finishes.
     yield result
 
 
@@ -39,6 +37,12 @@ def docker_lane(context, image_name) -> Workspace:
     '^Test Browser .*? on .*?$'
 )
 def basic_task(context) -> None:
+    # small sanity check for loops. If we have a loop on the task in the graph,
+    # we must also have a loop in the token.
+    if context.task.loop:
+        test.assertTrue(context.loop.expression)
+        test.assertEqual(context.loop.expression, context.task.loop.loop_expression)
+
     add_current_task(context)
 
 

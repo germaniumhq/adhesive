@@ -47,4 +47,6 @@ Scenario: Nested loops should execute correctly
   Given I run adhesive on 'processes/loop/loop-nested'
   Then the adhesive process has passed
 
-
+Scenario: Expressions should be accessible from the loop in the step implementation
+  Given I run adhesive on 'processes/loop/loop-expression'
+  Then the adhesive process has passed

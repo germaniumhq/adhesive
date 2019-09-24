@@ -12,17 +12,23 @@ class ExecutionLoop:
     Holds the current looping information.
     """
     def __init__(self,
+                 *args,
                  loop_id: str,
                  parent_loop: Optional['ExecutionLoop'],
                  task: BaseTask,
                  item: Any,
-                 index: int) -> None:
+                 index: int,
+                 expression: str) -> None:
+        if args:
+            raise Exception("You need to pass the parameters by name")
+
         self.loop_id = loop_id
         self._task = task
         self._key = item
         self._value = item
         self._index = index
         self.parent_loop = parent_loop
+        self._expression = expression
 
     @property
     def task(self) -> BaseTask:
@@ -43,6 +49,10 @@ class ExecutionLoop:
     @property
     def index(self) -> int:
         return self._index
+
+    @property
+    def expression(self) -> str:
+        return self._expression
 
     def __repr__(self) -> str:
         """
