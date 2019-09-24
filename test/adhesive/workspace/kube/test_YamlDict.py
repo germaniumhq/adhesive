@@ -161,6 +161,22 @@ class YamlDictTest(unittest.TestCase):
 
         self.assertEqual("YamlMissing(a.b.x.y)", representation)
 
+    def test_items_iteration_gives_yaml(self):
+        d = YamlDict(
+            content={
+                "a": {
+                    "x": 1
+                },
+            }
+        )
+
+        for k, v in d._items():
+            self.assertEqual("a", k)
+            self.assertTrue(isinstance(v, YamlDict),
+                            "The iterated property over items is not an YamlDict")
+            self.assertEqual("YamlDict(.a) {'x': 1}", f"{v}")
+            self.assertEqual(1, d.a.x)
+            self.assertFalse(d.a.y)
 
 if __name__ == '__main__':
     unittest.main()

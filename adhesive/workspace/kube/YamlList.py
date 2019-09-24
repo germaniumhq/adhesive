@@ -53,7 +53,10 @@ class YamlList(YamlNavigator):
         self.__content.__delitem__(key)
 
     def __iter__(self):
-        return self.__content.__iter__()
+        return YamlIteratorWrapper(
+            iter=self.__content.__iter__(),
+            property_name=self.__property_name,
+        )
 
     def __len__(self) -> int:
         return len(self.__content)
@@ -68,3 +71,6 @@ class YamlList(YamlNavigator):
 
     def __repr__(self):
         return f"YamlList({self.__property_name}) {self.__content}"
+
+
+from adhesive.workspace.kube.YamlIteratorWrapper import YamlIteratorWrapper

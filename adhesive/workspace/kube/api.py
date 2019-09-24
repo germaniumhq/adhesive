@@ -5,6 +5,7 @@ import uuid
 
 from adhesive.workspace import Workspace
 from adhesive.workspace.kube.YamlDict import YamlDict
+from adhesive.workspace.kube.YamlList import YamlList
 
 
 class KubeApi():
@@ -68,13 +69,15 @@ class KubeApi():
             command,
             capture_stdout=True)
 
-        def create_dict(content):
-            return YamlDict(
-                property_name=f"{{kind:{kind}}}",
-                content=content,
-            )
+        content = YamlDict(content=yaml.safe_load(object_data))
 
-        return list(map(create_dict, yaml.safe_load_all(object_data)))
+        if content.kind == "List" and content.apiVersion == "v1":
+            return YamlList(
+                property_name=f"{{kind:List[{kind}]}}",
+                content=content.items._raw)
+
+        return YamlList(property_name=f"{{kind:List[{kind}]}}",
+                        content=[content._raw])
 
     def exists(self,
                *args,

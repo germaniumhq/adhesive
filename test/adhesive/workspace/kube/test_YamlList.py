@@ -3,6 +3,7 @@ import copy
 
 from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlList import YamlList
+from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
 class YamlListTest(unittest.TestCase):
@@ -92,7 +93,6 @@ class YamlListTest(unittest.TestCase):
 
         self.assertEqual("YamlList(a.b) [1, 2, 3]", representation)
 
-
     def test_nested_repr(self):
         p = YamlDict(
             property_name="a.b",
@@ -108,6 +108,13 @@ class YamlListTest(unittest.TestCase):
 
         representation = f"{p.x[0].z}"
         self.assertEqual("YamlMissing(a.b.x.0.z)", representation)
+
+    def test_iteration_gives_yaml(self):
+        items = YamlList(content=[{"x": 1}])
+
+        for item in items:
+            self.assertTrue(isinstance(item, YamlNavigator),
+                            "The iterated instance should be a navigator.")
 
 
 if __name__ == '__main__':

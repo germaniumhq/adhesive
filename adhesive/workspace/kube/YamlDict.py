@@ -95,13 +95,19 @@ class YamlDict(YamlNavigator):
         self.__content.__delitem__(key)
 
     def __iter__(self):
-        return self.__content.__iter__()
+        return YamlIteratorWrapper(
+            iter=self.__content.__iter__(),
+            property_name=self.__property_name,
+        )
 
     def __len__(self) -> int:
         return len(self.__content)
 
     def _items(self):
-        return self.__content.items()
+        return YamlDictWrapper(
+            items_view=self.__content.items(),
+            property_name=self.__property_name,
+        )
 
     @property
     def _raw(self) -> Dict:
@@ -116,3 +122,4 @@ class YamlDict(YamlNavigator):
 
 
 from adhesive.workspace.kube.YamlList import YamlList
+from adhesive.workspace.kube.YamlIteratorWrapper import YamlIteratorWrapper, YamlDictWrapper
