@@ -1,19 +1,19 @@
 import unittest
 import copy
 
-from adhesive.workspace.kube.YamlDictNavigator import YamlDictNavigator
+from adhesive.workspace.kube.YamlDict import YamlDict
 
 
-class YamlDictNavigatorTest(unittest.TestCase):
+class YamlDictTest(unittest.TestCase):
     def test_simple_property_read(self):
-        p = YamlDictNavigator(content={
+        p = YamlDict(content={
             "x": 3
         })
 
         self.assertEqual(3, p.x)
 
     def test_nested_property_read(self):
-        p = YamlDictNavigator(content={
+        p = YamlDict(content={
             "x": 3,
             "y": {
                 "key": 1,
@@ -25,14 +25,14 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertEqual([1, 2, 3], p.y.list._raw)
 
     def test_read_via_get(self):
-        p = YamlDictNavigator(content={
+        p = YamlDict(content={
             "items": [1, 2, 3]
         })
 
         self.assertEqual([1,2,3], p["items"]._raw)
 
     def test_write_with_property(self):
-        p = YamlDictNavigator(content={
+        p = YamlDict(content={
             "x": "original"
         })
 
@@ -42,7 +42,7 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertEqual("new", p["x"])
 
     def test_write_with_set(self):
-        p = YamlDictNavigator(content={
+        p = YamlDict(content={
             "x": "original"
         })
 
@@ -52,7 +52,7 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertEqual("new", p["x"])
 
     def test_iteration_as_iterable(self):
-        p = YamlDictNavigator(content={
+        p = YamlDict(content={
             "x": "original",
             "y": "original",
             "z": "original",
@@ -65,7 +65,7 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertSetEqual({"x", "y", "z"}, items)
 
     def test_iteration_key_value(self):
-        p = YamlDictNavigator(content={
+        p = YamlDict(content={
             "x": "x",
             "y": "y",
             "z": "z",
@@ -88,8 +88,8 @@ class YamlDictNavigatorTest(unittest.TestCase):
         not property navigators.
         :return:
         """
-        p = YamlDictNavigator()
-        x = YamlDictNavigator()
+        p = YamlDict()
+        x = YamlDict()
 
         p.x = x
         p.x.y1 = "y1"
@@ -100,7 +100,7 @@ class YamlDictNavigatorTest(unittest.TestCase):
 
     def test_deep_copy_really_deep_copies(self):
         dict = {"x": 1}
-        p = YamlDictNavigator(content=dict)
+        p = YamlDict(content=dict)
 
         p_copy = copy.deepcopy(p)
         p_copy.x = 2
@@ -110,23 +110,23 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertEqual(1, p.x)
 
     def test_len(self):
-        d = YamlDictNavigator(content={"x": 1, "y": 2, "z": 3})
+        d = YamlDict(content={"x": 1, "y": 2, "z": 3})
         self.assertEqual(3, len(d))
 
     def test_removal_attribute(self):
-        d = YamlDictNavigator(content={"x": 1, "y": 2, "z": 3})
+        d = YamlDict(content={"x": 1, "y": 2, "z": 3})
         del d.x
 
         self.assertEqual({"y": 2, "z": 3}, d._raw)
 
     def test_removal_item(self):
-        d = YamlDictNavigator(content={"x": 1, "y": 2, "z": 3})
+        d = YamlDict(content={"x": 1, "y": 2, "z": 3})
         del d["x"]
 
         self.assertEqual({"y": 2, "z": 3}, d._raw)
 
     def test_none_navigation(self):
-        d = YamlDictNavigator(content={"x": 1, "y": 2, "z": 3})
+        d = YamlDict(content={"x": 1, "y": 2, "z": 3})
 
         self.assertTrue(not d.a)
         self.assertTrue(not d.a.b)
@@ -135,31 +135,31 @@ class YamlDictNavigatorTest(unittest.TestCase):
         self.assertTrue("b" not in d.a)
 
     def test_repr_dict(self):
-        d = YamlDictNavigator(
+        d = YamlDict(
             property_name="a.b",
             content={"x": 1})
 
         representation = f"{d}"
 
-        self.assertEqual("YamlDictNavigator(a.b) {'x': 1}", representation)
+        self.assertEqual("YamlDict(a.b) {'x': 1}", representation)
 
     def test_repr_missing(self):
-        d = YamlDictNavigator(
+        d = YamlDict(
             property_name="a.b",
             content={"c": 1})
 
         representation = f"{d.x}"
 
-        self.assertEqual("YamlNoopNavigator(a.b.x)", representation)
+        self.assertEqual("YamlMissing(a.b.x)", representation)
 
     def test_repr_missing_nested(self):
-        d = YamlDictNavigator(
+        d = YamlDict(
             property_name="a.b",
             content={"c": 1})
 
         representation = f"{d.x.y}"
 
-        self.assertEqual("YamlNoopNavigator(a.b.x.y)", representation)
+        self.assertEqual("YamlMissing(a.b.x.y)", representation)
 
 
 if __name__ == '__main__':

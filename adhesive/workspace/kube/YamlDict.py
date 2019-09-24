@@ -4,10 +4,10 @@ import copy
 
 # FIXME: move this to its own library: YamlDict seems a good name
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
-from adhesive.workspace.kube.YamlNoopNavigator import YamlNoopNavigator
+from adhesive.workspace.kube.YamlMissing import YamlMissing
 
 
-class YamlDictNavigator(YamlNavigator):
+class YamlDict(YamlNavigator):
     """
     A property navigator that allows accessing a dictionary via
     properties.
@@ -19,35 +19,35 @@ class YamlDictNavigator(YamlNavigator):
         if args:
             raise Exception("You need to pass the named arguments")
 
-        super(YamlDictNavigator, self).__init__()
+        super(YamlDict, self).__init__()
 
         self.__content = content if content is not None else dict()
         self.__property_name = property_name
 
     def __deepcopy__(self, memodict={}):
-        return YamlDictNavigator(
+        return YamlDict(
             property_name=self.__property_name,
             content=copy.deepcopy(self._raw))
 
     def __getattr__(self, item):
-        if item == '_YamlDictNavigator__content':
+        if item == '_YamlDict__content':
             return self.__content
 
-        if item == '_YamlDictNavigator__property_name':
+        if item == '_YamlDict__property_name':
             return self.__property_name
 
         if item not in self.__content:
-            return YamlNoopNavigator(
+            return YamlMissing(
                 property_name=f"{self.__property_name}.{item}")
 
         result = self.__content[item]
 
         if isinstance(result, dict):
-            return YamlDictNavigator(
+            return YamlDict(
                 property_name=f"{self.__property_name}.{item}",
                 content=result)
         elif isinstance(result, list):
-            return YamlListNavigator(
+            return YamlList(
                 property_name=f"{self.__property_name}.{item}",
                 content=result)
 
@@ -57,11 +57,11 @@ class YamlDictNavigator(YamlNavigator):
         result = self.__content[item]
 
         if isinstance(result, dict):
-            return YamlDictNavigator(
+            return YamlDict(
                 property_name=f"{self.__property_name}.[{item}]",
                 content=result)
         elif isinstance(result, list):
-            return YamlListNavigator(
+            return YamlList(
                 property_name=f"{self.__property_name}.[{item}]",
                 content=result)
 
@@ -71,12 +71,12 @@ class YamlDictNavigator(YamlNavigator):
         if isinstance(value, YamlNavigator):
             value = value._raw
 
-        if "_YamlDictNavigator__content" == key:
-            super(YamlDictNavigator, self).__setattr__(key, value)
+        if "_YamlDict__content" == key:
+            super(YamlDict, self).__setattr__(key, value)
             return
 
-        if "_YamlDictNavigator__property_name" == key:
-            super(YamlDictNavigator, self).__setattr__(key, value)
+        if "_YamlDict__property_name" == key:
+            super(YamlDict, self).__setattr__(key, value)
             return
 
         self.__content[key] = value
@@ -112,7 +112,7 @@ class YamlDictNavigator(YamlNavigator):
         return self.__content
 
     def __repr__(self) -> str:
-        return f"YamlDictNavigator({self.__property_name}) {self.__content}"
+        return f"YamlDict({self.__property_name}) {self.__content}"
 
 
-from adhesive.workspace.kube.YamlListNavigator import YamlListNavigator
+from adhesive.workspace.kube.YamlList import YamlList

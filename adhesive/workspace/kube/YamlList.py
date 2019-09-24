@@ -3,11 +3,11 @@ import copy
 
 
 # FIXME: move this to its own library: YamlDict seems a good name
-from adhesive.workspace.kube.YamlDictNavigator import YamlDictNavigator
+from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
-class YamlListNavigator(YamlNavigator):
+class YamlList(YamlNavigator):
     """
     A property navigator that allows accessing a list and
     correctly wraps potentially nested dictionaries.
@@ -19,25 +19,25 @@ class YamlListNavigator(YamlNavigator):
         if args:
             raise Exception("You need to pass the argument names")
 
-        super(YamlListNavigator, self).__init__()
+        super(YamlList, self).__init__()
 
         self.__content = content if content is not None else list()
         self.__property_name = property_name
 
     def __deepcopy__(self, memodict={}):
-        return YamlListNavigator(property_name=self.__property_name,
-                                 content=copy.deepcopy(self.__content))
+        return YamlList(property_name=self.__property_name,
+                        content=copy.deepcopy(self.__content))
 
     def __getitem__(self, item):
         result = self.__content[item]
 
         if isinstance(result, dict):
-            return YamlDictNavigator(
+            return YamlDict(
                 property_name=f"{self.__property_name}.{item}",
                 content=result)
 
         if isinstance(result, list):
-            return YamlListNavigator(
+            return YamlList(
                 property_name=f"{self.__property_name}.{item}",
                 content=result)
 
@@ -67,4 +67,4 @@ class YamlListNavigator(YamlNavigator):
         return self.__content
 
     def __repr__(self):
-        return f"YamlListNavigator({self.__property_name}) {self.__content}"
+        return f"YamlList({self.__property_name}) {self.__content}"

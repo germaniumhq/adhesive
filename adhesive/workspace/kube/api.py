@@ -4,7 +4,7 @@ import shlex
 import uuid
 
 from adhesive.workspace import Workspace
-from adhesive.workspace.kube.YamlDictNavigator import YamlDictNavigator
+from adhesive.workspace.kube.YamlDict import YamlDict
 
 
 class KubeApi():
@@ -36,7 +36,9 @@ class KubeApi():
             command,
             capture_stdout=True)
 
-        return YamlDictNavigator(yaml.safe_load(object_data))
+        return YamlDict(
+            property_name=f"{{kind:{kind}}}",
+            content=yaml.safe_load(object_data))
 
     def getall(self,
             *args,
@@ -66,7 +68,13 @@ class KubeApi():
             command,
             capture_stdout=True)
 
-        return list(map(YamlDictNavigator, yaml.safe_load_all(object_data)))
+        def create_dict(content):
+            return YamlDict(
+                property_name=f"{{kind:{kind}}}",
+                content=content,
+            )
+
+        return list(map(create_dict, yaml.safe_load_all(object_data)))
 
     def exists(self,
                *args,
