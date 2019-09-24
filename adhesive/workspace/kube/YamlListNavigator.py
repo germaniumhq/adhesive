@@ -14,6 +14,8 @@ class YamlListNavigator(YamlNavigator):
     """
     def __init__(self,
                  content: Optional[List]=None):
+        super(YamlListNavigator, self).__init__()
+
         self.__content = content if content is not None else list()
 
     def __deepcopy__(self, memodict={}):

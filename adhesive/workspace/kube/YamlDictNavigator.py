@@ -4,6 +4,7 @@ import copy
 
 # FIXME: move this to its own library: YamlDict seems a good name
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
+from adhesive.workspace.kube.YamlNoopNavigator import YamlNoopNavigator
 
 
 class YamlDictNavigator(YamlNavigator):
@@ -13,6 +14,8 @@ class YamlDictNavigator(YamlNavigator):
     """
     def __init__(self,
                  content: Optional[Dict]=None):
+        super(YamlDictNavigator, self).__init__()
+
         self.__content = content if content is not None else dict()
 
     def __deepcopy__(self, memodict={}):
@@ -21,6 +24,9 @@ class YamlDictNavigator(YamlNavigator):
     def __getattr__(self, item):
         if item == '_YamlDictNavigator__content':
             return self.__content
+
+        if item not in self.__content:
+            return YamlNoopNavigator()
 
         result = self.__content[item]
 
@@ -43,7 +49,7 @@ class YamlDictNavigator(YamlNavigator):
 
     def __setattr__(self, key, value):
         if isinstance(value, YamlNavigator):
-            value = value.__content
+            value = value._raw
 
         if "_YamlDictNavigator__content" == key:
             super(YamlDictNavigator, self).__setattr__(key, value)

@@ -125,6 +125,14 @@ class YamlDictNavigatorTest(unittest.TestCase):
 
         self.assertEqual({"y": 2, "z": 3}, d._raw)
 
+    def test_none_navigation(self):
+        d = YamlDictNavigator({"x": 1, "y": 2, "z": 3})
+
+        self.assertTrue(not d.a)
+        self.assertTrue(not d.a.b)
+
+        self.assertTrue("a" not in d)
+        self.assertTrue("b" not in d.a)
 
 if __name__ == '__main__':
     unittest.main()

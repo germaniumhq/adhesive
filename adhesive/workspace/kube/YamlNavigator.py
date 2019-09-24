@@ -4,15 +4,19 @@ import abc
 T = TypeVar('T')
 
 
-class YamlNavigator:
+class YamlNavigator(abc.ABC):
     @abc.abstractproperty
     def _raw(self) -> T:
         """
         Gets access to the underlying collection.
         :return: 
         """
-        pass
+        raise Exception("Not implemented")
 
     @abc.abstractmethod
     def __len__(self) -> int:
-        pass
+        raise Exception("Not implemented")
+
+    @abc.abstractmethod
+    def __iter__(self):
+        raise Exception("Not implemented")
