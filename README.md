@@ -63,13 +63,13 @@ data = adhesive.process_start()\
     .branch_start()\
         .sub_process_start() \
             .task("Run in parallel",
-                  loop="context.data.items") \
+                  loop="items") \
         .sub_process_end()\
     .branch_end() \
     .branch_start() \
         .sub_process_start() \
             .task("Run in parallel",
-                  loop="context.data.items") \
+                  loop="items") \
         .sub_process_end() \
     .branch_end() \
     .process_end()\
@@ -164,7 +164,8 @@ parameter contains the following information:
    data that you're allowed to change, and is propagated into the following
    execution tokens.
 4. `loop` - if the current task is in a loop, the entry contains its `index`,
-   and a `key` and `value`. Note that loop execution happens in parallel since
+   the `key` and `value` of the items that are iterating, and the `expression`
+   that was evaluated. Note that loop execution happens in parallel since
    these are simple execution tokens.
 5. `workspace` - a way to interact with a system, and execute commands, create
    files, etc.
