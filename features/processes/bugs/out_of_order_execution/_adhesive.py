@@ -12,7 +12,7 @@ def populate_selected_builds(context) -> None:
     }
 
 
-@adhesive.task("^bob: (.*)$")
+@adhesive.task(re="^bob: (.*)$")
 def bob_build(context, project_name) -> None:
     if project_name not in context.data.selected_builds:
         return
@@ -25,7 +25,7 @@ def bob_build(context, project_name) -> None:
     time.sleep(1)
 
 
-@adhesive.task('tc:\ awi')
+@adhesive.task('tc: awi')
 def tc_build(context) -> None:
     pass
 

@@ -4,12 +4,12 @@ import unittest
 test = unittest.TestCase()
 
 
-@adhesive.task('Hello .*?')
+@adhesive.task('Hello {loop.value}')
 def hello_loop_value_(context):
-	pass
+    pass
 
 
-@adhesive.lane('server\: .*?')
+@adhesive.lane('server: {loop.value}')
 def lane_server_loop_value_(context):
     context.data.lane_names = set()
     context.data.lane_names.add(context.lane.name)

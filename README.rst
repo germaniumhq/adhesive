@@ -59,7 +59,7 @@ processes, branching and looping available:
     import adhesive
     import uuid
 
-    @adhesive.task("Run in parallel")
+    @adhesive.task("Run in parallel item {loop.value}")
     def context_to_run(context):
         if not context.data.executions:
             context.data.executions = set()
@@ -75,7 +75,7 @@ processes, branching and looping available:
         .branch_end() \
         .branch_start() \
             .sub_process_start() \
-                .task("Run in parallel",
+                .task("Run in parallel item {loop.value}",
                       loop="items") \
             .sub_process_end() \
         .branch_end() \
@@ -131,11 +131,12 @@ into the step definition.
 Defining BPMN Tasks
 -------------------
 
-For example here, we define an implementation of tasks:
+For example here, we define an implementation of tasks using regex
+matching, and extracting values:
 
 .. code:: py
 
-    @adhesive.task(r"^Ensure Tooling:\s+(.+)$")
+    @adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
     def gbs_ensure_tooling(context, tool_name) -> None:
         # ...
 
@@ -143,7 +144,7 @@ Or a user task (interactive form):
 
 .. code:: py
 
-    @adhesive.usertask('Publish to PyPI\?')
+    @adhesive.usertask('Publish to PyPI?')
     def publish_to_pypi_confirm(context, ui):
         ui.add_checkbox_group(
             "publish",
@@ -158,8 +159,8 @@ Or a user task (interactive form):
 
 Don't forget, the ``@adhesive.task`` and ``@adhesive.usertask`` are just
 defining mappings for implementations of the task names available in the
-process, unless calling the ``adhesive.build()`` that creates a linear
-process out of these tasks.
+process. Only the ``adhesive.build()`` creates a linear process out of
+the declaration of the tasks.
 
 As you notice, there's always a first parameter named ``context``. The
 ``context`` parameter contains the following information:
@@ -177,7 +178,9 @@ As you notice, there's always a first parameter named ``context``. The
    ``index``, the ``key`` and ``value`` of the items that are iterating,
    and the ``expression`` that was evaluated. Note that loop execution
    happens in parallel since these are simple execution tokens.
-5. ``workspace`` - a way to interact with a system, and execute
+5. ``lane`` - the current lane where the tasks belongs. Implicitly it's
+   ``default``.
+6. ``workspace`` - a way to interact with a system, and execute
    commands, create files, etc.
 
 ``adhesive`` runs all the tasks on a parallel process pool for better
@@ -194,8 +197,8 @@ Tasks are connected to each other with connections. In some cases,
 connections can have conditions. Conditions are expressions that when
 evaluated to ``True`` will allow the token to pass the connection. In
 the connection there is access to the ``task``, ``task_name``, ``data``,
-``loop`` and ``context``, as well as the variables defined in the
-``context.data``.
+``loop``, ``lane`` and ``context``, as well as the variables defined in
+the ``context.data``.
 
 So if in a task there is defined a data field such as:
 

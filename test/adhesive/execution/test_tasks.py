@@ -33,8 +33,10 @@ def docker_lane(context, image_name) -> Workspace:
     'Cleanup Broken Tasks',
     'Error Was Caught',
     'Error Was Not Caught',
-    '^Cleanup Platform .*?$',
-    '^Test Browser .*? on .*?$'
+    re=[
+        '^Cleanup Platform .*?$',
+        '^Test Browser .*? on .*?$',
+    ]
 )
 def basic_task(context) -> None:
     # small sanity check for loops. If we have a loop on the task in the graph,
@@ -46,7 +48,7 @@ def basic_task(context) -> None:
     add_current_task(context)
 
 
-@adhesive.task(r'^Parallel \d+$')
+@adhesive.task(re=r'^Parallel \d+$')
 def parallel_task(context) -> None:
     time.sleep(1)
     if not context.data.executions:
@@ -56,7 +58,7 @@ def parallel_task(context) -> None:
 
 
 @adhesive.task(
-    r'^Throw Some Exception$',
+    'Throw Some Exception',
     'Throw Some Error',
 )
 def throw_some_exception(context) -> None:
@@ -82,7 +84,7 @@ def store_current_execution_id(context: ExecutionToken):
     context.data.execution_id = context.execution_id
 
 
-@adhesive.task('^sh:(.*)$')
+@adhesive.task(re='^sh:(.*)$')
 def execute_sh_command(context: ExecutionToken, command: str):
     add_current_task(context)
     context.workspace.run(command)

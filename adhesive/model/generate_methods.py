@@ -31,26 +31,30 @@ def generate_matching_re(name: str) -> str:
     return result
 
 
+def escape_string(name: str) -> str:
+    return repr(name)
+
+
 def display_unmatched_items(unmatched_items: Iterable[Union[BaseTask, Lane]]) -> None:
     print("Missing tasks implementations. Generate with:\n")
 
     for unmatched_item in unmatched_items:
         if isinstance(unmatched_item, UserTask):
-            print(f"@adhesive.usertask('{generate_matching_re(unmatched_item.name)}')")
+            print(f"@adhesive.usertask({escape_string(unmatched_item.name)})")
             print(f"def {generate_task_name(unmatched_item.name)}(context, ui):")
             print("    pass\n\n")
             continue
 
         if isinstance(unmatched_item, Lane):
-            print(f"@adhesive.lane('{generate_matching_re(unmatched_item.name)}')")
+            print(f"@adhesive.lane({escape_string(unmatched_item.name)})")
             print(f"def lane_{generate_task_name(unmatched_item.name)}(context):")
             print("    yield context.workspace.clone()\n\n")
             continue
 
         if isinstance(unmatched_item, ComplexGateway):
-            print(f"@adhesive.gateway('{generate_matching_re(unmatched_item.name)}')")
+            print(f"@adhesive.gateway({escape_string(unmatched_item.name)})")
         else:
-            print(f"@adhesive.task('{generate_matching_re(unmatched_item.name)}')")
+            print(f"@adhesive.task({escape_string(unmatched_item.name)})")
 
         print(f"def {generate_task_name(unmatched_item.name)}(context):")
         print("    pass\n\n")

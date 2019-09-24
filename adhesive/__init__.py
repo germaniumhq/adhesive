@@ -1,4 +1,4 @@
-from typing import Callable, TypeVar, Optional
+from typing import Callable, TypeVar, Optional, Union, List
 from contextlib import contextmanager
 
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
@@ -20,11 +20,18 @@ process = AdhesiveProcess('_root')
 #FIXME: move decorators into their own place
 
 def task(*task_names: str,
+         re: Optional[Union[str, List[str]]] = None,
          loop: Optional[str] = None,
          when: Optional[str] = None,
          lane: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        process.task_definitions.append(ExecutionTask(f, *task_names, loop=loop, when=when, lane=lane))
+        process.task_definitions.append(
+            ExecutionTask(code=f,
+                          expressions=task_names,
+                          regex_expressions=re,
+                          loop=loop,
+                          when=when,
+                          lane=lane))
         return f
 
     return wrapper_builder
@@ -34,11 +41,18 @@ gateway = task
 
 
 def usertask(*task_names: str,
+             re: Optional[Union[str, List[str]]] = None,
              loop: Optional[str] = None,
              when: Optional[str] = None,
              lane: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        user_task = ExecutionUserTask(f, *task_names, loop=loop, when=when, lane=lane)
+        user_task = ExecutionUserTask(
+            code=f,
+            expressions=task_names,
+            regex_expressions=re,
+            loop=loop,
+            when=when,
+            lane=lane)
         process.task_definitions.append(user_task)
         return f
 
