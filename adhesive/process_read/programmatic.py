@@ -102,7 +102,7 @@ class BranchEndBuilder:
         )
 
         self._wire_task_list(sub_process_builder.process,
-                        lane=lane)
+                             lane=lane)
 
         return sub_process_builder
 
@@ -113,6 +113,9 @@ class BranchEndBuilder:
             name="<end-event>")
 
         return self._wire_task_list(new_task, lane=lane)
+
+    def sub_process_end(self) -> 'ProcessBuilder':
+        return self.process_builder.sub_process_end()
 
     def _wire_task_list(self,
                         new_task: BaseTask,

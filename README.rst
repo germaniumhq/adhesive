@@ -1,27 +1,24 @@
-adhesive
-========
-
 A CI/CD system build around BPMN and Python. Basically a micro BPMN
 runner with python step implementations targeted for builds. Able to run
 in the terminal.
 
 Installation
-------------
+============
 
 .. code:: sh
 
     pip install adhesive
 
 Getting Started
----------------
+===============
 
 Simple Builds
-~~~~~~~~~~~~~
+-------------
 
 To create a basic build you just create a file in your project named
 ``_adhesive.py``. In it you then declare some tasks. For example:
 
-.. code:: py
+.. code:: python
 
     import adhesive
 
@@ -36,8 +33,9 @@ To create a basic build you just create a file in your project named
     adhesive.build()
 
 Since no process was defined, adhesive takes the defined tasks, stitches
-them in order, and has a process defined as ``<start>`` ->
-``Checkout Code`` -> ``Run Build`` -> ``<end>``.
+them in order, and has a process defined as ``<start>`` →
+``Checkout Code`` → ``Run
+Build`` → ``<end>``.
 
 To run it simply call ``adhesive`` in the terminal:
 
@@ -48,13 +46,13 @@ To run it simply call ``adhesive`` in the terminal:
 This is the equivalent of Jenkins stages. But we can do better:
 
 Programmatic Builds
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 In order to use the full programmatic functionalities that adhesive
 offers, you are able to stitch your BPM process manually. You have sub
 processes, branching and looping available:
 
-.. code:: py
+.. code:: python
 
     import adhesive
     import uuid
@@ -93,22 +91,19 @@ Note that you can pass ``initial_data`` into the process, and you can
 also get the ``context.data`` from the last execution token.
 
 BPMN Process
-~~~~~~~~~~~~
+------------
 
 Last but not least, adhesive reads BPMN files, and builds the process
 graph from them. This is particularly good if the process is complex and
 has a lot of dependencies:
 
-.. figure:: ./doc/yaoqiang-screenshot.png
-   :alt: Image Description
+|BPMN Editor|
 
-   Image Description
+The `build of adhesive`_ is modeled as a `BPMN process`_ itself, so we
+load it from the file directly using:
+``adhesive.build_bpmn("adhesive-self.bpmn")``
 
-The `build of adhesive <_adhesive.py>`__ is modeled as a `BPMN
-process <adhesive-self.bpmn>`__ itself, so we load it from the file
-directly using: ``adhesive.build_bpmn("adhesive-self.bpmn")``
-
-.. code:: py
+.. code:: python
 
     import adhesive
 
@@ -117,7 +112,7 @@ directly using: ``adhesive.build_bpmn("adhesive-self.bpmn")``
         context.data.run_mypy = False
         context.data.test_integration = True
 
-    @adhesive.task(r"^Ensure Tooling:\s+(.+)$")
+    @adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
     def gbs_ensure_tooling(context, tool_name) -> None:
         ge_tooling.ensure_tooling(context, tool_name)
 
@@ -129,12 +124,12 @@ As you see steps are parametrizable, and use the data from the task name
 into the step definition.
 
 Defining BPMN Tasks
--------------------
+===================
 
 For example here, we define an implementation of tasks using regex
 matching, and extracting values:
 
-.. code:: py
+.. code:: python
 
     @adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
     def gbs_ensure_tooling(context, tool_name) -> None:
@@ -142,7 +137,7 @@ matching, and extracting values:
 
 Or a user task (interactive form):
 
-.. code:: py
+.. code:: python
 
     @adhesive.usertask('Publish to PyPI?')
     def publish_to_pypi_confirm(context, ui):
@@ -157,29 +152,34 @@ Or a user task (interactive form):
             value=("pypitest", "pypi")
         )
 
-Don't forget, the ``@adhesive.task`` and ``@adhesive.usertask`` are just
+Don’t forget, the ``@adhesive.task`` and ``@adhesive.usertask`` are just
 defining mappings for implementations of the task names available in the
 process. Only the ``adhesive.build()`` creates a linear process out of
 the declaration of the tasks.
 
-As you notice, there's always a first parameter named ``context``. The
+As you notice, there’s always a first parameter named ``context``. The
 ``context`` parameter contains the following information:
 
-1. ``task`` - the Task in the graph that's currently matched against
+1. ``task`` - the Task in the graph that’s currently matched against
    this execution.
+
 2. ``task_name`` - The resolved name, with the variables interpolated.
    Matching is attempted *after* the name is resolved.
+
 3. ``data`` - Data that the current execution token contains. This data
-   is always cloned across executions, and ``set``\ s and ``dict``\ s
-   are automatically merged if multiple execution tokens are merged. So
-   you have a modifiable copy of the data that you're allowed to change,
-   and is propagated into the following execution tokens.
+   is always cloned across executions, and \`set\`s and \`dict\`s are
+   automatically merged if multiple execution tokens are merged. So you
+   have a modifiable copy of the data that you’re allowed to change, and
+   is propagated into the following execution tokens.
+
 4. ``loop`` - if the current task is in a loop, the entry contains its
    ``index``, the ``key`` and ``value`` of the items that are iterating,
    and the ``expression`` that was evaluated. Note that loop execution
    happens in parallel since these are simple execution tokens.
-5. ``lane`` - the current lane where the tasks belongs. Implicitly it's
+
+5. ``lane`` - the current lane where the tasks belongs. Implicitly it’s
    ``default``.
+
 6. ``workspace`` - a way to interact with a system, and execute
    commands, create files, etc.
 
@@ -191,14 +191,13 @@ that, we need to be able to execute commands, and create files. For that
 we have the ``workspace``.
 
 Connections
------------
+===========
 
-Tasks are connected to each other with connections. In some cases,
-connections can have conditions. Conditions are expressions that when
-evaluated to ``True`` will allow the token to pass the connection. In
-the connection there is access to the ``task``, ``task_name``, ``data``,
-``loop``, ``lane`` and ``context``, as well as the variables defined in
-the ``context.data``.
+Tasks are linked using connections. In some cases, connections can have
+conditions. Conditions are expressions that when evaluated to ``True``
+will allow the token to pass the connection. In the connection there is
+access to the ``task``, ``task_name``, ``data``, ``loop``, ``lane`` and
+``context``, as well as the variables defined in the ``context.data``.
 
 So if in a task there is defined a data field such as:
 
@@ -212,11 +211,13 @@ The ``navigation_direction`` can be validated in the condition with any
 of the following:
 
 -  ``context.data.navigation_direction == "forward"``
+
 -  ``data.navigation_direction == "forward"``
+
 -  ``navigation_direction == "forward"``
 
 Workspace
----------
+=========
 
 Workspaces are just a way of interacting with a system, running
 commands, and writing/reading files. Currently only
@@ -228,21 +229,21 @@ configured temp location (implicitly ``/tmp/adhesive``). The
 files, taking care of redirecting outputs, and even escaping the
 commands to be able to easily run them inside docker containers.
 
-Note that implicitly calling ``context.workspace.run(...)`` will run the
+Note that implicitly calling ``context.workspace.run(…​)`` will run the
 command on the host where adhesive is running.
 
 To create a docker workspace that runs inside a container with the
 tooling you just need to:
 
-.. code:: py
+.. code:: python
 
     from adhesive.workspace import docker
 
 Then to spin up a container that has the current folder mounted in,
-where you're able to execute commands *inside* the container you just
+where you’re able to execute commands *inside* the container you just
 need to:
 
-.. code:: py
+.. code:: python
 
     @adhesive.task("Test")
     def gbs_test_linux(context) -> None:
@@ -252,13 +253,13 @@ need to:
             w.run("python -m pytest -n 4")
 
 This creates a workspace from our current context workspace, where we
-simply execute what we want, using the ``run()`` method. If we're
+simply execute what we want, using the ``run()`` method. If we’re
 interested in the program output we simply do a ``run`` with a
 ``capture_stdout`` that returns the output as a string.
 
-Here's the full API for it:
+Here’s the full API for it:
 
-.. code:: py
+.. code:: python
 
     class Workspace(ABC):
         """
@@ -348,13 +349,13 @@ Here's the full API for it:
             Temporarily change a folder, that will go back to the original `pwd`
             when the `with` block ends. To change the folder for the workspace
             permanently, simply assing the `pwd`.
-            :param target_folder: 
-            :return: 
+            :param target_folder:
+            :return:
             """
             pass
 
 User Tasks
-----------
+==========
 
 In order to create user interactions, you have user tasks. These define
 form elements that are populated in the ``context.data``, and available
@@ -365,12 +366,12 @@ prompted to fill in the parameters. Note that the other started tasks
 continue running, proceeding forward with the build.
 
 The ``name`` used in the method call defines the name of the variable
-that's in the ``context.data``.
+that’s in the ``context.data``.
 
 For example in here we define a checkbox group that allows us to pick
 where to publish the package:
 
-.. code:: py
+.. code:: python
 
     @adhesive.usertask("Read User Data")
     def read_user_data(context, ui) -> None:
@@ -394,10 +395,7 @@ where to publish the package:
 
 This will prompt the user with this form:
 
-.. figure:: ./doc/console_usertask.png
-   :alt: form
-
-   form
+|form|
 
 This data is also available for edge conditions, so in the BPMN modeler
 we can define a condition such as ``"pypi" in context.data.roles``, or
@@ -407,7 +405,7 @@ since ``data`` is also available in the edge scope:
 The other option is simply reading what the user has selected in a
 following task:
 
-.. code:: py
+.. code:: python
 
     @adhesive.task("Register User")
     def publish_items(context):
@@ -417,7 +415,7 @@ following task:
 User tasks support the following API, available on the ``ui`` parameter,
 the parameter after the context:
 
-.. code:: py
+.. code:: python
 
     class UiBuilderApi(ABC):
         def add_input_text(self,
@@ -455,7 +453,7 @@ the parameter after the context:
                                value: Optional[Any] = True) -> None:
 
 Custom Buttons
-~~~~~~~~~~~~~~
+--------------
 
 In order to allow navigation inside the process, the
 ``add_default_button`` API exists to permit creation of buttons.
@@ -466,17 +464,17 @@ execution token.
 With ``add_default_button`` we create custom buttons such as ``Back``
 and ``Forward``, or whatever we need in our process. Unlike the default
 ``OK`` button, when these are called, they also set in the
-``context.data`` the ``value`` that's assigned to them. This value we
+``context.data`` the ``value`` that’s assigned to them. This value we
 use then further in a ``Gateway``, or simple as a condition on the
 outgoing edges.
 
-The title is optional, and only if missing it's build either from the
+The title is optional, and only if missing it’s build either from the
 ``name`` if all the buttons in the form have unique names, since they
 assign a different variable in the ``context.data``, or from the
 ``value`` if they have overlapping names.
 
 Secrets
--------
+=======
 
 Secrets are files that contain sensitive information are not checked in
 the project. In order to make them available to the build, we need to
@@ -485,10 +483,10 @@ current folder as ``.adhesive/secrets/SECRET_NAME``.
 
 In order to make them available, we just use the ``secret`` function
 that creates the file in the current workspace and deletes it when
-exiting. For example here's how we're doing the actual publish, creating
+exiting. For example here’s how we’re doing the actual publish, creating
 the secret inside a docker container:
 
-.. code:: py
+.. code:: python
 
     @adhesive.task('^PyPI publish to (.+?)$')
     def publish_to_pypi(context, registry):
@@ -499,21 +497,23 @@ the secret inside a docker container:
 Note the ``docker.inside`` that creates a different workspace.
 
 Configuration
--------------
+=============
 
 Adhesive supports configuration via its config files, or environment
 variables. The values are read in the following order:
 
 1. environment variables: ``ADHESIVE_XYZ``, then
+
 2. values that are in the project config yml file:
    ``.adhesive/config.yml``, then
+
 3. values configured in the global config yml file:
    ``$HOME/.adhesive/config.yml``.
 
 Currently the following values are defined for configuration:
 
 temp\_folder
-~~~~~~~~~~~~
+------------
 
 default value ``/tmp/adhesive``, environment var:
 ``ADHESIVE_TEMP_FOLDER``.
@@ -521,7 +521,7 @@ default value ``/tmp/adhesive``, environment var:
 Is where all the build files will be stored.
 
 plugins
-~~~~~~~
+-------
 
 default value ``[]``, environment var: ``ADHESIVE_PLUGINS_LIST``.
 
@@ -538,7 +538,7 @@ in the ``~/.adhesive/config.yml``:
 Then in the python path you can simply do regular imports.
 
 color
-~~~~~
+-----
 
 default value ``True``, environment var: ``ADHESIVE_COLOR``.
 
@@ -547,7 +547,7 @@ this is ``true``, but if log parsing is needed, it can make sense to
 have it false.
 
 log\_level
-~~~~~~~~~~
+----------
 
 default\_value ``info``, environment var: ``ADHESIVE_LOG_LEVEL``.
 
@@ -555,7 +555,7 @@ How verbose should the logging be on the terminal. Possible values are
 ``trace``, ``debug``, ``info``, ``warning``, ``error`` and ``critical``.
 
 pool\_size
-~~~~~~~~~~
+----------
 
 default value is empty, environment var: ``ADHESIVE_POOL_SIZE``.
 
@@ -563,7 +563,7 @@ Sets the number of workers that adhesive will use. Defaults to the
 number of CPUs if unset.
 
 stdout
-~~~~~~
+------
 
 default value is empty, environment var: ``ADHESIVE_STDOUT``.
 
@@ -571,7 +571,7 @@ Implicitly for each task, the log is redirected in a different file, and
 only shown if the task failed. The redirection can be disabled.
 
 parallel\_processing
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 default value is ``thread``, environment var:
 ``ADHESIVE_PARALLEL_PROCESSING``.
@@ -586,19 +586,27 @@ intensive. This has the drawback of recreating the connections on
 workspaces' each task execution.
 
 Hacking Adhesive
-----------------
+================
 
 Adhesive builds with itself. In order to do that, you need to checkout
-the `https://github.com/germaniumhq/adhesive-lib <adhesive-lib>`__
-shared plugin, and configure your local config to use it:
+the `adhesive-lib`_ shared plugin, and configure your local config to
+use it:
 
 .. code:: yaml
 
     plugins:
     - /path/to/adhesive-lib
 
-Then simply run the build:
+Then simply run the build using adhesive itself:
 
 .. code:: sh
 
     adhesive
+
+.. _build of adhesive: _adhesive.py
+.. _BPMN process: adhesive-self.bpmn
+.. _adhesive-lib: https://github.com/germaniumhq/adhesive-lib
+
+.. |BPMN Editor| image:: ./doc/yaoqiang-screenshot.png
+.. |form| image:: ./doc/console_usertask.png
+
