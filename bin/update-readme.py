@@ -36,7 +36,7 @@ def convert_asciidoc_to_docbook(context):
 def convert_docbook_to_markdown(context):
     with docker.inside(
         context.workspace,
-        "pandoc/core") as dw:
+        "bmst/pandoc") as dw:
         dw.run("""
             pandoc --from docbook --to markdown_strict README.docbook.xml -o README.md
         """)
@@ -45,9 +45,19 @@ def convert_docbook_to_markdown(context):
 def convert_docbook_to_restructuredtext(context):
     with docker.inside(
         context.workspace,
-        "pandoc/core") as dw:
+        "bmst/pandoc") as dw:
         dw.run("""
-            pandoc --from docbook --to rst README.docbook.xml -o README.rst
+            pandoc --reference-links --from docbook --to rst README.docbook.xml -o README.rst
+        """)
+
+
+@adhesive.task('Validate ReStructuredText')
+def validate_restructuredtext(context):
+    with docker.inside(
+        context.workspace,
+        "bmst/python-rst-validator") as dw:
+        dw.run("""
+            python -m readme_renderer README.rst -o /dev/null
         """)
 
 
@@ -73,6 +83,7 @@ adhesive.process_start()\
         .branch_end()\
         .branch_start()\
             .task("Convert DocBook to ReStructuredText", lane="local")\
+            .task("Validate ReStructuredText", lane="local")\
         .branch_end()\
     .sub_process_end()\
     .task("Remove DocBook documentation", lane="local")\

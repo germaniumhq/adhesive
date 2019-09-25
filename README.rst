@@ -2,21 +2,15 @@ A CI/CD system build around BPMN and Python. Basically a micro BPMN
 runner with python step implementations targeted for builds. Able to run
 in the terminal.
 
-.. __installation:
-
 Installation
 ============
 
 .. code:: sh
 
-   pip install adhesive
-
-.. __getting_started:
+    pip install adhesive
 
 Getting Started
 ===============
-
-.. __simple_builds:
 
 Simple Builds
 -------------
@@ -26,17 +20,17 @@ To create a basic build you just create a file in your project named
 
 .. code:: python
 
-   import adhesive
+    import adhesive
 
-   @adhesive.task("Checkout Code")
-   def checkout_code(context):
-       adhesive.scm.checkout(context.workspace)
+    @adhesive.task("Checkout Code")
+    def checkout_code(context):
+        adhesive.scm.checkout(context.workspace)
 
-   @adhesive.task("Run Build")
-   def run_build(context):
-       context.workspace.run("mvn clean install")
+    @adhesive.task("Run Build")
+    def run_build(context):
+        context.workspace.run("mvn clean install")
 
-   adhesive.build()
+    adhesive.build()
 
 Since no process was defined, adhesive takes the defined tasks, stitches
 them in order, and has a process defined as ``<start>`` →
@@ -47,11 +41,9 @@ To run it simply call ``adhesive`` in the terminal:
 
 .. code:: sh
 
-   adhesive
+    adhesive
 
 This is the equivalent of Jenkins stages. But we can do better:
-
-.. __programmatic_builds:
 
 Programmatic Builds
 -------------------
@@ -62,33 +54,33 @@ processes, branching and looping available:
 
 .. code:: python
 
-   import adhesive
-   import uuid
+    import adhesive
+    import uuid
 
-   @adhesive.task("Run in parallel item {loop.value}")
-   def context_to_run(context):
-       if not context.data.executions:
-           context.data.executions = set()
+    @adhesive.task("Run in parallel item {loop.value}")
+    def context_to_run(context):
+        if not context.data.executions:
+            context.data.executions = set()
 
-       context.data.executions.add(str(uuid.uuid4()))
+        context.data.executions.add(str(uuid.uuid4()))
 
-   data = adhesive.process_start()\
-       .branch_start()\
-           .sub_process_start() \
-               .task("Run in parallel",
-                     loop="items") \
-           .sub_process_end()\
-       .branch_end() \
-       .branch_start() \
-           .sub_process_start() \
-               .task("Run in parallel item {loop.value}",
-                     loop="items") \
-           .sub_process_end() \
-       .branch_end() \
-       .process_end()\
-       .build(initial_data={"items": [1, 2, 3, 4, 5]})
+    data = adhesive.process_start()\
+        .branch_start()\
+            .sub_process_start() \
+                .task("Run in parallel",
+                      loop="items") \
+            .sub_process_end()\
+        .branch_end() \
+        .branch_start() \
+            .sub_process_start() \
+                .task("Run in parallel item {loop.value}",
+                      loop="items") \
+            .sub_process_end() \
+        .branch_end() \
+        .process_end()\
+        .build(initial_data={"items": [1, 2, 3, 4, 5]})
 
-   assert len(data.executions) == 10
+    assert len(data.executions) == 10
 
 Here you see the full BPMN power starting to unfold. We create a process
 that branches out, creates sub processes (sub processes can be looped as
@@ -97,8 +89,6 @@ parallel in the same pool.
 
 Note that you can pass ``initial_data`` into the process, and you can
 also get the ``context.data`` from the last execution token.
-
-.. __bpmn_process:
 
 BPMN Process
 ------------
@@ -109,31 +99,29 @@ has a lot of dependencies:
 
 |BPMN Editor|
 
-The `build of adhesive <_adhesive.py>`__ is modeled as a `BPMN
-process <adhesive-self.bpmn>`__ itself, so we load it from the file
-directly using: ``adhesive.build_bpmn("adhesive-self.bpmn")``
+The `build of adhesive`_ is modeled as a `BPMN process`_ itself, so we
+load it from the file directly using:
+``adhesive.build_bpmn("adhesive-self.bpmn")``
 
 .. code:: python
 
-   import adhesive
+    import adhesive
 
-   @adhesive.task("Read Parameters")
-   def read_parameters(context) -> None:
-       context.data.run_mypy = False
-       context.data.test_integration = True
+    @adhesive.task("Read Parameters")
+    def read_parameters(context) -> None:
+        context.data.run_mypy = False
+        context.data.test_integration = True
 
-   @adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
-   def gbs_ensure_tooling(context, tool_name) -> None:
-       ge_tooling.ensure_tooling(context, tool_name)
+    @adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
+    def gbs_ensure_tooling(context, tool_name) -> None:
+        ge_tooling.ensure_tooling(context, tool_name)
 
-   # ...
+    # ...
 
-   adhesive.build_bpmn("adhesive-self.bpmn")
+    adhesive.build_bpmn("adhesive-self.bpmn")
 
 As you see steps are parametrizable, and use the data from the task name
 into the step definition.
-
-.. __defining_bpmn_tasks:
 
 Defining BPMN Tasks
 ===================
@@ -143,26 +131,26 @@ matching, and extracting values:
 
 .. code:: python
 
-   @adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
-   def gbs_ensure_tooling(context, tool_name) -> None:
-       # ...
+    @adhesive.task(re=r"^Ensure Tooling:\s+(.+)$")
+    def gbs_ensure_tooling(context, tool_name) -> None:
+        # ...
 
 Or a user task (interactive form):
 
 .. code:: python
 
-   @adhesive.usertask('Publish to PyPI?')
-   def publish_to_pypi_confirm(context, ui):
-       ui.add_checkbox_group(
-           "publish",
-           title="Publish",
-           values=(
-               ("nexus", "Publish to Nexus"),
-               ("pypitest", "Publish to PyPI Test"),
-               ("pypi", "Publish to PyPI"),
-           ),
-           value=("pypitest", "pypi")
-       )
+    @adhesive.usertask('Publish to PyPI?')
+    def publish_to_pypi_confirm(context, ui):
+        ui.add_checkbox_group(
+            "publish",
+            title="Publish",
+            values=(
+                ("nexus", "Publish to Nexus"),
+                ("pypitest", "Publish to PyPI Test"),
+                ("pypi", "Publish to PyPI"),
+            ),
+            value=("pypitest", "pypi")
+        )
 
 Don’t forget, the ``@adhesive.task`` and ``@adhesive.usertask`` are just
 defining mappings for implementations of the task names available in the
@@ -179,7 +167,7 @@ As you notice, there’s always a first parameter named ``context``. The
    Matching is attempted *after* the name is resolved.
 
 3. ``data`` - Data that the current execution token contains. This data
-   is always cloned across executions, and \`set`s and \`dict`s are
+   is always cloned across executions, and \`set\`s and \`dict\`s are
    automatically merged if multiple execution tokens are merged. So you
    have a modifiable copy of the data that you’re allowed to change, and
    is propagated into the following execution tokens.
@@ -202,8 +190,6 @@ The tasks perform the actual work for the build. But in order to have
 that, we need to be able to execute commands, and create files. For that
 we have the ``workspace``.
 
-.. __connections:
-
 Connections
 ===========
 
@@ -217,9 +203,9 @@ So if in a task there is defined a data field such as:
 
 .. code:: py
 
-   @adhesive.task('prepare data')
-   def prepare_data(context):
-       context.data.navigation_direction = "forward"
+    @adhesive.task('prepare data')
+    def prepare_data(context):
+        context.data.navigation_direction = "forward"
 
 The ``navigation_direction`` can be validated in the condition with any
 of the following:
@@ -229,8 +215,6 @@ of the following:
 -  ``data.navigation_direction == "forward"``
 
 -  ``navigation_direction == "forward"``
-
-.. __workspace:
 
 Workspace
 =========
@@ -253,7 +237,7 @@ tooling you just need to:
 
 .. code:: python
 
-   from adhesive.workspace import docker
+    from adhesive.workspace import docker
 
 Then to spin up a container that has the current folder mounted in,
 where you’re able to execute commands *inside* the container you just
@@ -261,12 +245,12 @@ need to:
 
 .. code:: python
 
-   @adhesive.task("Test")
-   def gbs_test_linux(context) -> None:
-       image_name = 'some-custom-python'
+    @adhesive.task("Test")
+    def gbs_test_linux(context) -> None:
+        image_name = 'some-custom-python'
 
-       with docker.inside(context.workspace, image_name) as w:
-           w.run("python -m pytest -n 4")
+        with docker.inside(context.workspace, image_name) as w:
+            w.run("python -m pytest -n 4")
 
 This creates a workspace from our current context workspace, where we
 simply execute what we want, using the ``run()`` method. If we’re
@@ -277,100 +261,98 @@ Here’s the full API for it:
 
 .. code:: python
 
-   class Workspace(ABC):
-       """
-       A workspace is a place where work can be done. That means a writable
-       folder is being allocated, that might be cleaned up at the end of the
-       execution.
-       """
+    class Workspace(ABC):
+        """
+        A workspace is a place where work can be done. That means a writable
+        folder is being allocated, that might be cleaned up at the end of the
+        execution.
+        """
 
-       @abstractmethod
-       def write_file(
-               self,
-               file_name: str,
-               content: str) -> None:
-           pass
+        @abstractmethod
+        def write_file(
+                self,
+                file_name: str,
+                content: str) -> None:
+            pass
 
-       @abstractmethod
-       def run(self,
-               command: str,
-               capture_stdout: bool = False) -> Union[str, None]:
-           """
-           Run a new command in the current workspace.
+        @abstractmethod
+        def run(self,
+                command: str,
+                capture_stdout: bool = False) -> Union[str, None]:
+            """
+            Run a new command in the current workspace.
 
-           :param capture_stdout:
-           :param command:
-           :return:
-           """
-           pass
+            :param capture_stdout:
+            :param command:
+            :return:
+            """
+            pass
 
-       @abstractmethod
-       def rm(self, path: Optional[str]=None) -> None:
-           """
-           Recursively remove the file or folder given as path. If no path is sent,
-           the whole workspace will be cleared.
+        @abstractmethod
+        def rm(self, path: Optional[str]=None) -> None:
+            """
+            Recursively remove the file or folder given as path. If no path is sent,
+            the whole workspace will be cleared.
 
-           :param path:
-           :return:
-           """
-           pass
+            :param path:
+            :return:
+            """
+            pass
 
-       @abstractmethod
-       def mkdir(self, path: str=None) -> None:
-           """
-           Create a folder, including all its needed parents.
+        @abstractmethod
+        def mkdir(self, path: str=None) -> None:
+            """
+            Create a folder, including all its needed parents.
 
-           :param path:
-           :return:
-           """
-           pass
+            :param path:
+            :return:
+            """
+            pass
 
-       @abstractmethod
-       def copy_to_agent(self,
-                         from_path: str,
-                         to_path: str) -> None:
-           """
-           Copy the files to the agent from the current disk.
-           :param from_path:
-           :param to_path:
-           :return:
-           """
-           pass
+        @abstractmethod
+        def copy_to_agent(self,
+                          from_path: str,
+                          to_path: str) -> None:
+            """
+            Copy the files to the agent from the current disk.
+            :param from_path:
+            :param to_path:
+            :return:
+            """
+            pass
 
-       @abstractmethod
-       def copy_from_agent(self,
-                           from_path: str,
-                           to_path: str) -> None:
-           """
-           Copy the files from the agent to the current disk.
-           :param from_path:
-           :param to_path:
-           :return:
-           """
-           pass
+        @abstractmethod
+        def copy_from_agent(self,
+                            from_path: str,
+                            to_path: str) -> None:
+            """
+            Copy the files from the agent to the current disk.
+            :param from_path:
+            :param to_path:
+            :return:
+            """
+            pass
 
-       @contextmanager
-       def temp_folder(self):
-           """
-           Create a temporary folder in the current `pwd` that will be deleted
-           when the `with` block ends.
+        @contextmanager
+        def temp_folder(self):
+            """
+            Create a temporary folder in the current `pwd` that will be deleted
+            when the `with` block ends.
 
-           :return:
-           """
-           pass
+            :return:
+            """
+            pass
 
-       @contextmanager
-       def chdir(self, target_folder: str):
-           """
-           Temporarily change a folder, that will go back to the original `pwd`
-           when the `with` block ends. To change the folder for the workspace
-           permanently, simply assing the `pwd`.
-           :param target_folder:
-           :return:
-           """
-           pass
-
-.. __user_tasks:
+        @contextmanager
+        def chdir(self, target_folder: str):
+            """
+            Temporarily change a folder, that will go back to the original `pwd`
+            when the `with` block ends. To change the folder for the workspace
+            permanently, simply assing the `pwd`.
+            :param target_folder:
+            :return:
+            """
+            pass
 
 User Tasks
 ==========
@@ -391,25 +373,25 @@ where to publish the package:
 
 .. code:: python
 
-   @adhesive.usertask("Read User Data")
-   def read_user_data(context, ui) -> None:
-       ui.add_input_text("user",
-               title="Login",
-               value="root")
-       ui.add_input_password("password",
-               title="Password")
-       ui.add_checkbox_group("roles",
-               title="Roles",
-               value=["cyborg"],
-               values=["admin", "cyborg", "anonymous"])
-       ui.add_radio_group("disabled",  # title is optional
-               values=["yes", "no"],
-               value="no")
-       ui.add_combobox("machine",
-               title="Machine",
-               values=(("any", "<any>"),
-                       ("win", "Windows"),
-                       ("lin", "Linux")))
+    @adhesive.usertask("Read User Data")
+    def read_user_data(context, ui) -> None:
+        ui.add_input_text("user",
+                title="Login",
+                value="root")
+        ui.add_input_password("password",
+                title="Password")
+        ui.add_checkbox_group("roles",
+                title="Roles",
+                value=["cyborg"],
+                values=["admin", "cyborg", "anonymous"])
+        ui.add_radio_group("disabled",  # title is optional
+                values=["yes", "no"],
+                value="no")
+        ui.add_combobox("machine",
+                title="Machine",
+                values=(("any", "<any>"),
+                        ("win", "Windows"),
+                        ("lin", "Linux")))
 
 This will prompt the user with this form:
 
@@ -425,52 +407,50 @@ following task:
 
 .. code:: python
 
-   @adhesive.task("Register User")
-   def publish_items(context):
-       for role in context.data.roles:
-           # ...
+    @adhesive.task("Register User")
+    def publish_items(context):
+        for role in context.data.roles:
+            # ...
 
 User tasks support the following API, available on the ``ui`` parameter,
 the parameter after the context:
 
 .. code:: python
 
-   class UiBuilderApi(ABC):
-       def add_input_text(self,
-                          name: str,
-                          title: Optional[str] = None,
-                          value: str = '') -> None:
-
-       def add_input_password(self,
-                              name: str,
-                              title: Optional[str] = None,
-                              value: str = '') -> None:
-
-       def add_combobox(self,
-                        name: str,
-                        title: Optional[str] = None,
-                        value: Optional[str]=None,
-                        values: Optional[Iterable[Union[Tuple[str, str], str]]]=None) -> None:
-
-       def add_checkbox_group(
-               self,
-               name: str,
-               title: Optional[str]=None,
-               value: Optional[Iterable[str]]=None,
-               values: Optional[Iterable[Union[Tuple[str, str], str]]]=None) -> None:
-
-       def add_radio_group(self,
+    class UiBuilderApi(ABC):
+        def add_input_text(self,
                            name: str,
-                           title: Optional[str]=None,
-                           value: Optional[str]=None,
-                           values: Optional[List[Any]]=None) -> None:
+                           title: Optional[str] = None,
+                           value: str = '') -> None:
 
-       def add_default_button(self,
-                              name: str,
-                              title: Optional[str] = None,
-                              value: Optional[Any] = True) -> None:
+        def add_input_password(self,
+                               name: str,
+                               title: Optional[str] = None,
+                               value: str = '') -> None:
 
-.. __custom_buttons:
+        def add_combobox(self,
+                         name: str,
+                         title: Optional[str] = None,
+                         value: Optional[str]=None,
+                         values: Optional[Iterable[Union[Tuple[str, str], str]]]=None) -> None:
+
+        def add_checkbox_group(
+                self,
+                name: str,
+                title: Optional[str]=None,
+                value: Optional[Iterable[str]]=None,
+                values: Optional[Iterable[Union[Tuple[str, str], str]]]=None) -> None:
+
+        def add_radio_group(self,
+                            name: str,
+                            title: Optional[str]=None,
+                            value: Optional[str]=None,
+                            values: Optional[List[Any]]=None) -> None:
+
+        def add_default_button(self,
+                               name: str,
+                               title: Optional[str] = None,
+                               value: Optional[Any] = True) -> None:
 
 Custom Buttons
 --------------
@@ -493,8 +473,6 @@ The title is optional, and only if missing it’s build either from the
 assign a different variable in the ``context.data``, or from the
 ``value`` if they have overlapping names.
 
-.. __secrets:
-
 Secrets
 =======
 
@@ -510,15 +488,13 @@ the secret inside a docker container:
 
 .. code:: python
 
-   @adhesive.task('^PyPI publish to (.+?)$')
-   def publish_to_pypi(context, registry):
-       with docker.inside(context.workspace, context.data.gbs_build_image_name) as w:
-           with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pypirc"):
-               w.run(f"python setup.py bdist_wheel upload -r {registry}")
+    @adhesive.task('^PyPI publish to (.+?)$')
+    def publish_to_pypi(context, registry):
+        with docker.inside(context.workspace, context.data.gbs_build_image_name) as w:
+            with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pypirc"):
+                w.run(f"python setup.py bdist_wheel upload -r {registry}")
 
 Note the ``docker.inside`` that creates a different workspace.
-
-.. __configuration:
 
 Configuration
 =============
@@ -536,17 +512,13 @@ variables. The values are read in the following order:
 
 Currently the following values are defined for configuration:
 
-.. __temp_folder:
-
-temp_folder
------------
+temp\_folder
+------------
 
 default value ``/tmp/adhesive``, environment var:
 ``ADHESIVE_TEMP_FOLDER``.
 
 Is where all the build files will be stored.
-
-.. __plugins:
 
 plugins
 -------
@@ -560,12 +532,10 @@ in the ``~/.adhesive/config.yml``:
 
 .. code:: yaml
 
-   plugins:
-   - /path/to/folder
+    plugins:
+    - /path/to/folder
 
 Then in the python path you can simply do regular imports.
-
-.. __color:
 
 color
 -----
@@ -576,27 +546,21 @@ Marks if the logging should use ANSI colors in the terminal. Implicitly
 this is ``true``, but if log parsing is needed, it can make sense to
 have it false.
 
-.. __log_level:
+log\_level
+----------
 
-log_level
----------
-
-default_value ``info``, environment var: ``ADHESIVE_LOG_LEVEL``.
+default\_value ``info``, environment var: ``ADHESIVE_LOG_LEVEL``.
 
 How verbose should the logging be on the terminal. Possible values are
 ``trace``, ``debug``, ``info``, ``warning``, ``error`` and ``critical``.
 
-.. __pool_size:
-
-pool_size
----------
+pool\_size
+----------
 
 default value is empty, environment var: ``ADHESIVE_POOL_SIZE``.
 
 Sets the number of workers that adhesive will use. Defaults to the
 number of CPUs if unset.
-
-.. __stdout:
 
 stdout
 ------
@@ -606,10 +570,8 @@ default value is empty, environment var: ``ADHESIVE_STDOUT``.
 Implicitly for each task, the log is redirected in a different file, and
 only shown if the task failed. The redirection can be disabled.
 
-.. __parallel_processing:
-
-parallel_processing
--------------------
+parallel\_processing
+--------------------
 
 default value is ``thread``, environment var:
 ``ADHESIVE_PARALLEL_PROCESSING``.
@@ -623,25 +585,27 @@ This value can be set to ``process``, in case the tasks are CPU
 intensive. This has the drawback of recreating the connections on
 workspaces' each task execution.
 
-.. __hacking_adhesive:
-
 Hacking Adhesive
 ================
 
 Adhesive builds with itself. In order to do that, you need to checkout
-the `adhesive-lib <https://github.com/germaniumhq/adhesive-lib>`__
-shared plugin, and configure your local config to use it:
+the `adhesive-lib`_ shared plugin, and configure your local config to
+use it:
 
 .. code:: yaml
 
-   plugins:
-   - /path/to/adhesive-lib
+    plugins:
+    - /path/to/adhesive-lib
 
 Then simply run the build using adhesive itself:
 
 .. code:: sh
 
-   adhesive
+    adhesive
+
+.. _build of adhesive: _adhesive.py
+.. _BPMN process: adhesive-self.bpmn
+.. _adhesive-lib: https://github.com/germaniumhq/adhesive-lib
 
 .. |BPMN Editor| image:: ./doc/yaoqiang-screenshot.png
 .. |form| image:: ./doc/console_usertask.png
