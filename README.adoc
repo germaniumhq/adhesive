@@ -1,4 +1,20 @@
 = adhesive
+:toc: left
+:experimental:
+:source-highlighter: pygments
+:pygments-css: style
+:sectanchors:
+:icons: font
+
+:leveloffset: +1
+
+// includes
+// include::otherfile.adoc[]
+
+:leveloffset: -1
+
+
+// FIXME: move to different files
 
 A CI/CD system build around BPMN and Python. Basically a micro BPMN runner with
 python step implementations targeted for builds. Able to run in the terminal.
@@ -228,21 +244,23 @@ on the host where adhesive is running.
 To create a docker workspace that runs inside a container with the tooling you
 just need to:
 
-```py
+[source,python]
+-----------------------------------------------------------------------------
 from adhesive.workspace import docker
-```
+-----------------------------------------------------------------------------
 
 Then to spin up a container that has the current folder mounted in, where
 you're able to execute commands _inside_ the container you just need to:
 
-```py
+[source,python]
+-----------------------------------------------------------------------------
 @adhesive.task("Test")
 def gbs_test_linux(context) -> None:
     image_name = 'some-custom-python'
 
     with docker.inside(context.workspace, image_name) as w:
         w.run("python -m pytest -n 4")
-```
+-----------------------------------------------------------------------------
 
 This creates a workspace from our current context workspace, where we simply
 execute what we want, using the `run()` method. If we're interested in the
