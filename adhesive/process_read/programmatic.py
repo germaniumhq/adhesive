@@ -1,4 +1,5 @@
 from typing import Optional, List, Callable
+import logging
 
 from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Edge import Edge
@@ -10,6 +11,8 @@ from adhesive.graph.Task import Task
 from adhesive.graph.Lane import Lane
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Process import Process
+
+LOG = logging.getLogger(__name__)
 
 
 current_id = 0
@@ -69,7 +72,13 @@ class BranchEndBuilder:
             name=name)
         return self._wire_task_list(new_task, when=when, loop=loop, lane=lane)
 
-    def user_task(self,
+    def user_task(self, *args, **kw) -> 'ProcessBuilder':
+        # FIXME: remove in version 1
+        LOG.warn("user_task() is deprecated and will be removed in version 1.0. "
+                 "Use usertask() instead.")
+        return self.usertask(*args, **kw)
+
+    def usertask(self,
                   name: str,
                   when: Optional[str] = None,
                   loop: Optional[str] = None,
@@ -87,9 +96,17 @@ class BranchEndBuilder:
             name=name)
         return self._wire_task_list(new_task, when=when, loop=loop, lane=lane)
 
-    def sub_process_start(self,
-                  name: str,
-                  lane: Optional[str] = None) -> 'ProcessBuilder':
+    def sub_process_start(self, *args, **kw) -> 'ProcessBuilder':
+        # FIXME: remove in version 1
+        LOG.warn("sub_process_start() is deprecated and will be removed in version 1.0. "
+                 "Use subprocess_start() instead.")
+        return self.subprocess_start(*args, **kw)
+
+    def subprocess_start(self,
+                         name: Optional[str] = None,
+                         when: Optional[str] = None,
+                         loop: Optional[str] = None,
+                         lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         We start a sub process.
         :param name:
@@ -102,6 +119,8 @@ class BranchEndBuilder:
         )
 
         self._wire_task_list(sub_process_builder.process,
+                             when=when,
+                             loop=loop,
                              lane=lane)
 
         return sub_process_builder
@@ -114,7 +133,13 @@ class BranchEndBuilder:
 
         return self._wire_task_list(new_task, lane=lane)
 
-    def sub_process_end(self) -> 'ProcessBuilder':
+    def sub_process_end(self, *args, **kw) -> 'ProcessBuilder':
+        # FIXME: remove in version 1
+        LOG.warn("sub_process_end() is deprecated and will be removed in version 1.0. "
+                 "Use subprocess_end() instead.")
+        return self.subprocess_end(*args, **kw)
+
+    def subprocess_end(self) -> 'ProcessBuilder':
         return self.process_builder.sub_process_end()
 
     def _wire_task_list(self,
@@ -205,11 +230,17 @@ class ProcessBuilder:
 
         return self._wire_task(new_task)
 
-    def sub_process_start(self,
-                          name: Optional[str] = None,
-                          when: Optional[str] = None,
-                          loop: Optional[str] = None,
-                          lane: Optional[str] = None) -> 'ProcessBuilder':
+    def sub_process_start(self, *args, **kw) -> 'ProcessBuilder':
+        # FIXME: remove in version 1
+        LOG.warn("sub_process_start() is deprecated and will be removed in version 1.0. "
+                 "Use subprocess_start() instead.")
+        return self.subprocess_start(*args, **kw)
+
+    def subprocess_start(self,
+                         name: Optional[str] = None,
+                         when: Optional[str] = None,
+                         loop: Optional[str] = None,
+                         lane: Optional[str] = None) -> 'ProcessBuilder':
         """
         We start a subprocess. Subprocesses can also loop over the whole subprocess.
         :param name:
@@ -231,7 +262,13 @@ class ProcessBuilder:
 
         return sub_process_builder
 
-    def sub_process_end(self) -> 'ProcessBuilder':
+    def sub_process_end(self, *args, **kw) -> 'ProcessBuilder':
+        # FIXME: remove in version 1
+        LOG.warn("sub_process_end() is deprecated and will be removed in version 1.0. "
+                 "Use subprocess_end() instead.")
+        return self.subprocess_end(*args, **kw)
+
+    def subprocess_end(self) -> 'ProcessBuilder':
         """
         End a subprocess definition.
         :return:
@@ -245,7 +282,13 @@ class ProcessBuilder:
 
         return self.parent_builder
 
-    def user_task(self,
+    def user_task(self, *args, **kw) -> 'ProcessBuilder':
+        # FIXME: remove in version 1
+        LOG.warn("user_task() is deprecated and will be removed in version 1.0. "
+                 "Use usertask() instead.")
+        return self.usertask(*args, **kw)
+
+    def usertask(self,
                   name: str,
                   when: Optional[str] = None,
                   loop: Optional[str] = None,
