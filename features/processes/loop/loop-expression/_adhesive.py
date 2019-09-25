@@ -23,10 +23,10 @@ def simple_nested_task(context) -> None:
 
 adhesive.process_start()\
     .task('Simple Looped Task', loop='simple')\
-    .sub_process_start(loop="parents")\
+    .subprocess_start(loop="parents")\
         .task("Simple Nested Loop Task", loop="nested")\
         .task("Simple Nested Task")\
-    .sub_process_end()\
+    .subprocess_end()\
     .build(initial_data={
         "simple": [1, 2, 3],
         "nested": [1, 2, 3],

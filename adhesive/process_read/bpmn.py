@@ -123,7 +123,7 @@ def process_node(result: Process,
     if "task" == node_name:
         process_node_task(result, node)
     elif "userTask" == node_name:
-        process_user_task(result, node)
+        process_usertask(result, node)
     elif "scriptTask" == node_name:
         process_script_task(result, node)
     elif "sequenceFlow" == node_name:
@@ -234,7 +234,7 @@ def process_node_task(p: Process, xml_node) -> None:
     p.add_task(task)
 
 
-def process_user_task(p: Process, xml_node) -> None:
+def process_usertask(p: Process, xml_node) -> None:
     """ Create a HumanTask element from the process """
     node_name = normalize_name(xml_node.get("name"))
     task = UserTask(

@@ -12,16 +12,16 @@ def context_to_run(context):
 
 data = adhesive.process_start()\
     .branch_start()\
-        .sub_process_start() \
+        .subprocess_start() \
             .task("Run in parallel",
                   loop="context.data.items") \
-        .sub_process_end()\
+        .subprocess_end()\
     .branch_end() \
     .branch_start() \
-        .sub_process_start() \
+        .subprocess_start() \
             .task("Run in parallel",
                   loop="context.data.items") \
-        .sub_process_end() \
+        .subprocess_end() \
     .branch_end() \
     .process_end()\
     .build(initial_data={"items": [1, 2, 3, 4, 5]})

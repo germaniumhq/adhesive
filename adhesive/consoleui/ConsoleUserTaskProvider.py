@@ -304,7 +304,7 @@ class ConsoleUserTaskProvider(UserTaskProvider):
         ui = UIBuilder(event)
 
         adhesive_task = cast(ExecutionUserTask, executor.tasks_impl[event.task.id])
-        context = adhesive_task.invoke_user_task(event, ui)
+        context = adhesive_task.invoke_usertask(event, ui)
 
         # redirecting logs, and initializing ncurses is prolly a bad idea
         # the code that generates the UI shouldn't be run in ncurses

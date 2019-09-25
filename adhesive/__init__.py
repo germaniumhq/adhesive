@@ -46,14 +46,14 @@ def usertask(*task_names: str,
              when: Optional[str] = None,
              lane: Optional[str] = None) -> Callable[..., Callable[..., T]]:
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
-        user_task = ExecutionUserTask(
+        usertask = ExecutionUserTask(
             code=f,
             expressions=task_names,
             regex_expressions=re,
             loop=loop,
             when=when,
             lane=lane)
-        process.task_definitions.append(user_task)
+        process.task_definitions.append(usertask)
         return f
 
     return wrapper_builder

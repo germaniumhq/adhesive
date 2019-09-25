@@ -26,9 +26,9 @@ def run_simple_task(context, task_name, platform):
 
 
 data = adhesive.process_start()\
-    .sub_process_start("Run builds on {loop.value}", loop="platforms", lane="custom")\
+    .subprocess_start("Run builds on {loop.value}", loop="platforms", lane="custom")\
         .task("Running {loop.value} on {loop.parent_loop.value}", loop="tasks", lane="custom")\
-    .sub_process_end()\
+    .subprocess_end()\
     .build(initial_data={
         "task_executions": set(),
         "lane_executions": set(),

@@ -33,7 +33,7 @@ class ExecutionUserTask(ExecutionBaseTask):
         self.when = when
         self.lane = lane
 
-    def invoke_user_task(
+    def invoke_usertask(
             self,
             event: ActiveEvent,
             ui: Any) -> ExecutionToken:

@@ -23,7 +23,7 @@ def generate_from_tasks(process: AdhesiveProcess) -> Process:
                          loop=task.loop,
                          lane=task.lane)
         elif isinstance(task, ExecutionUserTask):
-            builder.user_task(task.expressions[0],
+            builder.usertask(task.expressions[0],
                               when=task.when,
                               loop=task.loop,
                               lane=task.lane)

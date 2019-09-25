@@ -12,9 +12,9 @@ def run_simple_task(context):
 
 
 data = adhesive.process_start()\
-    .sub_process_start("Run builds on {loop.value}", loop="platforms")\
+    .subprocess_start("Run builds on {loop.value}", loop="platforms")\
         .task("Running {loop.value} on {loop.parent_loop.value}", loop="tasks")\
-    .sub_process_end()\
+    .subprocess_end()\
     .build(initial_data={
         "execution_count": set(),
         "platforms": ["linux", "windows", "solaris"],
