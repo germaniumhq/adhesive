@@ -204,8 +204,15 @@ Workspace
 =========
 
 Workspaces are just a way of interacting with a system, running
-commands, and writing/reading files. Currently only
-`LocalLinuxWorkspace` and `DockerWorkspace` are implemented.
+commands, and writing/reading files. Currently there’s support for:
+
+-   the local system
+
+-   docker containers
+
+-   kubernetes
+
+-   remote SSH connections
 
 When starting `adhesive` allocates a default workspace folder in the
 configured temp location (implicitly `/tmp/adhesive`). The `Workspace`
@@ -213,8 +220,26 @@ API is an API that allows you to run commands, and create files, taking
 care of redirecting outputs, and even escaping the commands to be able
 to easily run them inside docker containers.
 
-Note that implicitly calling `context.workspace.run(…​)` will run the
-command on the host where adhesive is running.
+The workspace is available from the cotext directly from the `context`,
+by calling `context.workspace`.
+
+For example calling `context.workspace.run(…​)` will run the command on
+the host where adhesive is running:
+
+    @adhesive.task("Run Maven")
+    def build_project(context) -> None:
+        context.workspace.run("mvn clean install")
+
+If we’re interested in the program output we simply do a `run` with a
+`capture_stdout` that returns the output as a string:
+
+    @adhesive.task("Test")
+    def gbs_test_linux(context) -> None:
+        content = context.workspace.run("echo yay", capture_stdout=True)
+        assert content == "yay"
+
+Docker Workspace
+----------------
 
 To create a docker workspace that runs inside a container with the
 tooling you just need to:
@@ -222,7 +247,7 @@ tooling you just need to:
     from adhesive.workspace import docker
 
 Then to spin up a container that has the current folder mounted in,
-where you’re able to execute commands *inside* the container you just
+where you’re able to execute commands *inside* the container. You just
 need to:
 
     @adhesive.task("Test")
@@ -232,10 +257,124 @@ need to:
         with docker.inside(context.workspace, image_name) as w:
             w.run("python -m pytest -n 4")
 
-This creates a workspace from our current context workspace, where we
-simply execute what we want, using the `run()` method. If we’re
-interested in the program output we simply do a `run` with a
-`capture_stdout` that returns the output as a string.
+This creates a container using our current context workspace, where we
+simply execute what we want, using the `run()` method. After the `with`
+statement the container will be teared down automatically.
+
+SSH Workspace
+-------------
+
+To have a SSH Workspace, it’s again the same approach:
+
+    from adhesive.workspace import ssh
+
+Then to connect to a host, you can just use the `ssh.inside` the same
+way like in the docker sample:
+
+    @adhesive.task("Run over SSH")
+    def run_over_ssh(context) -> None:
+        with ssh.inside(context.workspace,
+                        "192.168.0.51",
+                        username="raptor",
+                        key_fileaname="/home/raptor/.ssh/id_rsa") as s:
+            s.run("python -m pytest -n 4")
+
+The parameters are being passed to paramiko, that’s the implementation
+beneath the `SshWorkspace`.
+
+Kubernetes Workspace
+--------------------
+
+To run things in pods, it’s the same approach:
+
+    from adhesive.workspace import kube
+
+Then we can create a workspace to run things in kubernetes pods. The
+workspace, as well as the API, will use the `kubectl` command
+internally.
+
+    @adhesive.task("Run things in the pod")
+    def run_in_the_pod(context) -> None:
+        with kube.inside(context.workspace,
+                         pod_name="nginx-container") as pod:
+            pod.run("ps x")  # This runs in the pod
+
+Kubernetes API
+--------------
+
+Adhesive also packs a kubernetes api, that’s available on the
+`adhesive.workspace.kube.api`:
+
+    from adhesive.workspace.kube.api import KubeApi
+
+To use it, we need to create an instance against a workspace.
+
+    @adhesive.gateway('Determine action')
+    def determine_action(context):
+        kubeapi = KubeApi(context.workspace,
+                          namespace=context.data.target_namespace)
+
+Let’s create a namespace:
+
+    kubeapi.create(kind="ns", name=context.data.target_namespace)
+
+Or let’s create a service using the `kubectl apply` approach:
+
+        kubeapi.apply(f"""
+            apiVersion: v1
+            kind: Service
+            metadata:
+                name: nginx-http
+                labels:
+                    app: {context.data.target_namespace}
+            spec:
+                type: ClusterIP
+                ports:
+                - port: 80
+                  protocol: TCP
+                  name: http
+                selector:
+                  app: {context.data.target_namespace}
+        """)
+
+Or let’s get some pods:
+
+        pod_definitions = kubeapi.getall(
+            kind="pod",
+            filter=f"execution_id={context.execution_id}",
+            namespace=context.data.target_namespace)
+
+These returns objects that allow navigating properties as regular python
+attributes:
+
+        new_pods = dict()
+        for pod in pod_definitions:
+            if not pod.metadata.name:
+                raise Exception(f"Wrong definition {pod}")
+
+            new_pods[pod.metadata.name] = pod.status.phase
+
+You can also navigate properties that are not existing yet, for example
+to wait for the status of a pod to appear:
+
+    @adhesive.task('Wait For Pod Creation {loop.key}')
+    def wait_for_pod_creation_loop_value_(context):
+        kubeapi = KubeApi(context.workspace,
+                          namespace=context.data.target_namespace)
+        pod_name = context.loop.key
+        pod_status = context.loop.value
+
+        while pod_status != 'Running':
+            time.sleep(5)
+            pod = kubeapi.get(kind="pod", name=pod_name)
+
+            pod_status = pod.status.phase
+
+To get the actual data from the wrappers that the adhesive API creates,
+you can simply call the `_raw` property.
+
+Workspace API
+-------------
 
 Here’s the full API for it:
 
