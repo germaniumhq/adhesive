@@ -61,6 +61,18 @@ def check_the_text_in_stdouterr(context, where, searched_text):
         assert searched_text in context.process_stderr
 
 
+@step("there isn't in the (.*?) the text '(.*?)'")
+def check_the_text_in_stdouterr(context, where, searched_text):
+    if where == "stdout":
+        print("STDOUT")
+        print(context.process_stdout)
+        assert searched_text not in context.process_stdout
+    else:
+        print("STDERR")
+        print(context.process_stderr)
+        assert searched_text not in context.process_stderr
+
+
 @step("the user task renders just fine")
 def noop(context):
     pass

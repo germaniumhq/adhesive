@@ -1,9 +1,9 @@
 from typing import Callable, Optional, List, Union, Tuple
 
-from adhesive.logredirect.LogRedirect import redirect_stdout
-from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
+from adhesive.logredirect.LogRedirect import redirect_stdout
+from adhesive.model.ActiveEvent import ActiveEvent
 from .ExecutionToken import ExecutionToken
 
 
@@ -53,4 +53,4 @@ class ExecutionTask(ExecutionBaseTask):
             return event.context
 
     def __repr__(self) -> str:
-        return f"ExecutionTask(expressions={self.expressions})"
+        return f"@task(expressions={self.expressions}, code={self.code.__name__})"

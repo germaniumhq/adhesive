@@ -7,6 +7,7 @@ import uuid
 
 from concurrent.futures import Future
 from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple, Union
+import inspect
 
 from adhesive import logredirect
 from adhesive.consoleui.color_print import green, red, yellow, white
@@ -347,16 +348,31 @@ class ProcessExecutor:
                 continue
 
             self.tasks_impl[task_id] = adhesive_task
+            adhesive_task.used = True
 
         for lane_id, lane in process.lanes.items():
             lane_definition = self._match_lane(lane)
 
             if not lane_definition:
                 unmatched_items[f"lane:{lane.name}"] = lane
+                continue
 
-        if unmatched_items and missing_dict is None:  # we're the root call
+            lane_definition.used = True
+
+        if missing_dict is not None:  # we're not the root call, we're done
+            return
+
+        if unmatched_items:
             display_unmatched_items(unmatched_items.values())
             sys.exit(1)
+
+        for task_definition in self.process.task_definitions:
+            if not task_definition.used:
+                LOG.warn(f"Unused task: {task_definition}")
+
+        for lane_definition in self.process.lane_definitions:
+            if not lane_definition.used:
+                LOG.warn(f"Unused lane: {lane_definition}")
 
     def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:
         for task_definition in self.process.task_definitions:
