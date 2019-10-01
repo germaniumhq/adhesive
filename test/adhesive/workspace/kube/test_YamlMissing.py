@@ -27,14 +27,14 @@ class YamlMissingTest(unittest.TestCase):
     def test_set_attribute(self):
         p = YamlDict()
 
-        p.x.y = "test"
-        self.assertEqual("test", p.x.y)
+        p.x.y.z = "test"
+        self.assertEqual("test", p.x.y.z)
 
     def test_set_item(self):
         p = YamlDict()
 
-        p["x"]["y"] = "test"
-        self.assertEqual("test", p["x"]["y"])
+        p["x"]["y"]["z"] = "test"
+        self.assertEqual("test", p["x"]["y"]["z"])
 
 
 if __name__ == '__main__':
