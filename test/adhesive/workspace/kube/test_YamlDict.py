@@ -2,6 +2,7 @@ import unittest
 import copy
 
 from adhesive.workspace.kube.YamlDict import YamlDict
+from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
 class YamlDictTest(unittest.TestCase):
@@ -177,6 +178,14 @@ class YamlDictTest(unittest.TestCase):
             self.assertEqual("YamlDict(.a) {'x': 1}", f"{v}")
             self.assertEqual(1, d.a.x)
             self.assertFalse(d.a.y)
+
+    def test_set_other_yaml_navigator(self):
+        a = YamlDict()
+        b = YamlDict()
+
+        a.b = b
+
+        self.assertFalse(isinstance(a._raw["b"], YamlNavigator))
 
 if __name__ == '__main__':
     unittest.main()

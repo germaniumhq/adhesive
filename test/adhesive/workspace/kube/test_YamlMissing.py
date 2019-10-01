@@ -3,6 +3,7 @@ import unittest
 
 from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlMissing import YamlMissing
+from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
 class YamlMissingTest(unittest.TestCase):

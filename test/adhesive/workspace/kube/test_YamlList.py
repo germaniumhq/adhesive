@@ -116,6 +116,17 @@ class YamlListTest(unittest.TestCase):
             self.assertTrue(isinstance(item, YamlNavigator),
                             "The iterated instance should be a navigator.")
 
+    def test_set_other_yaml_navigator(self):
+        a = YamlList(
+            property_name="a",
+            content=["a"]
+        )
+        b = YamlDict()
+
+        a[0] = b
+
+        self.assertFalse(isinstance(a._raw[0], YamlNavigator))
+
 
 if __name__ == '__main__':
     unittest.main()
