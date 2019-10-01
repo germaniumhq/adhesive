@@ -47,4 +47,4 @@ class ExecutionUserTask(ExecutionBaseTask):
             return event.context
 
     def __repr__(self) -> str:
-        return f"ExecutionUserTask(expressions={self.expressions})"
+        return f"@usertask(expressions={self.expressions}, code={self.code.__name__})"

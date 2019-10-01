@@ -27,6 +27,7 @@ class ExecutionBaseTask:
         self.expressions = expressions
         self.re_expressions = []  # these one are actually checked
         self.code = code
+        self.used = False  # this is set by the process executor task validation
 
         if expressions:
             for expression in expressions:
