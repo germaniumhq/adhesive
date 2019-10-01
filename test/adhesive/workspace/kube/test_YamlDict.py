@@ -187,5 +187,6 @@ class YamlDictTest(unittest.TestCase):
 
         self.assertFalse(isinstance(a._raw["b"], YamlNavigator))
 
+
 if __name__ == '__main__':
     unittest.main()

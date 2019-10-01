@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Optional, Any, Union, Dict, List
 import yaml
 import shlex
 import uuid
@@ -6,6 +6,7 @@ import uuid
 from adhesive.workspace import Workspace
 from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlList import YamlList
+from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
 class KubeApi():
@@ -47,15 +48,15 @@ class KubeApi():
             content=yaml.safe_load(object_data))
 
     def getall(self,
-            *args,
-            kind: str,
-            filter: Optional[str] = None,
-            namespace: Optional[str] = None) -> Any:
+               *args,
+               kind: str,
+               filter: Optional[str] = None,
+               namespace: Optional[str] = None) -> YamlList:
         """
         Gets an object from the kubernetes API
         :param args:
         :param kind:
-        :param name:
+        :param filter:
         :param namespace:
         :return:
         """
@@ -195,7 +196,7 @@ class KubeApi():
         self._workspace.run(command)
 
     def apply(self,
-              content: str,
+              content: Union[str, YamlDict, Dict, YamlList, List],
               namespace: Optional[str] = None) -> None:
         """
         Apply the content
@@ -209,6 +210,15 @@ class KubeApi():
             command += f" --namespace {namespace}"
         else:
             command += f" --namespace={self._namespace}"
+
+        if isinstance(content, YamlNavigator):
+            content = content._raw
+
+        if isinstance(content, dict):
+            content = yaml.safe_dump(content)
+
+        if isinstance(content, list):
+            content = yaml.safe_dump_all(content)
 
         try:
             self._workspace.write_file(file_name, content)
