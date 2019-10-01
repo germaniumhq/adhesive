@@ -19,6 +19,10 @@ class YamlMissing(YamlNavigator):
         # If we get calls for other attributes, we just return none
         return YamlMissing(property_name=f"{self.__property_name}.{item}")
 
+    def __getitem__(self, item):
+        # If we get calls for other items, we just return none
+        return YamlMissing(property_name=f"{self.__property_name}.{item}")
+
     def _raw(self) -> Any:
         return None
 

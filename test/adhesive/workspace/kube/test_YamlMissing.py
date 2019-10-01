@@ -13,6 +13,10 @@ class YamlMissingTest(unittest.TestCase):
         self.assertTrue(copied is not missing_property)
         self.assertEqual("YamlMissing(a.b)", f"{missing_property}")
 
+    def test_get_item(self):
+        missing_property = YamlMissing(property_name="a.b")
+        self.assertFalse(missing_property["x"])
+
 
 if __name__ == '__main__':
     unittest.main()
