@@ -362,10 +362,6 @@ class ProcessExecutor:
         if missing_dict is not None:  # we're not the root call, we're done
             return
 
-        if unmatched_items:
-            display_unmatched_items(unmatched_items.values())
-            sys.exit(1)
-
         for task_definition in self.process.task_definitions:
             if not task_definition.used:
                 LOG.warn(f"Unused task: {task_definition}")
@@ -373,6 +369,10 @@ class ProcessExecutor:
         for lane_definition in self.process.lane_definitions:
             if not lane_definition.used:
                 LOG.warn(f"Unused lane: {lane_definition}")
+
+        if unmatched_items:
+            display_unmatched_items(unmatched_items.values())
+            sys.exit(1)
 
     def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:
         for task_definition in self.process.task_definitions:
