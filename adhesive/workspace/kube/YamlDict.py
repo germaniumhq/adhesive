@@ -4,7 +4,6 @@ import copy
 
 # FIXME: move this to its own library: YamlDict seems a good name
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
-from adhesive.workspace.kube.YamlMissing import YamlMissing
 
 
 class YamlDict(YamlNavigator):
@@ -36,9 +35,14 @@ class YamlDict(YamlNavigator):
         if item == '_YamlDict__property_name':
             return self.__property_name
 
+        if item == '_YamlDict__create_if_missing' or  item == '_YamlMissing__create_if_missing':
+            return self.__create_if_missing
+
         if item not in self.__content:
             return YamlMissing(
-                property_name=f"{self.__property_name}.{item}")
+                parent_property=self,
+                property_name=item,
+                full_property_name=f"{self.__property_name}.{item}")
 
         result = self.__content[item]
 
@@ -54,18 +58,7 @@ class YamlDict(YamlNavigator):
         return result
 
     def __getitem__(self, item):
-        result = self.__content[item]
-
-        if isinstance(result, dict):
-            return YamlDict(
-                property_name=f"{self.__property_name}.[{item}]",
-                content=result)
-        elif isinstance(result, list):
-            return YamlList(
-                property_name=f"{self.__property_name}.[{item}]",
-                content=result)
-
-        return result
+        return self.__getattr__(item)
 
     def __setattr__(self, key, value):
         if isinstance(value, YamlNavigator):
@@ -82,17 +75,16 @@ class YamlDict(YamlNavigator):
         self.__content[key] = value
 
     def __setitem__(self, key, value):
-        if isinstance(value, YamlNavigator):
-            self.__content[key] = value._raw
-            return
-
-        self.__content[key] = value
+        self.__setattr__(key, value)
 
     def __delattr__(self, item):
         self.__content.__delitem__(item)
 
     def __delitem__(self, key):
         self.__content.__delitem__(key)
+
+    def __create_if_missing(self) -> 'YamlDict':
+        return self
 
     def __iter__(self):
         return YamlIteratorWrapper(
@@ -123,3 +115,4 @@ class YamlDict(YamlNavigator):
 
 from adhesive.workspace.kube.YamlList import YamlList
 from adhesive.workspace.kube.YamlIteratorWrapper import YamlIteratorWrapper, YamlDictWrapper
+from adhesive.workspace.kube.YamlMissing import YamlMissing
