@@ -47,6 +47,9 @@ class KubeApi():
             property_name=f"{{kind:{kind}}}",
             content=yaml.safe_load(object_data))
 
+    def yaml(self, content: str) -> YamlDict:
+        return YamlDict(content=yaml.safe_load(content))
+
     def getall(self,
                *args,
                kind: str,

@@ -1,9 +1,9 @@
 from typing import List, Optional
 import copy
+import yaml
 
 
 # FIXME: move this to its own library: YamlDict seems a good name
-from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
@@ -73,4 +73,12 @@ class YamlList(YamlNavigator):
         return f"YamlList({self.__property_name}) {self.__content}"
 
 
+from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlIteratorWrapper import YamlIteratorWrapper
+
+
+def yaml_representer(dumper, data):
+    return dumper.represent_data(data._raw)
+
+
+yaml.add_representer(YamlList, yaml_representer, Dumper=yaml.SafeDumper)

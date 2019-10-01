@@ -1,8 +1,10 @@
+# FIXME: move this to its own library: YamlDict seems a good name
 from typing import Dict, Optional
 import copy
+import yaml
 
+from yaml import SafeDumper
 
-# FIXME: move this to its own library: YamlDict seems a good name
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
@@ -117,3 +119,10 @@ class YamlDict(YamlNavigator):
 from adhesive.workspace.kube.YamlList import YamlList
 from adhesive.workspace.kube.YamlIteratorWrapper import YamlIteratorWrapper, YamlDictWrapper
 from adhesive.workspace.kube.YamlMissing import YamlMissing
+
+
+def yaml_representer(dumper, data):
+    return dumper.represent_data(data._raw)
+
+
+yaml.add_representer(YamlDict, yaml_representer, Dumper=SafeDumper)

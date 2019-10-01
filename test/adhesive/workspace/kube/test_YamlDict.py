@@ -1,5 +1,6 @@
 import unittest
 import copy
+import yaml
 
 from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
@@ -187,6 +188,13 @@ class YamlDictTest(unittest.TestCase):
 
         self.assertFalse(isinstance(a._raw["b"], YamlNavigator))
 
+    def test_yaml_gets_serialized(self):
+        a = YamlDict(content={
+            "x": 3
+        })
+
+        data = yaml.safe_dump(a)
+        print(data)
 
 if __name__ == '__main__':
     unittest.main()
