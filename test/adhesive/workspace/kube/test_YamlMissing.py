@@ -36,6 +36,16 @@ class YamlMissingTest(unittest.TestCase):
         p["x"]["y"]["z"] = "test"
         self.assertEqual("test", p["x"]["y"]["z"])
 
+    @unittest.expectedFailure
+    def test_set_missing_fails(self):
+        a = YamlMissing(
+            parent_property=None,
+            property_name="a",
+            full_property_name="x.a"
+        )
+
+        a.x = True
+
 
 if __name__ == '__main__':
     unittest.main()

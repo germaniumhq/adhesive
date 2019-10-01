@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Union, Optional
 
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
@@ -8,7 +8,7 @@ class YamlMissing(YamlNavigator):
 
     def __init__(self,
                  *args,
-                 parent_property: Union['YamlDict', 'YamlMissing'],
+                 parent_property: Optional[Union['YamlDict', 'YamlMissing']],
                  property_name: str,
                  full_property_name: str):
         if args:
@@ -24,14 +24,14 @@ class YamlMissing(YamlNavigator):
         self.__parent_property = parent_property
 
     def __getattr__(self, item):
+        if item == '_YamlMissing__parent_property':
+            return self.__parent_property
+
         if item == '_YamlMissing__property_name':
             return self.__property_name
 
         if item == '_YamlMissing__full_property_name':
             return self.__property_name
-
-        if item == '_YamlMissing__parent_property':
-            return self.__parent_property
 
         if item == '_YamlMissing__create_if_missing':
             return self.__create_if_missing
@@ -57,6 +57,9 @@ class YamlMissing(YamlNavigator):
         if key == '_YamlMissing__full_property_name':
             super(YamlMissing, self).__setattr__(key, value)
             return
+
+        if self.__parent_property is None:
+            raise Exception(f"No parent_property set on the missing property {self}")
 
         parent: YamlDict = self.__parent_property.__create_if_missing()
 

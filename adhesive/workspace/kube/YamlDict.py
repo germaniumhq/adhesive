@@ -35,6 +35,7 @@ class YamlDict(YamlNavigator):
         if item == '_YamlDict__property_name':
             return self.__property_name
 
+        # FIXME I'm not sure why the YamlMissing gets called here even from the parent
         if item == '_YamlDict__create_if_missing' or  item == '_YamlMissing__create_if_missing':
             return self.__create_if_missing
 
