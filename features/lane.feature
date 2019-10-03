@@ -14,4 +14,9 @@ Scenario: A lane ran in a loop is not instantiated for the starting of the
   Given I run adhesive on 'processes/lane/parametrized_loop_workspace'
   Then the adhesive process has passed
 
+@3
+Scenario: A default lane override, gets a workspace regardless
+  Given I run adhesive on 'processes/lane/default_lane'
+  Then the adhesive process has passed
+  And there isn't in the stdout the text 'Unused lane: @lane(expressions=('default',), code=default_lane)'
 

@@ -1,35 +1,31 @@
-import adhesive
-from typing import Optional
 import logging
+from typing import Optional
 
-from adhesive.graph.Process import Process
-from adhesive.workspace.Workspace import Workspace
+import adhesive
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLaneId import ExecutionLaneId
+from adhesive.graph.Process import Process
+from adhesive.workspace.Workspace import Workspace
 from adhesive.workspace.local.LocalLinuxWorkspace import LocalLinuxWorkspace
-
 from .ActiveEvent import ActiveEvent
-from .AdhesiveProcess import AdhesiveProcess
 from .AdhesiveLane import AdhesiveLane
-from .ActiveLoopType import ActiveLoopType
+from .AdhesiveProcess import AdhesiveProcess
 
 LOG = logging.getLogger(__name__)
+
+DEFAULT_LANE_ID = ExecutionLaneId("root", "default")
 
 
 def ensure_default_lane(process: AdhesiveProcess) -> None:
     """
     Ensures the 'default' lane is defined.
     """
-    default_lane_id = ExecutionLaneId("root", "default")
-
-    if default_lane_id.key in process.lanes:
+    if DEFAULT_LANE_ID.key in process.lanes:
         return
 
     @adhesive.lane('default')
     def lane_default(context):
-        yield LocalLinuxWorkspace(
-                context.execution_id,
-                context.token_id)
+        yield context.workspace
 
 
 def allocate_workspace(process: AdhesiveProcess,
@@ -120,6 +116,13 @@ def create_lane_for_event(process: AdhesiveProcess,
         if params is None:
             continue
 
+        if not execution_lane_id or DEFAULT_LANE_ID.key == execution_lane_id.key:
+            # The very first lane won't have any workspace. Since a lot of times we
+            # just want to change the folder, we ensure that the default lane gets
+            # the local workspace.
+            # FIXME make it configurable?
+            event.context.workspace = create_default_workspace(event.context)
+
         # create the lane object using the context
         gen = lane_definition.code(event.context, *params)
 
@@ -148,3 +151,6 @@ def create_lane_for_event(process: AdhesiveProcess,
             f"`{event.context.lane.name}`. Use the @adhesive.lane "
             f"decorator to create them, and yield the workspace.")
 
+
+def create_default_workspace(context) -> Workspace:
+    return LocalLinuxWorkspace(context.execution_id, context.token_id)

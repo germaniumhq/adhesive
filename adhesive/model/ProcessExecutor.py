@@ -351,7 +351,7 @@ class ProcessExecutor:
             adhesive_task.used = True
 
         for lane_id, lane in process.lanes.items():
-            lane_definition = self._match_lane(lane)
+            lane_definition = self._match_lane(lane.name)
 
             if not lane_definition:
                 unmatched_items[f"lane:{lane.name}"] = lane
@@ -361,6 +361,15 @@ class ProcessExecutor:
 
         if missing_dict is not None:  # we're not the root call, we're done
             return
+
+        # The default lane is not explicitly present in the process. If we have
+        # an implementation, we don't want to see it as an unused warning.
+        lane_definition = self._match_lane("default")
+        # if we don't have a definition, the lane_controller will dinamically add
+        # it.
+        # FIXME: probably it's better if the lane definition would be here.
+        if lane_definition:
+            lane_definition.used = True
 
         for task_definition in self.process.task_definitions:
             if not task_definition.used:
@@ -381,9 +390,9 @@ class ProcessExecutor:
 
         return None
 
-    def _match_lane(self, lane: Lane) -> Optional[ExecutionLane]:
+    def _match_lane(self, lane_name: str) -> Optional[ExecutionLane]:
         for lane_definition in self.process.lane_definitions:
-            if token_utils.matches(lane_definition.re_expressions, lane.name) is not None:
+            if token_utils.matches(lane_definition.re_expressions, lane_name) is not None:
                 return lane_definition
 
         return None
