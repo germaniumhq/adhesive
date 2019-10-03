@@ -1,11 +1,7 @@
-import re
-
 from adhesive import ExecutionTask, ExecutionUserTask
-from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 
 from adhesive.graph.Process import Process
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
-from adhesive.model.generate_methods import generate_matching_re
 from adhesive.process_read.programmatic import generate_from_calls
 
 

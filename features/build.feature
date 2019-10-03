@@ -8,16 +8,21 @@ Scenario: A build process that runs a task in parallel
   Then the adhesive process has passed
 
 @2
+Scenario: A build process can start tasks in a lane
+  Given I run adhesive on 'processes/build/build_lane'
+  Then the adhesive process has passed
+
+@3
 Scenario: A build process that runs a task after a loop
   Given I run adhesive on 'processes/build/build_loop_task_after'
   Then the adhesive process has passed
 
-@3
+@4
 Scenario: A programmatic workflow that runs a task in a loop in a custom lane
   Given I run adhesive on 'processes/build/build_loop_lane'
   Then the adhesive process has passed
 
-@4
+@5
 Scenario: A task that contains regex characters can still be created
   Given I run adhesive on 'processes/build/build_generate_names_with_re'
   Then the adhesive process has passed
