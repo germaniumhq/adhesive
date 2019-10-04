@@ -27,7 +27,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(6, len(process.tasks))
         self.assertEqual(6, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         first_task = process.tasks["_3"]
@@ -40,7 +40,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(5, len(process.tasks))
         self.assertEqual(4, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         subprocess = cast(SubProcess, process.tasks["_7"])
@@ -48,7 +48,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(3, len(subprocess.tasks))
         self.assertEqual(1, len(subprocess.edges))
-        self.assertEqual(2, len(subprocess.start_tasks))
+        self.assertEqual(2, len(subprocess.start_events))
         self.assertEqual(2, len(subprocess.end_events))
 
     def test_reading_exclusive_gateway_bpmn(self) -> None:
@@ -56,7 +56,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(6, len(process.tasks))
         self.assertEqual(6, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         task_route = process.edges["_9"]
@@ -70,7 +70,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(9, len(process.tasks))
         self.assertEqual(12, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         self.assertTrue(isinstance(process.tasks["_9"], ParallelGateway))
@@ -80,7 +80,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(7, len(process.tasks))
         self.assertEqual(8, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         self.assertTrue(isinstance(process.tasks["_3"], ExclusiveGateway))
@@ -90,7 +90,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(8, len(process.tasks))
         self.assertEqual(10, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         self.assertTrue(isinstance(process.tasks["_3"], ParallelGateway))
@@ -100,7 +100,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(8, len(process.tasks))
         self.assertEqual(10, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         self.assertTrue(isinstance(
@@ -113,7 +113,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(6, len(process.tasks))
         self.assertEqual(5, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         boundary_event: ErrorBoundaryEvent = cast(ErrorBoundaryEvent, process.tasks["_6"])
@@ -133,7 +133,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(3, len(process.tasks))
         self.assertEqual(2, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         self.assertTrue(isinstance(
@@ -146,7 +146,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(4, len(process.tasks))
         self.assertEqual(3, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         self.assertTrue(isinstance(
@@ -172,7 +172,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(5, len(process.tasks))
         self.assertEqual(5, len(process.edges))
-        self.assertEqual(1, len(process.start_tasks))
+        self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
         self.assertTrue(isinstance(
@@ -188,7 +188,7 @@ class TestReadingBpmn(unittest.TestCase):
 
         self.assertEqual(3, len(process.tasks))
         self.assertEqual(2, len(process.edges))
-        self.assertEqual(0, len(process.start_tasks))
+        self.assertEqual(0, len(process.start_events))
         self.assertEqual(1, len(process.message_events))
         self.assertEqual(1, len(process.end_events))
 

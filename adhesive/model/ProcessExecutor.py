@@ -506,7 +506,7 @@ class ProcessExecutor:
                 raise Exception(f"Failure on {event.context.task_name}", e)
 
             if isinstance(event.task, Process):
-                for start_task in event.task.start_tasks.values():
+                for start_task in event.task.start_events.values():
                     # this automatically registers our events for execution
                     self.clone_event(event, start_task, parent_id=event.token_id)
                 return

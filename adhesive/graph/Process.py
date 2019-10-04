@@ -38,7 +38,7 @@ class Process(BaseTask):
         self._graph = nx.MultiDiGraph()
 
     @property
-    def start_tasks(self) -> Dict[str, StartEvent]:
+    def start_events(self) -> Dict[str, StartEvent]:
         return self._start_events
 
     @property

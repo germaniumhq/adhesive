@@ -111,7 +111,7 @@ def read_process(parent_process: Optional[Process], process) -> Process:
         if result.has_incoming_edges(task):
             continue
 
-        result.start_tasks[task.id] = task
+        result.start_events[task.id] = task
 
     for task_id, task in result.tasks.items():
         if not result.has_outgoing_edges(task):
