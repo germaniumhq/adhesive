@@ -9,6 +9,7 @@ from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Loop import Loop
+from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.ParallelGateway import ParallelGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.StartEvent import StartEvent
@@ -102,6 +103,9 @@ def read_process(parent_process: Optional[Process], process) -> Process:
 
     for task_id, task in result.tasks.items():
         if isinstance(task, BoundaryEvent):
+            continue
+
+        if isinstance(task, StartEvent):
             continue
 
         if result.has_incoming_edges(task):
@@ -303,6 +307,17 @@ def process_boundary_task(p: Process, xml_node) -> None:
 def process_node_start_event(p: Process, xml_node) -> None:
     """ Create a start event from the process """
     node_name = normalize_name(xml_node.get("name"))
+
+    message_event_node = find_node(xml_node, "messageEventDefinition")
+
+    if message_event_node is not None:
+        task = MessageEvent(
+            parent_process=p,
+            id=xml_node.get("id"),
+            name=node_name)
+
+        p.add_message_event(task)
+        return
 
     task = StartEvent(
         parent_process=p,

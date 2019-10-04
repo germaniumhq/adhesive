@@ -3,6 +3,7 @@ from typing import Dict, List, Iterator, Optional
 import networkx as nx
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
+from adhesive.graph.MessageEvent import MessageEvent
 from .BaseTask import BaseTask
 from .StartEvent import StartEvent
 from .EndEvent import EndEvent
@@ -24,6 +25,7 @@ class Process(BaseTask):
             name=name)
 
         self._start_events: Dict[str, StartEvent] = dict()
+        self._message_events: Dict[str, MessageEvent] = dict()
         self._tasks: Dict[str, BaseTask] = dict()
         self._edges: Dict[str, Edge] = dict()
         self._end_events: Dict[str, EndEvent] = dict()
@@ -38,6 +40,10 @@ class Process(BaseTask):
     @property
     def start_tasks(self) -> Dict[str, StartEvent]:
         return self._start_events
+
+    @property
+    def message_events(self) -> Dict[str, MessageEvent]:
+        return self._message_events
 
     @property
     def tasks(self) -> Dict[str, BaseTask]:
@@ -101,6 +107,10 @@ class Process(BaseTask):
 
     def add_start_event(self, event: StartEvent) -> None:
         self._start_events[event.id] = event
+        self.add_task(event)
+
+    def add_message_event(self, event: MessageEvent) -> None:
+        self._message_events[event.id] = event
         self.add_task(event)
 
     def add_end_event(self, event: EndEvent) -> None:

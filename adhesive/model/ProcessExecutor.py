@@ -365,7 +365,7 @@ class ProcessExecutor:
         # The default lane is not explicitly present in the process. If we have
         # an implementation, we don't want to see it as an unused warning.
         lane_definition = self._match_lane("default")
-        # if we don't have a definition, the lane_controller will dinamically add
+        # if we don't have a definition, the lane_controller will dynamically add
         # it.
         # FIXME: probably it's better if the lane definition would be here.
         if lane_definition:

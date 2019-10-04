@@ -183,6 +183,15 @@ class TestReadingBpmn(unittest.TestCase):
         loop: Loop = process.tasks["_5"].loop
         self.assertEqual("data.test_platforms", loop.loop_expression)
 
+    def test_reading_message_event(self) -> None:
+        process = read_bpmn_file("test/adhesive/xml/message-event.bpmn")
+
+        self.assertEqual(3, len(process.tasks))
+        self.assertEqual(2, len(process.edges))
+        self.assertEqual(0, len(process.start_tasks))
+        self.assertEqual(1, len(process.message_events))
+        self.assertEqual(1, len(process.end_events))
+
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):
             read_bpmn_file("test/adhesive/xml/unsupported-call-activity.bpmn")
