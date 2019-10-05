@@ -13,6 +13,7 @@ from adhesive import logredirect
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
+from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
@@ -25,7 +26,7 @@ from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLoop import ExecutionLoop, parent_loop_id, loop_id
 from adhesive.execution.call_script_task import call_script_task
-from adhesive.execution import token_utils
+from adhesive.execution import token_utils, ExecutionMessageEvent
 from adhesive.storage.ensure_folder import get_folder
 
 T = TypeVar('T')
@@ -162,7 +163,7 @@ class ProcessExecutor:
                  process: AdhesiveProcess,
                  ut_provider: Optional['UserTaskProvider'] = None,
                  wait_tasks: bool = True) -> None:
-        self.process = process
+        self.adhesive_process = process
         self.tasks_impl: Dict[str, ExecutionTask] = dict()
 
         # A dictionary of events that are currently active. This is just to find out
@@ -178,19 +179,19 @@ class ProcessExecutor:
     # FIXME: remove async. async is's not possible since it would thread switch
     # and completely screw up log redirection.
     def execute(self,
-                      initial_data=None) -> ExecutionData:
+                initial_data=None) -> ExecutionData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
         """
-        process = self.process.process
+        process = self.adhesive_process.process
         self.tasks_impl: Dict[str, ExecutionTask] = dict()
 
         self._validate_tasks(process)
 
         # since the workspaces are allocated by lanes, we need to ensure
         # our default lane is existing.
-        lane_controller.ensure_default_lane(self.process)
+        lane_controller.ensure_default_lane(self.adhesive_process)
 
         # FIXME: it's getting pretty crowded
         token_id = str(uuid.uuid4())
@@ -277,7 +278,7 @@ class ProcessExecutor:
 
         LOG.debug(f"Register {event}")
 
-        lane_controller.allocate_workspace(self.process, event)
+        lane_controller.allocate_workspace(self.adhesive_process, event)
 
         self.events[event.token_id] = event
 
@@ -289,7 +290,7 @@ class ProcessExecutor:
             raise Exception(f"{event} not found in events. Either the event was "
                             f"already terminated, either it was not registered.")
 
-        lane_controller.deallocate_workspace(self.process, event)
+        lane_controller.deallocate_workspace(self.adhesive_process, event)
 
         LOG.debug(f"Unregister {event}")
 
@@ -320,7 +321,7 @@ class ProcessExecutor:
         if missing_dict is not None:
             unmatched_items = missing_dict
         else:
-            unmatched_items: Dict[str, Union[BaseTask, Lane]] = dict()
+            unmatched_items: Dict[str, Union[BaseTask, Lane, MessageEvent]] = dict()
 
         for task_id, task in process.tasks.items():
             if isinstance(task, SubProcess):
@@ -359,6 +360,15 @@ class ProcessExecutor:
 
             lane_definition.used = True
 
+        for mevent_id, message_event in process.message_events.items():
+            message_event_definition = self._match_message_event(message_event.name)
+
+            if not message_event_definition:
+                unmatched_items[f"message_event:{message_event.name}"] = message_event
+                continue
+
+            message_event_definition.used = True
+
         if missing_dict is not None:  # we're not the root call, we're done
             return
 
@@ -371,11 +381,11 @@ class ProcessExecutor:
         if lane_definition:
             lane_definition.used = True
 
-        for task_definition in self.process.task_definitions:
+        for task_definition in self.adhesive_process.task_definitions:
             if not task_definition.used:
                 LOG.warn(f"Unused task: {task_definition}")
 
-        for lane_definition in self.process.lane_definitions:
+        for lane_definition in self.adhesive_process.lane_definitions:
             if not lane_definition.used:
                 LOG.warn(f"Unused lane: {lane_definition}")
 
@@ -384,16 +394,23 @@ class ProcessExecutor:
             sys.exit(1)
 
     def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:
-        for task_definition in self.process.task_definitions:
+        for task_definition in self.adhesive_process.task_definitions:
             if token_utils.matches(task_definition.re_expressions, task.name) is not None:
                 return task_definition
 
         return None
 
     def _match_lane(self, lane_name: str) -> Optional[ExecutionLane]:
-        for lane_definition in self.process.lane_definitions:
+        for lane_definition in self.adhesive_process.lane_definitions:
             if token_utils.matches(lane_definition.re_expressions, lane_name) is not None:
                 return lane_definition
+
+        return None
+
+    def _match_message_event(self, message_event_name: str) -> Optional[ExecutionMessageEvent]:
+        for message_definition in self.adhesive_process.message_definitions:
+            if token_utils.matches(message_definition.re_expressions, message_event_name) is not None:
+                return message_definition
 
         return None
 
@@ -409,7 +426,7 @@ class ProcessExecutor:
         self.register_event(event)
 
         if parent_id is None:
-            process = self.process.process
+            process = self.adhesive_process.process
         else:
             process = self.events[parent_id].task
 

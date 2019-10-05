@@ -111,7 +111,7 @@ class Process(BaseTask):
 
     def add_message_event(self, event: MessageEvent) -> None:
         self._message_events[event.id] = event
-        self.add_task(event)
+        self.add_start_event(event)
 
     def add_end_event(self, event: EndEvent) -> None:
         self._end_events[event.id] = event

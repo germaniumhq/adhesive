@@ -1,6 +1,7 @@
 from typing import Callable, TypeVar, Optional, Union, List
 from contextlib import contextmanager
 
+from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
 from adhesive.model.ProcessExecutor import ProcessExecutor
@@ -59,6 +60,7 @@ def usertask(*task_names: str,
     return wrapper_builder
 
 
+# FIXME: implement regex matching for it
 def lane(*lane_names:str) -> Callable[..., Callable[..., T]]:
     """
     Allow defining a lane where a custom workspace will be created. This
@@ -70,6 +72,21 @@ def lane(*lane_names:str) -> Callable[..., Callable[..., T]]:
         newf = contextmanager(f)
         process.lane_definitions.append(ExecutionLane(newf, *lane_names))
         return newf
+
+    return wrapper_builder
+
+
+def message(*message_names: str,
+             re: Optional[Union[str, List[str]]] = None):
+    def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
+        message_definition = ExecutionMessageEvent(
+            code=f,
+            expressions=message_names,
+            regex_expressions=re)
+
+        process.message_definitions.append(message_definition)
+
+        return f
 
     return wrapper_builder
 

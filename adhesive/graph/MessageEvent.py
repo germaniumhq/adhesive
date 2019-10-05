@@ -1,9 +1,7 @@
 from typing import Optional
 
-from adhesive.graph.StartEvent import StartEvent
 
-
-class MessageEvent(StartEvent):
+class MessageEvent:
     """
     MessageEvent documentation.
     """

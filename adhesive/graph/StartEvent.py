@@ -19,4 +19,3 @@ class StartEvent(BaseTask):
             parent_process=parent_process,
             id=id,
             name=name)
-
