@@ -12,6 +12,7 @@ import inspect
 from adhesive import logredirect
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.graph.BoundaryEvent import BoundaryEvent
+from adhesive.graph.Event import Event
 from adhesive.graph.Gateway import Gateway
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
@@ -116,7 +117,7 @@ def is_predecessor(event, e) -> bool:
         # if we are in a loop and the other predecessor is inside
         # a loop of its own, we need to check if it's in the same
         # loop as ours
-        if isinstance(e.task, ProcessTask) and e.task.loop:
+        if hasattr(e.task, "loop") and e.task.loop:
             return parent_loop_id(e) == loop_id(event)
 
         # we check if we are in the same loop. each iteration
@@ -180,7 +181,7 @@ class ProcessExecutor:
     # FIXME: remove async. async is's not possible since it would thread switch
     # and completely screw up log redirection.
     def execute(self,
-                      initial_data=None) -> ExecutionData:
+                initial_data=None) -> ExecutionData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
@@ -330,14 +331,12 @@ class ProcessExecutor:
                 continue
 
             # gateways don't have associated tasks with them.
-            if isinstance(task, StartEvent) or \
-                    isinstance(task, EndEvent) or \
-                    isinstance(task, Gateway) or \
-                    isinstance(task, BoundaryEvent):
+            if isinstance(task, Event) or \
+                    isinstance(task, Gateway):
                 continue
 
             if isinstance(task, ScriptTask):
-                if task.language in ("python", "text/python"):
+                if task.language in ("python", "text/python", "python3", "text/python3"):
                     continue
 
                 raise Exception(f"Unknown script task language: {task.language}. Only python and "
@@ -417,10 +416,8 @@ class ProcessExecutor:
 
         def process_event(_event) -> ActiveEventState:
             # if there is no processing needed, we skip to routing
-            if isinstance(event.task, StartEvent) or isinstance(event.task, EndEvent):
-                return event.state.route(event.context)
-
-            if isinstance(event.task, NonWaitingGateway):
+            if isinstance(event.task, Event) or \
+                    isinstance(event.task, NonWaitingGateway):
                 return event.state.route(event.context)
 
             # if we need to wait, we wait.
@@ -609,7 +606,7 @@ class ProcessExecutor:
 
                 for outgoing_edge in outgoing_edges:
                     target_task = process.tasks[outgoing_edge.target_id]
-                    if isinstance(target_task, ProcessTask) and target_task.loop:
+                    if hasattr(target_task, "loop") and target_task.loop:
                         # we start a loop by firing the loop events, and consume this event.
                         loop_controller.create_loop(event, self.clone_event, target_task)
                     else:
