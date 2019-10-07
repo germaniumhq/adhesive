@@ -3,7 +3,7 @@ from typing import Iterable, Union
 import re
 
 from adhesive.graph.ComplexGateway import ComplexGateway
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Lane import Lane
 
@@ -35,7 +35,7 @@ def escape_string(name: str) -> str:
     return repr(name)
 
 
-def display_unmatched_items(unmatched_items: Iterable[Union[BaseTask, Lane]]) -> None:
+def display_unmatched_items(unmatched_items: Iterable[Union[ProcessTask, Lane]]) -> None:
     print("Missing tasks implementations. Generate with:\n")
 
     for unmatched_item in unmatched_items:

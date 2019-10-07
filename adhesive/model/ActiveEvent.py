@@ -2,7 +2,7 @@ import uuid
 from typing import Optional
 
 from adhesive.execution import token_utils
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine
 from adhesive.model.ActiveLoopType import ActiveLoopType
 
@@ -43,7 +43,7 @@ class ActiveEvent:
         }
 
     def clone(self,
-              task: BaseTask,
+              task: ProcessTask,
               parent_id: str) -> 'ActiveEvent':
         """
         Clone the current event for another task id target.
@@ -60,7 +60,9 @@ class ActiveEvent:
         # FIXME: this probably doesn't belong here
         # FIXME: the self.task != task is probably wrong, since we want to support
         # boolean looping expressions.
-        if self.context.task.loop and self.context.loop \
+        if hasattr(self.context.task, "loop")\
+                and self.context.task.loop \
+                and self.context.loop \
                 and self.context.loop.task == self.context.task \
                 and self.context.task != task \
                 and parent_id == self.parent_id:
@@ -75,12 +77,12 @@ class ActiveEvent:
         return result
 
     @property
-    def task(self) -> BaseTask:
+    def task(self) -> ProcessTask:
         return self._task
 
     @task.setter
-    def task(self, task: BaseTask) -> None:
-        if not isinstance(task, BaseTask):
+    def task(self, task: ProcessTask) -> None:
+        if not isinstance(task, ProcessTask):
             raise Exception(f"Not a task: {task}")
 
         self.context.task = task

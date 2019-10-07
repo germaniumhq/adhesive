@@ -1,11 +1,8 @@
-from typing import Optional
-
-from .BaseTask import BaseTask
+from adhesive.graph.Event import Event
 
 
-class EndEvent(BaseTask):
+class EndEvent(Event):
     """
     EndEvent
     """
     pass
-

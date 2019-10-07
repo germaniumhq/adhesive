@@ -1,4 +1,4 @@
-from typing import Dict, List, Iterator, Optional
+from typing import Dict, List, Iterator
 
 import networkx as nx
 
@@ -7,35 +7,43 @@ from adhesive.graph.MessageEvent import MessageEvent
 from .BaseTask import BaseTask
 from .StartEvent import StartEvent
 from .EndEvent import EndEvent
+from adhesive.graph.NamedItem import NamedItem
 from .Edge import Edge
+from .EndEvent import EndEvent
 from .Lane import Lane
+from .ProcessTask import ProcessTask
+from .StartEvent import StartEvent
 
 
-class Process(BaseTask):
+# FIXME: revisit this since it's probably wrong
+class Process(NamedItem):
     """
     A process for the build
     """
     def __init__(self,
-                 parent_process: Optional['Process'],
+                 *args,
                  id: str,
                  name: str = '[root process]') -> None:
+        if args:
+            raise Exception("You need to pass in named arguments")
+
         super(Process, self).__init__(
-            parent_process=parent_process,
             id=id,
             name=name)
 
         self._start_events: Dict[str, StartEvent] = dict()
         self._message_events: Dict[str, MessageEvent] = dict()
-        self._tasks: Dict[str, BaseTask] = dict()
+        self._tasks: Dict[str, ProcessTask] = dict()
         self._edges: Dict[str, Edge] = dict()
         self._end_events: Dict[str, EndEvent] = dict()
 
         self._task_lane_map: Dict[str, Lane] = dict()
-        self._default_lane = Lane("root", "default")
+        self._default_lane = Lane(parent_process=self, id="root", name="default")
 
         self._lanes: Dict[str, Lane] = dict()
-
         self._graph = nx.MultiDiGraph()
+
+        self.error_task = None
 
     @property
     def start_events(self) -> Dict[str, StartEvent]:
@@ -46,7 +54,7 @@ class Process(BaseTask):
         return self._message_events
 
     @property
-    def tasks(self) -> Dict[str, BaseTask]:
+    def tasks(self) -> Dict[str, ProcessTask]:
         return self._tasks
 
     @property
@@ -61,12 +69,10 @@ class Process(BaseTask):
     def end_events(self) -> Dict[str, EndEvent]:
         return self._end_events
 
-    def add_task(self, task: BaseTask) -> None:
+    def add_task(self, task: ProcessTask) -> None:
         """ Add a task into the graph. """
         self._tasks[task.id] = task
         self._graph.add_node(task.id)
-
-        task.process_id = self.id
 
     def add_lane(self, lane: Lane) -> None:
         """
@@ -127,14 +133,14 @@ class Process(BaseTask):
 
         return result
 
-    def has_incoming_edges(self, task: BaseTask) -> bool:
+    def has_incoming_edges(self, task: ProcessTask) -> bool:
         for from_node, to_node, data in self._graph.in_edges(task.id, data=True):
             if data["_edge"]:
                 return True
 
         return False
 
-    def has_outgoing_edges(self, task: BaseTask) -> bool:
+    def has_outgoing_edges(self, task: ProcessTask) -> bool:
         for from_node, to_node, data in self._graph.out_edges(task.id, data=True):
             if data["_edge"]:
                 return True
@@ -142,8 +148,8 @@ class Process(BaseTask):
         return False
 
     def are_predecessors(self,
-                         task: BaseTask,
-                         potential_predecessors: Iterator[BaseTask]) -> bool:
+                         task: ProcessTask,
+                         potential_predecessors: Iterator[ProcessTask]) -> bool:
         predecessors = list(potential_predecessors)
         for potential_predecessor in predecessors:
             # FIXME: cross subprocess exceptions are handled as no predecessors
@@ -157,3 +163,7 @@ class Process(BaseTask):
                 pass
 
         return False
+
+    @property
+    def process_id(self) -> str:
+        return self.id

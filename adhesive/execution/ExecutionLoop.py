@@ -1,7 +1,7 @@
 import uuid
 from typing import Callable, Any, Optional
 
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 #from adhesive.model.ActiveEvent import ActiveEvent  # FIXME move from here
 # references to the ActiveEvent
 from adhesive.execution import token_utils
@@ -15,7 +15,7 @@ class ExecutionLoop:
                  *args,
                  loop_id: str,
                  parent_loop: Optional['ExecutionLoop'],
-                 task: BaseTask,
+                 task: ProcessTask,
                  item: Any,
                  index: int,
                  expression: str) -> None:
@@ -31,7 +31,7 @@ class ExecutionLoop:
         self._expression = expression
 
     @property
-    def task(self) -> BaseTask:
+    def task(self) -> ProcessTask:
         return self._task
 
     @property
@@ -62,8 +62,8 @@ class ExecutionLoop:
 
     @staticmethod
     def create_loop(event: 'ActiveEvent',
-                    clone_event: Callable[['ActiveEvent', 'BaseTask'], 'ActiveEvent'],
-                    target_task: 'BaseTask') -> int:
+                    clone_event: Callable[['ActiveEvent', 'ProcessTask'], 'ActiveEvent'],
+                    target_task: 'ProcessTask') -> int:
         expression = target_task.loop.loop_expression
 
         eval_data = token_utils.get_eval_data(event.context)

@@ -1,16 +1,17 @@
-from typing import Optional, List, Callable
 import logging
+from typing import Optional, List, Callable
 
-from adhesive.graph.BaseTask import BaseTask
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
+from adhesive.graph.Lane import Lane
 from adhesive.graph.Loop import Loop
+from adhesive.graph.Process import Process
+from adhesive.graph.ProcessNode import ProcessNode
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
-from adhesive.graph.Lane import Lane
 from adhesive.graph.UserTask import UserTask
-from adhesive.graph.Process import Process
 
 LOG = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ current_id = 0
 
 class BranchDefinition:
     def __init__(self,
-                 start_task: BaseTask):
+                 start_task: ProcessTask):
         self.start_task = start_task
         self.last_task = start_task
 
@@ -143,7 +144,7 @@ class BranchEndBuilder:
         return self.process_builder.sub_process_end()
 
     def _wire_task_list(self,
-                        new_task: BaseTask,
+                        new_task: ProcessTask,
                         when: Optional[str] = None,
                         loop: Optional[str] = None,
                         lane: Optional[str] = None):
@@ -168,10 +169,15 @@ class ProcessBuilder:
                  name: Optional[str] = None):
         self.parent_builder = parent_builder
 
-        self.process = desired_type(
-            parent_process=parent_builder.process if parent_builder else None,
-            id=next_id(),
-            name="<process>" if name is None else name)
+        if desired_type == Process:
+            self.process = desired_type(
+                id=next_id(),
+                name="<process>" if name is None else name)
+        else:
+            self.process = SubProcess(
+                id=next_id(),
+                name="<sub-process>" if name is None else name,
+                parent_process=parent_builder.process)
 
         self.current_task = StartEvent(
             parent_process=self.process,
@@ -309,7 +315,7 @@ class ProcessBuilder:
         return self._build(*args, **kw)
 
     def _wire_task(self,
-                   new_task: BaseTask,
+                   new_task: ProcessNode,
                    when: Optional[str] = None,
                    loop: Optional[str] = None,
                    lane: Optional[str] = None) -> 'ProcessBuilder':
@@ -332,10 +338,10 @@ class ProcessBuilder:
             self.nested_branches[-1].branches[-1].last_task = new_task
 
         new_edge = Edge(
-            next_id(),
-            self.current_task.id,
-            new_task.id,
-            when)
+            id=next_id(),
+            source_id=self.current_task.id,
+            target_id=new_task.id,
+            condition=when)
 
         self.current_task = new_task
         self.process.add_edge(new_edge)
@@ -347,7 +353,11 @@ class ProcessBuilder:
         lane_element = self.process.lanes.get(lane, None)
 
         if not lane_element:
-            lane_element = Lane(next_id(), lane)
+            lane_element = Lane(
+                id=next_id(),
+                name=lane,
+                parent_process=self.process)
+
             self.process.add_lane(lane_element)
 
         self.process.add_task_to_lane(lane_element, new_task.id)
@@ -355,8 +365,8 @@ class ProcessBuilder:
         return self
 
     def _wire_task_list(self,
-                        previous_tasks: List[BaseTask],
-                        new_task: BaseTask,
+                        previous_tasks: List[ProcessTask],
+                        new_task: ProcessTask,
                         when: Optional[str] = None,
                         loop: Optional[str] = None,
                         lane: Optional[str] = None) -> 'ProcessBuilder':
@@ -380,10 +390,10 @@ class ProcessBuilder:
 
         for previous_task in previous_tasks:
             new_edge = Edge(
-                next_id(),
-                previous_task.id,
-                new_task.id,
-                when)
+                id=next_id(),
+                source_id=previous_task.id,
+                target_id=new_task.id,
+                condition=when)
 
             self.process.add_edge(new_edge)
 
@@ -394,7 +404,11 @@ class ProcessBuilder:
         lane_element = self.process.lanes.get(lane, None)
 
         if not lane_element:
-            lane_element = Lane(next_id(), lane)
+            lane_element = Lane(
+                id=next_id(),
+                name=lane,
+                parent_process=self.process)
+
             self.process.add_lane(lane_element)
 
         self.process.add_task_to_lane(lane_element, new_task.id)

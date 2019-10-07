@@ -1,5 +1,5 @@
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 
 
-class UserTask(BaseTask):
+class UserTask(ProcessTask):
     pass
