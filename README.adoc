@@ -203,6 +203,27 @@ The tasks perform the actual work for the build. But in order to have that, we
 need to be able to execute commands, and create files. For that we have the
 `workspace`.
 
+== Start Event Messages
+
+Adhesive supports also start events with messages in the process. Each message
+start event, is being processed in its own thread and `yield` results:
+
+[source,python]
+-----------------------------------------------------------------------------
+@adhesive.message('Generate Event')
+def message_generate_event(context):
+    for i in range(10):
+        yield i
+
+@adhesive.task('Process Event')
+def process_event(context):
+    print(f"event data: {context.data.event}")
+-----------------------------------------------------------------------------
+
+Each yield generates a new event that fires up the connected tasks.  The data
+yielded is present in the `event` attribute in the token, for the following
+tasks.
+
 == Connections
 
 Tasks are linked using connections. In some cases, connections can have
