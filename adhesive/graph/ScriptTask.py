@@ -1,12 +1,11 @@
-from typing import Optional
+from adhesive.graph.Process import Process
+from adhesive.graph.ProcessTask import ProcessTask
 
-from adhesive.graph.BaseTask import BaseTask
 
-
-class ScriptTask(BaseTask):
+class ScriptTask(ProcessTask):
     def __init__(self,
                  *args,
-                 parent_process: Optional['Process'],
+                 parent_process: Process,
                  id: str,
                  name: str,
                  language: str,

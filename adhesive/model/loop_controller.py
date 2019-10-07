@@ -4,7 +4,7 @@ import logging
 
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLoop import ExecutionLoop
-from adhesive.graph import BaseTask
+from adhesive.graph import ProcessTask
 
 from .ActiveEvent import ActiveEvent
 from .ActiveLoopType import ActiveLoopType
@@ -16,7 +16,7 @@ def is_top_loop_event(event: ActiveEvent):
     return event.task.loop and (not event.context.loop or event.context.loop.task != event.task)
 
 
-def create_loop(event: ActiveEvent, clone_event, target_task: BaseTask) -> None:
+def create_loop(event: ActiveEvent, clone_event, target_task: ProcessTask) -> None:
     """
     Create a loop event.
     """

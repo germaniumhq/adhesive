@@ -15,7 +15,7 @@ class AdhesiveProcess:
         self.lane_definitions: List[ExecutionLane] = []
         self.task_definitions: List[ExecutionBaseTask] = []
 
-        self.process: Process = Process(parent_process=None, id=id)
+        self.process: Process = Process(id=id)
 
         # map from lane key, to actual lane
         self.lanes: Dict[str, AdhesiveLane] = dict()

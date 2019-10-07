@@ -1,7 +1,7 @@
 from typing import Optional, List, Callable
 import logging
 
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.Loop import Loop
@@ -20,7 +20,7 @@ current_id = 0
 
 class BranchDefinition:
     def __init__(self,
-                 start_task: BaseTask):
+                 start_task: ProcessTask):
         self.start_task = start_task
         self.last_task = start_task
 
@@ -143,7 +143,7 @@ class BranchEndBuilder:
         return self.process_builder.sub_process_end()
 
     def _wire_task_list(self,
-                        new_task: BaseTask,
+                        new_task: ProcessTask,
                         when: Optional[str] = None,
                         loop: Optional[str] = None,
                         lane: Optional[str] = None):
@@ -309,7 +309,7 @@ class ProcessBuilder:
         return self._build(*args, **kw)
 
     def _wire_task(self,
-                   new_task: BaseTask,
+                   new_task: ProcessTask,
                    when: Optional[str] = None,
                    loop: Optional[str] = None,
                    lane: Optional[str] = None) -> 'ProcessBuilder':
@@ -355,8 +355,8 @@ class ProcessBuilder:
         return self
 
     def _wire_task_list(self,
-                        previous_tasks: List[BaseTask],
-                        new_task: BaseTask,
+                        previous_tasks: List[ProcessTask],
+                        new_task: ProcessTask,
                         when: Optional[str] = None,
                         loop: Optional[str] = None,
                         lane: Optional[str] = None) -> 'ProcessBuilder':

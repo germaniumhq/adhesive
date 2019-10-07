@@ -80,7 +80,10 @@ def fill_in_lane_id(process: AdhesiveProcess,
     Ensures the lane_id is not the cloned one, but the one where the task
     resides.
     """
-    parent_process = event.task.parent_process
+    parent_process = None
+
+    if hasattr(event.task, "parent_process"):
+        parent_process = event.task.parent_process
 
     if not parent_process and isinstance(event.task, Process):
         parent_process = event.task

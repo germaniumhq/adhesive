@@ -2,7 +2,7 @@ import re
 from typing import Tuple, Optional
 from xml.etree import ElementTree
 
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.Edge import Edge
@@ -73,7 +73,6 @@ def read_process(parent_process: Optional[Process], process) -> Process:
 
     if "process" == node_name:
         result = Process(
-            parent_process=parent_process,
             id=process.get('id')
         )
     elif "subProcess" == node_name:
@@ -192,8 +191,10 @@ def process_lane(process: Process,
     """ Create a lane object """
     lane_node_ns, lane_node_name = parse_tag(lane_node)
 
-    lane = Lane(lane_id=lane_node.get("id"),
-                name=lane_node.get("name"))
+    lane = Lane(id=lane_node.get("id"),
+                name=lane_node.get("name"),
+                parent_process=process)
+
     process.add_lane(lane)
 
     for node in list(lane_node):
@@ -332,9 +333,9 @@ def process_node_sub_process(p: Process, xml_node) -> None:
 
 
 def process_node_sequence_flow(p: Process, xml_node) -> None:
-    edge = Edge(xml_node.get("id"),
-                xml_node.get("sourceRef"),
-                xml_node.get("targetRef"))
+    edge = Edge(id=xml_node.get("id"),
+                source_id=xml_node.get("sourceRef"),
+                target_id=xml_node.get("targetRef"))
 
     condition_node = find_node(xml_node, "conditionExpression")
 
@@ -378,7 +379,7 @@ def process_complex_gateway(p: Process, xml_node) -> None:
     p.add_task(task)
 
 
-def process_potential_loop(task: BaseTask, xml_node) -> BaseTask:
+def process_potential_loop(task: ProcessTask, xml_node) -> ProcessTask:
     loop_node = find_node(xml_node, "standardLoopCharacteristics")
     multi_instance_loop = find_node(xml_node, "multiInstanceLoopCharacteristics")
 

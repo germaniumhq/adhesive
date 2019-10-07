@@ -1,6 +1,6 @@
 from typing import Callable, Any, List, Optional, Tuple, Union
 
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent

@@ -1,13 +1,5 @@
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessNode import ProcessNode
 
 
-class Gateway(BaseTask):
-    pass
-
-
-class NonWaitingGateway(Gateway):
-    pass
-
-
-class WaitingGateway(Gateway):
+class Gateway(ProcessNode):
     pass

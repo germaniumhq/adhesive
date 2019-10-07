@@ -1,4 +1,4 @@
-from adhesive.graph.Gateway import NonWaitingGateway
+from adhesive.graph.NonWaitingGateway import NonWaitingGateway
 
 
 class ExclusiveGateway(NonWaitingGateway):

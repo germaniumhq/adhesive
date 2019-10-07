@@ -12,10 +12,12 @@ import inspect
 from adhesive import logredirect
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.graph.BoundaryEvent import BoundaryEvent
-from adhesive.graph.Gateway import Gateway, NonWaitingGateway, WaitingGateway
+from adhesive.graph.Gateway import Gateway
+from adhesive.graph.NonWaitingGateway import NonWaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
+from adhesive.graph.WaitingGateway import WaitingGateway
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_items
@@ -35,7 +37,7 @@ import concurrent.futures
 from adhesive.graph.EndEvent import EndEvent
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
-from adhesive.graph.BaseTask import BaseTask
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.Process import Process
 from adhesive.graph.Lane import Lane
 from adhesive.execution.ExecutionTask import ExecutionTask
@@ -114,7 +116,7 @@ def is_predecessor(event, e) -> bool:
         # if we are in a loop and the other predecessor is inside
         # a loop of its own, we need to check if it's in the same
         # loop as ours
-        if e.task.loop:
+        if isinstance(e.task, ProcessTask) and e.task.loop:
             return parent_loop_id(e) == loop_id(event)
 
         # we check if we are in the same loop. each iteration
@@ -309,7 +311,7 @@ class ProcessExecutor:
 
     def _validate_tasks(self,
                         process: Process,
-                        missing_dict: Optional[Dict[str, Union[BaseTask, Lane]]]=None) -> None:
+                        missing_dict: Optional[Dict[str, Union[ProcessTask, Lane]]]=None) -> None:
         """
         Recursively traverse the graph, and print to the user if it needs to implement
         some tasks.
@@ -320,7 +322,7 @@ class ProcessExecutor:
         if missing_dict is not None:
             unmatched_items = missing_dict
         else:
-            unmatched_items: Dict[str, Union[BaseTask, Lane]] = dict()
+            unmatched_items: Dict[str, Union[ProcessTask, Lane]] = dict()
 
         for task_id, task in process.tasks.items():
             if isinstance(task, SubProcess):
@@ -383,7 +385,7 @@ class ProcessExecutor:
             display_unmatched_items(unmatched_items.values())
             sys.exit(1)
 
-    def _match_task(self, task: BaseTask) -> Optional[ExecutionBaseTask]:
+    def _match_task(self, task: ProcessTask) -> Optional[ExecutionBaseTask]:
         for task_definition in self.process.task_definitions:
             if token_utils.matches(task_definition.re_expressions, task.name) is not None:
                 return task_definition
@@ -399,7 +401,7 @@ class ProcessExecutor:
 
     def clone_event(self,
                     old_event: ActiveEvent,
-                    task: BaseTask,
+                    task: ProcessTask,
                     parent_id: Optional[str] = None) -> ActiveEvent:
 
         if parent_id is None:
@@ -428,9 +430,7 @@ class ProcessExecutor:
             # normally we shouldn't wait for tasks, since it's counter BPMN, so
             # we allow configuring waiting for it.
             if self.config.wait_tasks and (
-                    isinstance(event.task, ScriptTask) or
-                    isinstance(event.task, UserTask) or
-                    isinstance(event.task, Task) or
+                    isinstance(event.task, ProcessTask) or
                     isinstance(event.task, Process)
             ):
                 return event.state.wait_check()
@@ -609,7 +609,7 @@ class ProcessExecutor:
 
                 for outgoing_edge in outgoing_edges:
                     target_task = process.tasks[outgoing_edge.target_id]
-                    if target_task.loop:
+                    if isinstance(target_task, ProcessTask) and target_task.loop:
                         # we start a loop by firing the loop events, and consume this event.
                         loop_controller.create_loop(event, self.clone_event, target_task)
                     else:
@@ -632,7 +632,7 @@ class ProcessExecutor:
 
         def done_end_task(_event) -> None:
             # we should check all the WAITING processes if they finished.
-            event_count: Dict[BaseTask, int] = dict()
+            event_count: Dict[ProcessTask, int] = dict()
             waiting_events: List[ActiveEvent] = list()
 
             for id, self_event in self.events.items():
