@@ -41,3 +41,6 @@ class ExecutionMessageEvent:
                 self.re_expressions.append(
                     re.compile(regex_expression)
                 )
+
+    def __repr__(self) -> str:
+        return f"@message(expressions={self.expressions}, code={self.code.__name__})"

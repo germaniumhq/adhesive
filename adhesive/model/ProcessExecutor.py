@@ -385,6 +385,10 @@ class ProcessExecutor:
             if not lane_definition.used:
                 LOG.warn(f"Unused lane: {lane_definition}")
 
+        for message_event in self.adhesive_process.message_definitions:
+            if not message_event.used:
+                LOG.warn(f"Unused message: {message_event}")
+
         if unmatched_items:
             display_unmatched_items(unmatched_items.values())
             sys.exit(1)
