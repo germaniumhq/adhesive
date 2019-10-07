@@ -29,7 +29,8 @@ class MessageEventExecutor:
             for event_data in self.execution_message_event.code(self.root_event.context):
                 new_event = self.clone_event(
                     self.root_event,
-                    self.message_event)
+                    self.message_event,
+                    parent_id=self.root_event.token_id)
 
                 new_event.context.data.event = event_data
         except Exception as e:

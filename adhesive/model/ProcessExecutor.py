@@ -210,6 +210,8 @@ class ProcessExecutor:
         fake_event.token_id = None  # FIXME: why
 
         root_event = self.clone_event(fake_event, process)
+        self.root_event = root_event
+
         root_event.state.after_enter(ActiveEventState.ERROR, raise_unhandled_exception)
 
         self.start_message_event_listeners(root_event=root_event)
@@ -235,10 +237,7 @@ class ProcessExecutor:
         being processed) that in turn might generate new events.
         :return: data from the last execution token.
         """
-        old_done_futures = set()
-        #old_pending_events = set(self.events.keys())
-
-        while self.events:
+        while self.events or self.futures:
             pending_events = filter(lambda e: e.state.state == ActiveEventState.NEW,
                                     self.events.values())
 
@@ -253,17 +252,24 @@ class ProcessExecutor:
                 return_when=concurrent.futures.FIRST_COMPLETED,
                 timeout=0.1)
 
-            #if old_done_futures - done_futures:
-            #    broken_futures = old_done_futures - done_futures
-            #    LOG.warn(f"Some of the old futures are still present: {broken_futures}")
-            #
-            #old_done_futures = set(done_futures)
-
             for future in done_futures:
                 token_id = self.futures[future]
 
+                # a message executor has finished
                 if token_id == "__message_executor":
                     del self.futures[future]
+
+                    # FIXME: this is duplicated code from done_task
+                    # check sub-process termination
+                    found = False
+                    for ev in self.events.values():
+                        if ev.parent_id == self.root_event.token_id and ev != self.root_event:
+                            found = True
+                            break
+
+                    if not found:
+                        self.root_event.state.route(self.root_event.context)
+
                     continue
 
                 try:
@@ -274,11 +280,6 @@ class ProcessExecutor:
                         "error": traceback.format_exc(),
                         "failed_event": self.events[token_id]
                     })
-
-            old_pending_events = set(self.events.keys())
-
-            if len(self.events) == 1 and not self.futures:
-                break
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
