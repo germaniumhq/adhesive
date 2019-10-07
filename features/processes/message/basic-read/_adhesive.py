@@ -1,6 +1,7 @@
 import adhesive
 import uuid
 import unittest
+import time
 
 
 test = unittest.TestCase()
@@ -9,6 +10,7 @@ test = unittest.TestCase()
 @adhesive.message('Generate Event')
 def message_generate_event(context):
     for i in range(10):
+        time.sleep(1)
         yield i
 
 
@@ -18,7 +20,8 @@ def process_event(context):
     context.data.executions.add(str(uuid.uuid4()))
 
 
-data = adhesive.bpmn_build("basic-read.bpmn")
+data = adhesive.bpmn_build("basic-read.bpmn",
+                           wait_tasks=False)
 
-test.assertEqual(10, len(context.data.executions))
+test.assertEqual(10, len(data.executions))
 

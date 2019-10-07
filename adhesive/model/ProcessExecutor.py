@@ -25,6 +25,7 @@ from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.WaitingGateway import WaitingGateway
 from adhesive.model.GatewayController import GatewayController
+from adhesive.model.MessageEventExecutor import MessageEventExecutor
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_items
 from adhesive.storage.ensure_folder import get_folder
@@ -163,6 +164,7 @@ class ProcessExecutor:
                  wait_tasks: bool = True) -> None:
         self.adhesive_process = process
         self.tasks_impl: Dict[str, ExecutionTask] = dict()
+        self.mevent_impl: Dict[str, ExecutionMessageEvent] = dict()
 
         # A dictionary of events that are currently active. This is just to find out
         # the parent of an event, since from it we can also derive the current parent
@@ -210,9 +212,20 @@ class ProcessExecutor:
         root_event = self.clone_event(fake_event, process)
         root_event.state.after_enter(ActiveEventState.ERROR, raise_unhandled_exception)
 
+        self.start_message_event_listeners(root_event=root_event)
         self.execute_process_event_loop()
 
         return root_event.context.data
+
+    def start_message_event_listeners(self, root_event: ActiveEvent):
+        for mevent_id, mevent in self.mevent_impl.items():
+            executor = MessageEventExecutor(
+                root_event=root_event,
+                message_event=self.adhesive_process.process.message_events[mevent_id],
+                execution_message_event=mevent,
+                clone_event=self.clone_event)
+
+            self.futures[executor.future] = "__message_executor"
 
     def execute_process_event_loop(self) -> None:
         """
@@ -238,7 +251,7 @@ class ProcessExecutor:
             done_futures, not_done_futures = concurrent.futures.wait(
                 self.futures.keys(),
                 return_when=concurrent.futures.FIRST_COMPLETED,
-                timeout=5)
+                timeout=1)
 
             #if old_done_futures - done_futures:
             #    broken_futures = old_done_futures - done_futures
@@ -248,6 +261,11 @@ class ProcessExecutor:
 
             for future in done_futures:
                 token_id = self.futures[future]
+
+                if token_id == "__message_executor":
+                    del self.futures[future]
+                    continue
+
                 try:
                     context = future.result()
                     self.events[token_id].state.route(context)
@@ -363,6 +381,7 @@ class ProcessExecutor:
                 unmatched_items[f"message_event:{message_event.name}"] = message_event
                 continue
 
+            self.mevent_impl[mevent_id] = message_event_definition
             message_event_definition.used = True
 
         if missing_dict is not None:  # we're not the root call, we're done
