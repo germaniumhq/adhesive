@@ -4,9 +4,6 @@ import networkx as nx
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.MessageEvent import MessageEvent
-from .BaseTask import BaseTask
-from .StartEvent import StartEvent
-from .EndEvent import EndEvent
 from adhesive.graph.NamedItem import NamedItem
 from .Edge import Edge
 from .EndEvent import EndEvent
@@ -117,7 +114,7 @@ class Process(NamedItem):
 
     def add_message_event(self, event: MessageEvent) -> None:
         self._message_events[event.id] = event
-        self.add_start_event(event)
+        self.add_task(event)
 
     def add_end_event(self, event: EndEvent) -> None:
         self._end_events[event.id] = event

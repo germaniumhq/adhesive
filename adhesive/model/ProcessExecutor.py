@@ -1,19 +1,24 @@
-import logging
 import copy
+import logging
 import os
 import sys
 import traceback
 import uuid
-
 from concurrent.futures import Future
-from typing import Set, Optional, Dict, TypeVar, Any, List, Tuple, Union
-import inspect
+from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
 
-from adhesive import logredirect
+from adhesive import logredirect, ExecutionMessageEvent
 from adhesive.consoleui.color_print import green, red, yellow, white
-from adhesive.graph.BoundaryEvent import BoundaryEvent
+from adhesive.execution import token_utils
+from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
+from adhesive.execution.ExecutionData import ExecutionData
+from adhesive.execution.ExecutionLane import ExecutionLane
+from adhesive.execution.ExecutionLoop import parent_loop_id, loop_id
+from adhesive.execution.ExecutionToken import ExecutionToken
+from adhesive.execution.call_script_task import call_script_task
 from adhesive.graph.Event import Event
 from adhesive.graph.Gateway import Gateway
+from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
@@ -22,21 +27,12 @@ from adhesive.graph.WaitingGateway import WaitingGateway
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_items
-from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
-from adhesive.execution.ExecutionLane import ExecutionLane
-from adhesive.execution.ExecutionToken import ExecutionToken
-from adhesive.execution.ExecutionData import ExecutionData
-from adhesive.execution.ExecutionLoop import ExecutionLoop, parent_loop_id, loop_id
-from adhesive.execution.call_script_task import call_script_task
-from adhesive.execution import token_utils, ExecutionMessageEvent
 from adhesive.storage.ensure_folder import get_folder
 
 T = TypeVar('T')
 
 import concurrent.futures
 
-from adhesive.graph.EndEvent import EndEvent
-from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.Process import Process

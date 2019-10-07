@@ -2,6 +2,7 @@ import re
 from typing import Tuple, Optional
 from xml.etree import ElementTree
 
+from adhesive.graph.Event import Event
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.ComplexGateway import ComplexGateway
@@ -101,10 +102,7 @@ def read_process(parent_process: Optional[Process], process) -> Process:
         process_lane_set(result, node)
 
     for task_id, task in result.tasks.items():
-        if isinstance(task, BoundaryEvent):
-            continue
-
-        if isinstance(task, StartEvent):
+        if not isinstance(task, ProcessTask):
             continue
 
         if result.has_incoming_edges(task):
