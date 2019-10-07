@@ -3,6 +3,7 @@ from typing import Iterable, Union
 import re
 
 from adhesive.graph.ComplexGateway import ComplexGateway
+from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Lane import Lane
@@ -49,6 +50,13 @@ def display_unmatched_items(unmatched_items: Iterable[Union[ProcessTask, Lane]])
             print(f"@adhesive.lane({escape_string(unmatched_item.name)})")
             print(f"def lane_{generate_task_name(unmatched_item.name)}(context):")
             print("    yield context.workspace.clone()\n\n")
+            continue
+
+        if isinstance(unmatched_item, MessageEvent):
+            print(f"@adhesive.message({escape_string(unmatched_item.name)})")
+            print(f"def message_{generate_task_name(unmatched_item.name)}(context):")
+            print("    message_data = 'data'")
+            print("    yield message_data\n\n")
             continue
 
         if isinstance(unmatched_item, ComplexGateway):
