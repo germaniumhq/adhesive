@@ -251,7 +251,7 @@ class ProcessExecutor:
             done_futures, not_done_futures = concurrent.futures.wait(
                 self.futures.keys(),
                 return_when=concurrent.futures.FIRST_COMPLETED,
-                timeout=1)
+                timeout=0.1)
 
             #if old_done_futures - done_futures:
             #    broken_futures = old_done_futures - done_futures
@@ -276,6 +276,9 @@ class ProcessExecutor:
                     })
 
             old_pending_events = set(self.events.keys())
+
+            if len(self.events) == 1 and not self.futures:
+                break
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
