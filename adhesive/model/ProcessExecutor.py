@@ -267,11 +267,10 @@ class ProcessExecutor:
 
             for future in done_futures:
                 token_id = self.futures[future]
+                del self.futures[future]
 
                 # a message executor has finished
                 if token_id == "__message_executor":
-                    del self.futures[future]
-
                     # FIXME: this is duplicated code from done_task
                     # check sub-process termination
                     found = False
@@ -735,11 +734,6 @@ class ProcessExecutor:
             event.state.done()
 
         def done_task(_event) -> None:
-            # if the task is done, but the future is still registered, we need to
-            # remove the future.
-            if event.future in self.futures:
-                del self.futures[event.future]
-
             self.unregister_event(event)
 
         event.state.after_enter(ActiveEventState.PROCESSING, process_event)
