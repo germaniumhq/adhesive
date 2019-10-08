@@ -49,6 +49,8 @@ from adhesive.model.ActiveLoopType import ActiveLoopType
 from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 
+import signal
+
 LOG = logging.getLogger(__name__)
 
 DONE_STATES = {
@@ -189,6 +191,8 @@ class ProcessExecutor:
 
         self._validate_tasks(process)
 
+        signal.signal(signal.SIGUSR1, self.print_state)
+
         # since the workspaces are allocated by lanes, we need to ensure
         # our default lane is existing.
         lane_controller.ensure_default_lane(self.adhesive_process)
@@ -218,6 +222,15 @@ class ProcessExecutor:
         self.execute_process_event_loop()
 
         return root_event.context.data
+
+    def print_state(self, x, y) -> None:
+        print("Events:")
+        for event in self.events.values():
+            print(event)
+
+        print("Futures:")
+        for f in self.futures:
+            print(f)
 
     def start_message_event_listeners(self, root_event: ActiveEvent):
         for mevent_id, mevent in self.mevent_impl.items():
