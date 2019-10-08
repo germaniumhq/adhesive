@@ -704,6 +704,10 @@ class ProcessExecutor:
                     found = True
                     break
 
+            if not found and parent_id == self.root_event.token_id and self.futures:
+                event.state.done()
+                return  # ==> if we still have running futures, we don't kill the main process
+
             # we merge into the parent event if it's an end state.
             if parent_id is not None:
                 self.events[parent_id].context.data = ExecutionData.merge(

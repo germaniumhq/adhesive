@@ -15,12 +15,10 @@ def message_generate_event(context):
 def process_event(context):
     context.data.executions = set()
     context.data.executions.add(str(uuid.uuid4()))
-    print(f"event data: {context.data.event}")
 
 
 data = adhesive.bpmn_build("basic-read.bpmn",
                             wait_tasks=False)
 
-print(data._data)
-#test.assertEqual(10, len(data.executions))
 
+test.assertEqual(10, len(data.executions))

@@ -1,10 +1,14 @@
+import logging
 import uuid
 from concurrent.futures import Future
 from threading import Thread
 
 from adhesive import ExecutionMessageEvent
+from adhesive.consoleui.color_print import green, red, yellow
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.model.ActiveEvent import ActiveEvent
+
+LOG = logging.getLogger(__name__)
 
 
 class MessageEventExecutor:
@@ -25,6 +29,8 @@ class MessageEventExecutor:
         Thread(target=self.run_thread_loop).start()
 
     def run_thread_loop(self):
+        LOG.info(yellow("Run  ") + yellow(self.message_event.name, bold=True))
+
         try:
             for event_data in self.execution_message_event.code(self.root_event.context):
                 new_event = self.clone_event(
@@ -34,6 +40,9 @@ class MessageEventExecutor:
 
                 new_event.context.data.event = event_data
         except Exception as e:
+            LOG.info(red("Failed ") + red(self.message_event.name, bold=True))
+            LOG.debug(e)
             self.future.set_exception(e)
         else:
+            LOG.info(green("Done ") + green(self.message_event.name, bold=True))
             self.future.set_result("__done")
