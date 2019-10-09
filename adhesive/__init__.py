@@ -61,7 +61,9 @@ def usertask(*task_names: str,
 
 
 # FIXME: implement regex matching for it
-def lane(*lane_names:str) -> Callable[..., Callable[..., T]]:
+def lane(*lane_names:str,
+         re: Optional[Union[str, List[str]]] = None,
+         ) -> Callable[..., Callable[..., T]]:
     """
     Allow defining a lane where a custom workspace will be created. This
     function needs to yield a workspace that will be used. It's a
@@ -70,7 +72,10 @@ def lane(*lane_names:str) -> Callable[..., Callable[..., T]]:
     """
     def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
         newf = contextmanager(f)
-        process.lane_definitions.append(ExecutionLane(newf, *lane_names))
+        process.lane_definitions.append(ExecutionLane(
+            code=newf,
+            expressions=lane_names,
+            regex_expressions=re))
         return newf
 
     return wrapper_builder

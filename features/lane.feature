@@ -20,3 +20,10 @@ Scenario: A default lane override, gets a workspace regardless
   Then the adhesive process has passed
   And there isn't in the stdout the text 'Unused lane: @lane(expressions=('default',), code=default_lane)'
 
+@4
+Scenario: A lane defined with regex can match multiple lanes
+  Given I run adhesive on 'processes/lane/parametrized_lane'
+  Then the adhesive process has passed
+  And there is in the stdout the text 'created lane java'
+  And there is in the stdout the text 'created lane maven'
+
