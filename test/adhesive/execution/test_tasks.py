@@ -10,7 +10,7 @@ from adhesive.workspace import Workspace
 test = unittest.TestCase()
 
 
-@adhesive.lane("docker: (.*)")
+@adhesive.lane(re="docker: (.*)")
 def docker_lane(context, image_name) -> Workspace:
     if not context.workspace:
         raise Exception("No workspace is defined.")
