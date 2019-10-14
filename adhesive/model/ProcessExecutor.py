@@ -7,6 +7,7 @@ import uuid
 from concurrent.futures import Future
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
 
+import adhesive
 from adhesive import logredirect, ExecutionMessageEvent
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.execution import token_utils
@@ -190,6 +191,9 @@ class ProcessExecutor:
         self.tasks_impl: Dict[str, ExecutionTask] = dict()
 
         self._validate_tasks(process)
+
+        if adhesive.config.current.verify_mode:
+            return ExecutionData(initial_data)
 
         signal.signal(signal.SIGUSR1, self.print_state)
 

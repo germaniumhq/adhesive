@@ -2,11 +2,36 @@ _globals = globals()
 _locals = locals()
 
 
-def __main():
-    """
-    The main adhesive program.
-    """
+import click
 
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+def __main(ctx):
+    if ctx.invoked_subcommand is None:
+        __adhesive_build()
+
+
+@__main.command('verify')
+def verify():
+    """
+    Validate if the BPMN and step definitions are matching
+    """
+    import adhesive
+    adhesive.config.current.verify_mode = True
+
+    __run_the_process_executor()
+
+
+@__main.command('build')
+def __adhesive_build():
+    """
+    Run the _adhesive.py script
+    """
+    __run_the_process_executor()
+
+
+def __run_the_process_executor():
     # we import everything locally so we don't pollute the globals
     import adhesive
     from adhesive.logging import configure_logging
