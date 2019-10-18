@@ -141,7 +141,7 @@ class BranchEndBuilder:
         return self.subprocess_end(*args, **kw)
 
     def subprocess_end(self) -> 'ProcessBuilder':
-        return self.process_builder.sub_process_end()
+        return self.process_builder.subprocess_end()
 
     def _wire_task_list(self,
                         new_task: ProcessTask,
