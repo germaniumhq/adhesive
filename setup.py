@@ -8,7 +8,7 @@ packages = find_packages()
 
 setup(
     name='adhesive',
-    version='0.2.15',
+    version='0.1.master',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -25,7 +25,9 @@ setup(
         "colorama==0.4.1",
         "termcolor==1.1.0",
         "termcolor_util==1.0.1",
-        "PyYAML >=5.1, <5.2"],
+        "PyYAML >=5.1, <5.2",
+        "paramiko==2.6.0",
+        "click==7.0"],
     packages=packages,
     package_data={
         '': ['*.txt', '*.rst']
