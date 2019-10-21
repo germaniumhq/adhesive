@@ -14,7 +14,7 @@ from adhesive.execution import token_utils
 from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLane import ExecutionLane
-from adhesive.execution.ExecutionLoop import parent_loop_id, loop_id
+from adhesive.execution.ExecutionLoop import parent_loop_id, loop_id, ExecutionLoop
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.call_script_task import call_script_task
 from adhesive.graph.Event import Event
@@ -106,26 +106,40 @@ def raise_unhandled_exception(_ev):
     sys.exit(1)
 
 
-def is_predecessor(event, e) -> bool:
+def is_parent(self,
+              *,
+              parent_element: ActiveEvent,
+              child_element: ActiveEvent) -> bool:
+    parent_id = child_element.parent_id
+
+    while parent_id:
+        if parent_id == parent_element.token_id:
+            return True
+
+        parent_id = self.events[parent_id].parent_id
+
+    return False
+
+
+def is_potential_predecessor(self, event: ActiveEvent, e: ActiveEvent) -> bool:
+    # if the events are not in the same process they're not related
+    if event.parent_id != e.parent_id:
+        return False
+
     if e.state.state not in ACTIVE_STATES:
         return False
 
     if e.task == event.task:
         return False
 
-    if event.context.loop:
-        # if we are in a loop and the other predecessor is inside
-        # a loop of its own, we need to check if it's in the same
-        # loop as ours
-        if hasattr(e.task, "loop") and e.task.loop:
-            return parent_loop_id(e) == loop_id(event)
+    # When we have a loop on an element, if it's already running (i.e. not
+    # initial), it means we already evaluated we don't have any predecessors
+    if event.context.loop and \
+            event.context.loop.task.id == event.task.id and \
+            event.context.loop.index >= 0:
+        return False
 
-        # we check if we are in the same loop. each iteration
-        # will have its own loop id.
-        if loop_id(e) != loop_id(event):
-            return False
-
-    return True
+    return loop_id(e) == loop_id(event)
 
 
 def deep_copy_event(e: ActiveEvent) -> ActiveEvent:
@@ -500,6 +514,11 @@ class ProcessExecutor:
             result = None
             count = 0
 
+            if source.context.loop and \
+                    source.context.loop.task.id == source.task.id and \
+                    source.context.loop.index >= 0:
+                return result, count
+
             for ev in self.events.values():
                 if ev == source:
                     continue
@@ -520,13 +539,15 @@ class ProcessExecutor:
 
             potential_predecessors = list(map(
                 lambda e: e.task,
-                filter(lambda e: is_predecessor(event, e), self.events.values())))
+                filter(lambda e: is_potential_predecessor(self, event, e), self.events.values())))
 
             if other_waiting:
                 new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
                 other_waiting.context.data = new_data
 
                 event.state.done()
+
+            # this should return for initial loops
 
             # if we have predecessors, we stay in waiting
             if process.are_predecessors(event.task, potential_predecessors):
@@ -708,7 +729,7 @@ class ProcessExecutor:
 
                 potential_predecessors = list(map(
                     lambda e: e.task,
-                    filter(lambda e: is_predecessor(waiting_event, e), self.events.values())))
+                    filter(lambda e: is_potential_predecessor(self, waiting_event, e), self.events.values())))
 
                 if not process.are_predecessors(waiting_event.task, potential_predecessors):
                     waiting_event.state.run()

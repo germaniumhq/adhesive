@@ -22,7 +22,10 @@ def gbs_ensure_tooling(context, tool_name) -> None:
 
 @adhesive.task(re="^Run tool: (.*?)$")
 def gbs_run_tool(context, command: str) -> None:
-    ge_tooling.run_tool(context, command)
+    ge_tooling.run_tool(
+            context,
+            tool=command,
+            command=command)
 
 
 @adhesive.task("Checkout Code")
@@ -33,7 +36,7 @@ def checkout_code(context) -> None:
 @adhesive.task("GBS: lin64")
 def gbs_build_lin64(context) -> None:
     context.data.gbs_build_image_name = \
-        gbs.build(workspace=context.workspace,
+        gbs.build(context,
               platform="python:3.7",
               gbs_prefix=f"/_gbs/lin64/")
 
@@ -41,7 +44,7 @@ def gbs_build_lin64(context) -> None:
 @adhesive.task('GBS Test {parallel_processing}: lin64')
 def gbs_test_lin64(context) -> None:
     image_name = gbs.test(
-        workspace=context.workspace,
+        context,
         platform="python:3.7",
         gbs_prefix=f"/_gbs/lin64/")
 
@@ -56,7 +59,7 @@ def gbs_test_lin64(context) -> None:
 @adhesive.task('GBS Integration Test {parallel_processing}: lin64')
 def gbs_integration_test_lin64(context) -> None:
     image_name = gbs.test(
-        workspace=context.workspace,
+        context,
         platform="python:3.7",
         gbs_prefix=f"/_gbs/lin64/")
 
@@ -84,7 +87,8 @@ def gbs_build_win32(context) -> None:
 def is_release_version(context):
     current_version = ge_tooling.run_tool(
         context,
-        "version-manager --tag",
+        tool="version-manager",
+        command="version-manager --tag",
         capture_stdout=True).strip()
 
     if ge_git.is_tag_version(current_version):

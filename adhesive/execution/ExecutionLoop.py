@@ -1,10 +1,10 @@
 import uuid
-from typing import Callable, Any, Optional
+from typing import Callable, Any, Optional, Union
 
-from adhesive.graph.ProcessTask import ProcessTask
-#from adhesive.model.ActiveEvent import ActiveEvent  # FIXME move from here
+# from adhesive.model.ActiveEvent import ActiveEvent  # FIXME move from here
 # references to the ActiveEvent
 from adhesive.execution import token_utils
+from adhesive.graph.ProcessTask import ProcessTask
 
 
 class ExecutionLoop:
@@ -113,9 +113,21 @@ def parent_loop_id(e: 'ActiveEvent') -> Optional[str]:
     return f"{e.context.loop.parent_loop.loop_id}:{e.context.loop.parent_loop.index}"
 
 
-def loop_id(e: 'ActiveEvent') -> Optional[str]:
-    if not e.context.loop:
+def loop_id(event: 'ActiveEvent') -> Optional[str]:
+    """
+    Finds the loop id where this event executes. This is the owning loop ID.
+    :param event:
+    :return:
+    """
+    loop: ExecutionLoop = event.context.loop
+
+    if not loop:
         return None
 
-    return f"{e.context.loop.loop_id}:{e.context.loop.index}"
+    if loop.task == event.context.task:
+        loop = loop.parent_loop
 
+    if not loop:
+        return None
+
+    return f"{loop.loop_id}:{loop.index}"

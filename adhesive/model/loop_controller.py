@@ -16,7 +16,9 @@ def is_top_loop_event(event: ActiveEvent):
     return event.task.loop and (not event.context.loop or event.context.loop.task != event.task)
 
 
-def create_loop(event: ActiveEvent, clone_event, target_task: ProcessTask) -> None:
+def create_loop(event: ActiveEvent,
+                clone_event,
+                target_task: ProcessTask) -> None:
     """
     Create a loop event.
     """
@@ -26,10 +28,17 @@ def create_loop(event: ActiveEvent, clone_event, target_task: ProcessTask) -> No
 
     loop_id = str(uuid.uuid4())
 
+    owning_loop = event.context.loop
+
+    # FIXME: task check should have just worked
+    if event.context.loop and \
+        event.context.loop.task.id == event.task.id:
+        owning_loop = owning_loop.parent_loop
+
     new_event.loop_type = ActiveLoopType.INITIAL
     new_event.context.loop = ExecutionLoop(
         loop_id=loop_id,
-        parent_loop=event.context.loop,
+        parent_loop=owning_loop,
         task=new_event.task,
         item=None,
         index=-1,

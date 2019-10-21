@@ -1,3 +1,4 @@
+addict
 networkx==2.3
 npyscreen==4.10.5
 colorama==0.4.1
