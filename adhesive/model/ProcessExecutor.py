@@ -148,14 +148,18 @@ def deep_copy_event(e: ActiveEvent) -> ActiveEvent:
     :param e:
     :return:
     """
-    workspace = e.context.workspace
-    e.context.workspace = None
-    result = copy.deepcopy(e)
+    try:
+        workspace = e.context.workspace
+        e.context.workspace = None
+        result = copy.deepcopy(e)
 
-    result.context.workspace = workspace
+        result.context.workspace = workspace
 
-    return result
-
+        return result
+    except Exception as err:
+        LOG.error(red("Unable to serialize token", bold=True))
+        LOG.error(red(f"Data: {e.context.data._data}"))
+        raise err
 
 def noop_copy_event(e: ActiveEvent) -> ActiveEvent:
     return e
