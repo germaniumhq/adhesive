@@ -91,8 +91,10 @@ def is_release_version(context):
         command="version-manager --tag",
         capture_stdout=True).strip()
 
-    if ge_git.is_tag_version(current_version):
+    if ge_git.get_tag_version(current_version):
         context.data.release_version = True
+    else:
+        context.data.release_version = False
 
 
 @adhesive.usertask('Publish to PyPI?')
