@@ -8,7 +8,7 @@ from concurrent.futures import Future
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
 
 import adhesive
-from adhesive import logredirect, ExecutionMessageEvent
+from adhesive import logredirect, ExecutionMessageEvent, ExecutionMessageCallbackEvent
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
@@ -186,6 +186,7 @@ class ProcessExecutor:
         self.adhesive_process = process
         self.tasks_impl: Dict[str, ExecutionTask] = dict()
         self.mevent_impl: Dict[str, ExecutionMessageEvent] = dict()
+        self.mevent_callback_impl: Dict[str, ExecutionMessageCallbackEvent] = dict()
 
         # A dictionary of events that are currently active. This is just to find out
         # the parent of an event, since from it we can also derive the current parent
@@ -255,6 +256,27 @@ class ProcessExecutor:
             print(f)
 
     def start_message_event_listeners(self, root_event: ActiveEvent):
+        def create_callback_code(mevent_id, mevent):
+            message_event = self.adhesive_process.process.message_events[mevent_id]
+            event_name_parsed = token_utils.parse_name(
+                self.root_event.context,
+                message_event.name)
+
+            params = token_utils.matches(mevent.re_expressions,
+                                         event_name_parsed)
+
+            def callback_code(event_data):
+                new_event = self.clone_event(
+                        root_event,
+                        message_event,
+                        parent_id=root_event.token_id)
+                new_event.context.data.event = event_data
+
+            mevent.code(root_event.context, callback_code, *params)
+
+        for mevent_id, mevent in self.mevent_callback_impl.items():
+            create_callback_code(mevent_id, mevent)
+
         for mevent_id, mevent in self.mevent_impl.items():
             executor = MessageEventExecutor(
                 root_event=root_event,
@@ -419,7 +441,11 @@ class ProcessExecutor:
                 unmatched_items[f"message_event:{message_event.name}"] = message_event
                 continue
 
-            self.mevent_impl[mevent_id] = message_event_definition
+            if isinstance(message_event_definition, ExecutionMessageEvent):
+                self.mevent_impl[mevent_id] = message_event_definition
+            else:
+                self.mevent_callback_impl[mevent_id] = message_event_definition
+
             message_event_definition.used = True
 
         if missing_dict is not None:  # we're not the root call, we're done
@@ -446,6 +472,10 @@ class ProcessExecutor:
             if not message_event.used:
                 LOG.warn(f"Unused message: {message_event}")
 
+        for message_event_callback in self.adhesive_process.message_callback_definitions:
+            if not message_event_callback.used:
+                LOG.warn(f"Unused message: {message_event_callback}")
+
         if unmatched_items:
             display_unmatched_items(unmatched_items.values())
             sys.exit(1)
@@ -464,8 +494,12 @@ class ProcessExecutor:
 
         return None
 
-    def _match_message_event(self, message_event_name: str) -> Optional[ExecutionMessageEvent]:
+    def _match_message_event(self, message_event_name: str) -> Optional[Union[ExecutionMessageEvent, ExecutionMessageCallbackEvent]]:
         for message_definition in self.adhesive_process.message_definitions:
+            if token_utils.matches(message_definition.re_expressions, message_event_name) is not None:
+                return message_definition
+
+        for message_definition in self.adhesive_process.message_callback_definitions:
             if token_utils.matches(message_definition.re_expressions, message_event_name) is not None:
                 return message_definition
 
@@ -577,6 +611,7 @@ class ProcessExecutor:
 
                 return
 
+            # FIXME: probably this try/except should be longer than just the LOG
             try:
                 LOG.info(yellow("Run  ") + yellow(event.context.task_name, bold=True))
             except Exception as e:

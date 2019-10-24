@@ -48,7 +48,7 @@ class MessageEventExecutor:
 
                 new_event.context.data.event = event_data
         except Exception as e:
-            LOG.info(red("Failed ") + red(event_name_parsed, bold=True))
+            LOG.error(red("Failed ") + red(event_name_parsed, bold=True))
             LOG.debug(e)
             self.future.set_exception(e)
         else:

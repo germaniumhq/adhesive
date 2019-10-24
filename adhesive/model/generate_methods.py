@@ -28,6 +28,7 @@ def generate_matching_re(name: str) -> str:
     result = re.escape(name)
     result = LABEL_EXPRESSION.sub('.*?', result)
     result = SPACES.sub(' ', result)
+    result = f"^{result}$"
 
     return result
 
@@ -56,7 +57,12 @@ def display_unmatched_items(unmatched_items: Iterable[Union[ProcessTask, Lane]])
             print(f"@adhesive.message({escape_string(unmatched_item.name)})")
             print(f"def message_{generate_task_name(unmatched_item.name)}(context):")
             print("    message_data = 'data'")
-            print("    yield message_data\n\n")
+            print("    yield message_data")
+            print("# or ")
+            print(f"@adhesive.message_callback({escape_string(unmatched_item.name)})")
+            print(f"def message_{generate_task_name(unmatched_item.name)}(context, callback):")
+            print("    # save the callback, and just use it to push events")
+            print("    callback('data')\n\n")
             continue
 
         if isinstance(unmatched_item, ComplexGateway):

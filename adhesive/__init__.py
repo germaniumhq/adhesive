@@ -1,6 +1,7 @@
 from typing import Callable, TypeVar, Optional, Union, List
 from contextlib import contextmanager
 
+from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
 from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
@@ -60,7 +61,6 @@ def usertask(*task_names: str,
     return wrapper_builder
 
 
-# FIXME: implement regex matching for it
 def lane(*lane_names:str,
          re: Optional[Union[str, List[str]]] = None,
          ) -> Callable[..., Callable[..., T]]:
@@ -90,6 +90,27 @@ def message(*message_names: str,
             regex_expressions=re)
 
         process.message_definitions.append(message_definition)
+
+        return f
+
+    return wrapper_builder
+
+
+def message_callback(*message_names: str,
+                     re: Optional[Union[str, List[str]]] = None):
+    """
+    Obtain a message callback, that can push the
+    :param message_names:
+    :param re:
+    :return:
+    """
+    def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
+        message_definition = ExecutionMessageCallbackEvent(
+            code=f,
+            expressions=message_names,
+            regex_expressions=re)
+
+        process.message_callback_definitions.append(message_definition)
 
         return f
 
