@@ -196,6 +196,27 @@ Each yield generates a new event that fires up the connected tasks. The
 data yielded is present in the `event` attribute in the token, for the
 following tasks.
 
+Callback Messages
+-----------------
+
+The other option to push messages into a process is to use callback
+messages:
+
+    @adhesive.message_callback('REST: /rest/process-resource')
+    def message_rest_rest_process_resource(context, callback):
+        @app.route("/rest/resource/create")
+        def create_resource():
+            callback(Dict({
+                "type": "CREATE"
+            }))
+
+            return "Create event fired"
+
+Using this we’re able to hook into other systems that have their own
+loop, such as in this case the Flask server, and push messages using the
+`callback`. This approach has also the advantage of not creating new
+threads for each message endpoint.
+
 Connections
 ===========
 
