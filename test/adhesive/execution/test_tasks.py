@@ -25,6 +25,7 @@ def docker_lane(context, image_name) -> Workspace:
     'Test Chrome',
     'Test Firefox',
     'Build Germanium Image',
+    'Build Germanium Image on {loop.value}',
     'Prepare Firefox',
     # exclusive gateway
     'Exclusive Task Branch',
