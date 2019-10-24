@@ -4,6 +4,7 @@ import os
 import sys
 import traceback
 import uuid
+import time
 from concurrent.futures import Future
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
 
@@ -295,14 +296,22 @@ class ProcessExecutor:
         :return: data from the last execution token.
         """
         while self.events or self.futures:
-            pending_events = filter(lambda e: e.state.state == ActiveEventState.NEW,
-                                    self.events.values())
+            pending_events = list(filter(lambda e: e.state.state == ActiveEventState.NEW,
+                                         self.events.values()))
 
-            # except for new processes, and processes that are running with futures
-            # the states should transition automatically.
-            processed_events = list(pending_events)
-            for pending_event in processed_events:
-                pending_event.state.process()
+            # we ensure we have only events to be processed
+            while pending_events:
+                # except for new processes, and processes that are running with futures
+                # the states should transition automatically.
+                processed_events = list(pending_events)
+                for pending_event in processed_events:
+                    pending_event.state.process()
+
+                pending_events = list(filter(lambda e: e.state.state == ActiveEventState.NEW,
+                                             self.events.values()))
+
+            if not self.futures:
+                time.sleep(0.1)
 
             done_futures, not_done_futures = concurrent.futures.wait(
                 self.futures.keys(),
