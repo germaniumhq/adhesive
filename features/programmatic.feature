@@ -17,3 +17,7 @@ Scenario: A programmatic process that runs a looped task in a lane in parallel
   Given I run adhesive on 'processes/programmatic/programmatic_loop_lane'
   Then the adhesive process has passed
 
+@4
+Scenario: A programmatic process that skips a task on a when condition
+  Given I run adhesive on 'processes/programmatic/programmatic_when_condition'
+  Then the adhesive process has passed

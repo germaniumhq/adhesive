@@ -183,6 +183,7 @@ class ProcessBuilder:
             parent_process=self.process,
             id=next_id(),
             name="<start>")
+        self.pre_current_when_task = None
 
         self.process.add_start_event(self.current_task)
 
@@ -342,9 +343,21 @@ class ProcessBuilder:
             source_id=self.current_task.id,
             target_id=new_task.id,
             condition=when)
+        self.process.add_edge(new_edge)
+
+        if self.pre_current_when_task:
+            new_edge = Edge(
+                id=next_id(),
+                source_id=self.pre_current_when_task.id,
+                target_id=new_task.id)
+            self.process.add_edge(new_edge)
+
+        if when:
+            self.pre_current_when_task = self.current_task
+        else:
+            self.pre_current_when_task = None
 
         self.current_task = new_task
-        self.process.add_edge(new_edge)
 
         if lane is None:
             return self
@@ -386,8 +399,6 @@ class ProcessBuilder:
         else:
             self.process.add_task(new_task)
 
-        self.current_task = new_task
-
         for previous_task in previous_tasks:
             new_edge = Edge(
                 id=next_id(),
@@ -396,6 +407,21 @@ class ProcessBuilder:
                 condition=when)
 
             self.process.add_edge(new_edge)
+
+            if self.pre_current_when_task:
+                new_edge = Edge(
+                    id=next_id(),
+                    source_id=self.pre_current_when_task.id,
+                    target_id=new_task.id)
+
+                self.process.add_edge(new_edge)
+
+        if when:
+            self.pre_current_when_task = self.current_task
+        else:
+            self.pre_current_when_task = None
+
+        self.current_task = new_task
 
         if lane is None:
             return self
