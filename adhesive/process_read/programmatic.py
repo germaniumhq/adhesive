@@ -183,7 +183,7 @@ class ProcessBuilder:
             parent_process=self.process,
             id=next_id(),
             name="<start>")
-        self.pre_current_when_task = None
+        self.pre_current_when_task = self.current_task
 
         self.process.add_start_event(self.current_task)
 
@@ -345,17 +345,18 @@ class ProcessBuilder:
             condition=when)
         self.process.add_edge(new_edge)
 
-        if self.pre_current_when_task:
+        # if this task is preceeded by other task that might be excluded,
+        # we need to connect it to the pre_current_when_task.
+        if self.current_task.id != self.pre_current_when_task.id:
             new_edge = Edge(
                 id=next_id(),
                 source_id=self.pre_current_when_task.id,
-                target_id=new_task.id)
+                target_id=new_task.id,
+                condition=when)
             self.process.add_edge(new_edge)
 
-        if when:
+        if not when:
             self.pre_current_when_task = self.current_task
-        else:
-            self.pre_current_when_task = None
 
         self.current_task = new_task
 
@@ -408,18 +409,18 @@ class ProcessBuilder:
 
             self.process.add_edge(new_edge)
 
-            if self.pre_current_when_task:
+            # if this task is preceeded by other task that might be excluded,
+            # we need to connect it to the pre_current_when_task.
+            if self.current_task.id != self.pre_current_when_task.id:
                 new_edge = Edge(
                     id=next_id(),
                     source_id=self.pre_current_when_task.id,
-                    target_id=new_task.id)
-
+                    target_id=new_task.id,
+                    condition=when)
                 self.process.add_edge(new_edge)
 
-        if when:
+        if not when:
             self.pre_current_when_task = self.current_task
-        else:
-            self.pre_current_when_task = None
 
         self.current_task = new_task
 
