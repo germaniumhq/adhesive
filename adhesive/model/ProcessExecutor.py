@@ -471,19 +471,19 @@ class ProcessExecutor:
 
         for task_definition in self.adhesive_process.task_definitions:
             if not task_definition.used:
-                LOG.warn(f"Unused task: {task_definition}")
+                LOG.warning(f"Unused task: {task_definition}")
 
         for lane_definition in self.adhesive_process.lane_definitions:
             if not lane_definition.used:
-                LOG.warn(f"Unused lane: {lane_definition}")
+                LOG.warning(f"Unused lane: {lane_definition}")
 
         for message_event in self.adhesive_process.message_definitions:
             if not message_event.used:
-                LOG.warn(f"Unused message: {message_event}")
+                LOG.warning(f"Unused message: {message_event}")
 
         for message_event_callback in self.adhesive_process.message_callback_definitions:
             if not message_event_callback.used:
-                LOG.warn(f"Unused message: {message_event_callback}")
+                LOG.warning(f"Unused message: {message_event_callback}")
 
         if unmatched_items:
             display_unmatched_items(unmatched_items.values())

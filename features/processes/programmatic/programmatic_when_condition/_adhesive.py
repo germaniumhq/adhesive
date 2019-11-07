@@ -21,7 +21,7 @@ def third_task(context):
 
 
 @adhesive.task('Fourth task')
-def third_task(context):
+def fourth_task(context):
     context.data.fourth_task.add(str(uuid.uuid4()))
 
 
@@ -40,7 +40,7 @@ data = adhesive.process_start()\
         "second_task": set(),
         "third_task": set(),
         "fourth_task": set(),
-    },wait_tasks=True)
+    })
 
 test.assertEqual(1, len(data.first_task), "Expected a single first task execution")
 test.assertEqual(0, len(data.second_task), "Expected no second task executions")
