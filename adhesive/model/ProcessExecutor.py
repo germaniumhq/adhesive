@@ -212,8 +212,6 @@ class ProcessExecutor:
         being processed) that in turn might generate new events.
         :return: data from the last execution token.
         """
-        self.read_enqueued_events()
-
         while self.events or self.futures:
             pending_events = list(filter(lambda e: e.state.state == ActiveEventState.NEW,
                                          self.events.values()))
@@ -236,6 +234,12 @@ class ProcessExecutor:
                 self.futures.keys(),
                 return_when=concurrent.futures.FIRST_COMPLETED,
                 timeout=0.1)
+
+            # We need to read the enqueued events before dealing with the done futures. If
+            # a message has finished generating events, and the events are only enqueued
+            # they are not yet visible in the `done_check()` so our root process might
+            # inadvertently exit to soon, before trying to clone the enqueued events.
+            self.read_enqueued_events()
 
             for future in done_futures:
                 token_id = self.futures[future]
@@ -264,8 +268,6 @@ class ProcessExecutor:
                         "error": traceback.format_exc(),
                         "failed_event": self.events[token_id]
                     })
-
-            self.read_enqueued_events()
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
