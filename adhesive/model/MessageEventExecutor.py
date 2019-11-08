@@ -41,6 +41,7 @@ class MessageEventExecutor:
                                          event_name_parsed)
 
             for event_data in self.execution_message_event.code(self.root_event.context, *params):
+                # FIXME use an enqeue mechanism so I don't wrap all in rw locks
                 new_event = self.clone_event(
                     self.root_event,
                     self.message_event,

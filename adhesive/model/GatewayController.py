@@ -82,6 +82,7 @@ def eval_edge(condition: str,
               event: ActiveEvent) -> Any:
     # FIXME: for some reason if this is in the get_eval_data() the script
     # task executions are failing.
+    # FIXME: use the yaml parsing, or just another Data object?
     eval_data = addict.Dict(token_utils.get_eval_data(event.context))
 
     return eval(condition, globals(), eval_data)

@@ -1,10 +1,40 @@
+import copy
 import uuid
 from typing import Optional
+import logging
 
 from adhesive.execution import token_utils
 from adhesive.graph.ProcessTask import ProcessTask
-from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine
+from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine, ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
+from adhesive.execution.ExecutionLoop import parent_loop_id, loop_id, ExecutionLoop
+from adhesive.consoleui.color_print import red
+from adhesive import config
+
+LOG = logging.getLogger(__name__)
+
+DONE_STATES = {
+    ActiveEventState.DONE_CHECK,
+    ActiveEventState.DONE_END_TASK,
+    ActiveEventState.DONE,
+}
+
+ACTIVE_STATES = {
+    ActiveEventState.NEW,
+    ActiveEventState.PROCESSING,
+    ActiveEventState.WAITING,
+    ActiveEventState.RUNNING,
+    ActiveEventState.ERROR,
+    ActiveEventState.ROUTING,
+}
+
+# When waiting for predecessors it only makes sense to collapse events
+# into ActiveEvents only when the event is not already running.
+PRE_RUN_STATES = {
+    ActiveEventState.NEW,
+    ActiveEventState.PROCESSING,
+    ActiveEventState.WAITING,
+}
 
 
 class ActiveEvent:
@@ -92,6 +122,71 @@ class ActiveEvent:
         # the task.token_id should be the same as the self.texecutionoken_id
         return f"ActiveEvent({self.token_id}, {self.state.state}): " \
                f"({self.task.id}):{self.context.task_name}"
+
+
+def is_parent(self,
+              *,
+              parent_element: ActiveEvent,
+              child_element: ActiveEvent) -> bool:
+    parent_id = child_element.parent_id
+
+    while parent_id:
+        if parent_id == parent_element.token_id:
+            return True
+
+        parent_id = self.events[parent_id].parent_id
+
+    return False
+
+
+def is_potential_predecessor(self, event: ActiveEvent, e: ActiveEvent) -> bool:
+    # if the events are not in the same process they're not related
+    if event.parent_id != e.parent_id:
+        return False
+
+    if e.state.state not in ACTIVE_STATES:
+        return False
+
+    if e.task == event.task:
+        return False
+
+    # When we have a loop on an element, if it's already running (i.e. not
+    # initial), it means we already evaluated we don't have any predecessors
+    if event.context.loop and \
+            event.context.loop.task.id == event.task.id and \
+            event.context.loop.index >= 0:
+        return False
+
+    return loop_id(e) == loop_id(event)
+
+
+def deep_copy_event(e: ActiveEvent) -> ActiveEvent:
+    """
+    We deepcopy everything except the workspace.
+    :param e:
+    :return:
+    """
+    try:
+        workspace = e.context.workspace
+        e.context.workspace = None
+        result = copy.deepcopy(e)
+
+        result.context.workspace = workspace
+
+        return result
+    except Exception as err:
+        LOG.error(red("Unable to serialize token", bold=True))
+        LOG.error(red(f"Data: {e.context.data._data}"))
+        raise err
+
+
+def noop_copy_event(e: ActiveEvent) -> ActiveEvent:
+    return e
+
+
+copy_event = noop_copy_event \
+        if config.current.parallel_processing == "process" else \
+        deep_copy_event
 
 
 from adhesive.execution.ExecutionToken import ExecutionToken
