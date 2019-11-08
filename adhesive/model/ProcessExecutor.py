@@ -1,3 +1,4 @@
+import collections
 import logging
 import os
 import sys
@@ -5,6 +6,7 @@ import time
 import traceback
 import uuid
 from concurrent.futures import Future
+from threading import Lock
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
 
 import adhesive
@@ -21,6 +23,7 @@ from adhesive.graph.Event import Event
 from adhesive.graph.Gateway import Gateway
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
+from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
@@ -109,11 +112,14 @@ class ProcessExecutor:
         self.futures: Dict[Any, str] = dict()
         self.ut_provider = ut_provider
 
+        self.enqueued_events: List[Tuple[Event, Any]] = list()
+        self.enqueued_events_lock = Lock()
+
         self.config = ProcessExecutorConfig(wait_tasks=wait_tasks)
         self.execution_id = str(uuid.uuid4())
 
-    # FIXME: remove async. async is's not possible since it would thread switch
-    # and completely screw up log redirection.
+    # FIXME: reintroduce async? Since the tasks are executing on the
+    # thread pool without async, they shouldn't impact log redirection.
     def execute(self,
                 initial_data=None) -> ExecutionData:
         """
@@ -180,11 +186,9 @@ class ProcessExecutor:
                                          event_name_parsed)
 
             def callback_code(event_data):
-                new_event = self.clone_event(
-                        root_event,
-                        message_event,
-                        parent_id=root_event.token_id)
-                new_event.context.data.event = event_data
+                self.enqueue_event(
+                    event=message_event,
+                    event_data=event_data)
 
             mevent.code(root_event.context, callback_code, *params)
 
@@ -196,7 +200,7 @@ class ProcessExecutor:
                 root_event=root_event,
                 message_event=self.adhesive_process.process.message_events[mevent_id],
                 execution_message_event=mevent,
-                clone_event=self.clone_event)
+                enqueue_event=self.enqueue_event)
 
             self.futures[executor.future] = "__message_executor"
 
@@ -208,6 +212,8 @@ class ProcessExecutor:
         being processed) that in turn might generate new events.
         :return: data from the last execution token.
         """
+        self.read_enqueued_events()
+
         while self.events or self.futures:
             pending_events = list(filter(lambda e: e.state.state == ActiveEventState.NEW,
                                          self.events.values()))
@@ -259,6 +265,8 @@ class ProcessExecutor:
                         "failed_event": self.events[token_id]
                     })
 
+            self.read_enqueued_events()
+
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
         """
@@ -293,6 +301,33 @@ class ProcessExecutor:
         LOG.debug(f"Unregister {event}")
 
         del self.events[event.token_id]
+
+    def enqueue_event(self,
+                      *,
+                      event: Event,
+                      event_data: Any) -> None:
+        with self.enqueued_events_lock:
+            self.enqueued_events.append((event, event_data))
+
+    def read_enqueued_events(self) -> None:
+        """
+        Reads all the events that are being injected from different threads,
+        and clone them from the root_event into our process.
+        :return:
+        """
+        new_events = []
+
+        # we release the lock ASAP
+        with self.enqueued_events_lock:
+            new_events.extend(self.enqueued_events)
+            self.enqueued_events.clear()
+
+        for event, event_data in new_events:
+            new_event = self.clone_event(
+                self.root_event,
+                event,
+                parent_id=self.root_event.token_id)
+            new_event.context.data.event = event_data
 
     def get_parent(self,
                    token_id: str) -> ActiveEvent:
