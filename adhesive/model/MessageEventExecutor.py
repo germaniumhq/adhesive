@@ -17,14 +17,17 @@ class MessageEventExecutor:
                  root_event: ActiveEvent,
                  message_event: MessageEvent,
                  execution_message_event: ExecutionMessageEvent,
-                 clone_event) -> None:
+                 enqueue_event) -> None:
         self.id = str(uuid.uuid4())
 
-        self.root_event = root_event
+
+        self.root_event = root_event         # Used only to print the task name
         self.message_event = message_event
         self.execution_message_event = execution_message_event
-        self.clone_event = clone_event
+        self.enqueue_event = enqueue_event
 
+        # Future used to signal the termination of the message ingestion, so the
+        # process can finish.
         self.future = Future()
 
         Thread(target=self.run_thread_loop).start()
@@ -41,12 +44,10 @@ class MessageEventExecutor:
                                          event_name_parsed)
 
             for event_data in self.execution_message_event.code(self.root_event.context, *params):
-                new_event = self.clone_event(
-                    self.root_event,
-                    self.message_event,
-                    parent_id=self.root_event.token_id)
-
-                new_event.context.data.event = event_data
+                self.enqueue_event(
+                    event=self.message_event,
+                    event_data=event_data
+                )
         except Exception as e:
             LOG.error(red("Failed ") + red(event_name_parsed, bold=True))
             LOG.debug(e)

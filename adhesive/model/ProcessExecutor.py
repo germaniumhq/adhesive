@@ -1,11 +1,12 @@
-import copy
+import collections
 import logging
 import os
 import sys
+import time
 import traceback
 import uuid
-import time
 from concurrent.futures import Future
+from threading import Lock
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
 
 import adhesive
@@ -15,13 +16,14 @@ from adhesive.execution import token_utils
 from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLane import ExecutionLane
-from adhesive.execution.ExecutionLoop import parent_loop_id, loop_id, ExecutionLoop
+from adhesive.execution.ExecutionLoop import loop_id
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.call_script_task import call_script_task
 from adhesive.graph.Event import Event
 from adhesive.graph.Gateway import Gateway
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
+from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
@@ -48,35 +50,13 @@ from adhesive.model import loop_controller
 
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
-from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.model.ActiveEvent import ActiveEvent, PRE_RUN_STATES, is_potential_predecessor, copy_event, DONE_STATES
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 
 import signal
 
+
 LOG = logging.getLogger(__name__)
-
-DONE_STATES = {
-    ActiveEventState.DONE_CHECK,
-    ActiveEventState.DONE_END_TASK,
-    ActiveEventState.DONE,
-}
-
-ACTIVE_STATES = {
-    ActiveEventState.NEW,
-    ActiveEventState.PROCESSING,
-    ActiveEventState.WAITING,
-    ActiveEventState.RUNNING,
-    ActiveEventState.ERROR,
-    ActiveEventState.ROUTING,
-}
-
-# When waiting for predecessors it only makes sense to collapse events
-# into ActiveEvents only when the event is not already running.
-PRE_RUN_STATES = {
-    ActiveEventState.NEW,
-    ActiveEventState.PROCESSING,
-    ActiveEventState.WAITING,
-}
 
 
 def raise_unhandled_exception(_ev):
@@ -107,70 +87,6 @@ def raise_unhandled_exception(_ev):
     sys.exit(1)
 
 
-def is_parent(self,
-              *,
-              parent_element: ActiveEvent,
-              child_element: ActiveEvent) -> bool:
-    parent_id = child_element.parent_id
-
-    while parent_id:
-        if parent_id == parent_element.token_id:
-            return True
-
-        parent_id = self.events[parent_id].parent_id
-
-    return False
-
-
-def is_potential_predecessor(self, event: ActiveEvent, e: ActiveEvent) -> bool:
-    # if the events are not in the same process they're not related
-    if event.parent_id != e.parent_id:
-        return False
-
-    if e.state.state not in ACTIVE_STATES:
-        return False
-
-    if e.task == event.task:
-        return False
-
-    # When we have a loop on an element, if it's already running (i.e. not
-    # initial), it means we already evaluated we don't have any predecessors
-    if event.context.loop and \
-            event.context.loop.task.id == event.task.id and \
-            event.context.loop.index >= 0:
-        return False
-
-    return loop_id(e) == loop_id(event)
-
-
-def deep_copy_event(e: ActiveEvent) -> ActiveEvent:
-    """
-    We deepcopy everything except the workspace.
-    :param e:
-    :return:
-    """
-    try:
-        workspace = e.context.workspace
-        e.context.workspace = None
-        result = copy.deepcopy(e)
-
-        result.context.workspace = workspace
-
-        return result
-    except Exception as err:
-        LOG.error(red("Unable to serialize token", bold=True))
-        LOG.error(red(f"Data: {e.context.data._data}"))
-        raise err
-
-def noop_copy_event(e: ActiveEvent) -> ActiveEvent:
-    return e
-
-
-copy_event = noop_copy_event \
-        if config.current.parallel_processing == "process" else \
-        deep_copy_event
-
-
 class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -196,11 +112,14 @@ class ProcessExecutor:
         self.futures: Dict[Any, str] = dict()
         self.ut_provider = ut_provider
 
+        self.enqueued_events: List[Tuple[Event, Any]] = list()
+        self.enqueued_events_lock = Lock()
+
         self.config = ProcessExecutorConfig(wait_tasks=wait_tasks)
         self.execution_id = str(uuid.uuid4())
 
-    # FIXME: remove async. async is's not possible since it would thread switch
-    # and completely screw up log redirection.
+    # FIXME: reintroduce async? Since the tasks are executing on the
+    # thread pool without async, they shouldn't impact log redirection.
     def execute(self,
                 initial_data=None) -> ExecutionData:
         """
@@ -267,11 +186,9 @@ class ProcessExecutor:
                                          event_name_parsed)
 
             def callback_code(event_data):
-                new_event = self.clone_event(
-                        root_event,
-                        message_event,
-                        parent_id=root_event.token_id)
-                new_event.context.data.event = event_data
+                self.enqueue_event(
+                    event=message_event,
+                    event_data=event_data)
 
             mevent.code(root_event.context, callback_code, *params)
 
@@ -283,7 +200,7 @@ class ProcessExecutor:
                 root_event=root_event,
                 message_event=self.adhesive_process.process.message_events[mevent_id],
                 execution_message_event=mevent,
-                clone_event=self.clone_event)
+                enqueue_event=self.enqueue_event)
 
             self.futures[executor.future] = "__message_executor"
 
@@ -317,6 +234,12 @@ class ProcessExecutor:
                 self.futures.keys(),
                 return_when=concurrent.futures.FIRST_COMPLETED,
                 timeout=0.1)
+
+            # We need to read the enqueued events before dealing with the done futures. If
+            # a message has finished generating events, and the events are only enqueued
+            # they are not yet visible in the `done_check()` so our root process might
+            # inadvertently exit to soon, before trying to clone the enqueued events.
+            self.read_enqueued_events()
 
             for future in done_futures:
                 token_id = self.futures[future]
@@ -380,6 +303,33 @@ class ProcessExecutor:
         LOG.debug(f"Unregister {event}")
 
         del self.events[event.token_id]
+
+    def enqueue_event(self,
+                      *,
+                      event: Event,
+                      event_data: Any) -> None:
+        with self.enqueued_events_lock:
+            self.enqueued_events.append((event, event_data))
+
+    def read_enqueued_events(self) -> None:
+        """
+        Reads all the events that are being injected from different threads,
+        and clone them from the root_event into our process.
+        :return:
+        """
+        new_events = []
+
+        # we release the lock ASAP
+        with self.enqueued_events_lock:
+            new_events.extend(self.enqueued_events)
+            self.enqueued_events.clear()
+
+        for event, event_data in new_events:
+            new_event = self.clone_event(
+                self.root_event,
+                event,
+                parent_id=self.root_event.token_id)
+            new_event.context.data.event = event_data
 
     def get_parent(self,
                    token_id: str) -> ActiveEvent:
@@ -471,19 +421,19 @@ class ProcessExecutor:
 
         for task_definition in self.adhesive_process.task_definitions:
             if not task_definition.used:
-                LOG.warn(f"Unused task: {task_definition}")
+                LOG.warning(f"Unused task: {task_definition}")
 
         for lane_definition in self.adhesive_process.lane_definitions:
             if not lane_definition.used:
-                LOG.warn(f"Unused lane: {lane_definition}")
+                LOG.warning(f"Unused lane: {lane_definition}")
 
         for message_event in self.adhesive_process.message_definitions:
             if not message_event.used:
-                LOG.warn(f"Unused message: {message_event}")
+                LOG.warning(f"Unused message: {message_event}")
 
         for message_event_callback in self.adhesive_process.message_callback_definitions:
             if not message_event_callback.used:
-                LOG.warn(f"Unused message: {message_event_callback}")
+                LOG.warning(f"Unused message: {message_event_callback}")
 
         if unmatched_items:
             display_unmatched_items(unmatched_items.values())

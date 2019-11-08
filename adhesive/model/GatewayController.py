@@ -1,5 +1,7 @@
 from typing import List, cast, Any
 
+import addict
+
 from adhesive.graph.Edge import Edge
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Gateway import Gateway
@@ -78,7 +80,10 @@ class GatewayController:
 
 def eval_edge(condition: str,
               event: ActiveEvent) -> Any:
-    eval_data = token_utils.get_eval_data(event.context)
+    # FIXME: for some reason if this is in the get_eval_data() the script
+    # task executions are failing.
+    # FIXME: use the yaml parsing, or just another Data object?
+    eval_data = addict.Dict(token_utils.get_eval_data(event.context))
 
     return eval(condition, globals(), eval_data)
 

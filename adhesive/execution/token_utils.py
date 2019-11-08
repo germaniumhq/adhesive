@@ -1,7 +1,5 @@
-from typing import List, Dict, Optional
-
-import traceback
 import logging
+from typing import List, Dict, Optional
 
 from .ExecutionToken import ExecutionToken
 

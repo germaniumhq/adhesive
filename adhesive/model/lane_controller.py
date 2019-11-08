@@ -134,7 +134,8 @@ def create_lane_for_event(process: AdhesiveProcess,
         if not isinstance(workspace, Workspace):
             raise Exception(f"The lane yielded the wrong type {type(workspace)} instead of a Workspace")
 
-        if execution_lane_id:
+        # We have to create the lane being called from a different lane?
+        if execution_lane_id and execution_lane_id.key != DEFAULT_LANE_ID.key:
             parent_lane = process.lanes[execution_lane_id.key]
         else:
             parent_lane = None
