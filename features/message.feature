@@ -16,3 +16,9 @@ Scenario: Run a workflow that generates 10 messages
     And there is in the stdout the text 'event data: 8'
     And there is in the stdout the text 'event data: 9'
 
+
+@noprocess
+Scenario: Run the deduplication process
+    When I run adhesive on 'processes/message/deduplication'
+    Then the adhesive process has passed
+

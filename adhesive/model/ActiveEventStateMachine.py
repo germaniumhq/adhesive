@@ -218,6 +218,10 @@ class ActiveEventStateMachine(object):
         if self._currentState and \
                 not transition_set.get(STATE_INDEX[self._currentState.value] << 14 | STATE_INDEX[targetState.value]):
             LOG.warning("No transition exists between %s -> %s." % (self._currentState.value, targetState.value))
+
+            raise Exception("No transition exists between %s -> %s." %
+                            (self._currentState.value, targetState.value))
+
             return self._currentState
 
         if self._current_change_state_event:
