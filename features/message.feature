@@ -22,3 +22,7 @@ Scenario: Run the deduplication process
     When I run adhesive on 'processes/message/deduplication'
     Then the adhesive process has passed
 
+@noprocess
+Scenario: Run the deduplication process
+    When I run adhesive on 'processes/message/deduplication-async'
+    Then the adhesive process has passed
