@@ -87,6 +87,10 @@ def raise_unhandled_exception(_ev):
     sys.exit(1)
 
 
+class ActiveTimer:
+    pass
+
+
 class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -111,6 +115,8 @@ class ProcessExecutor:
         self.events: Dict[str, ActiveEvent] = dict()
         self.futures: Dict[Any, str] = dict()
         self.ut_provider = ut_provider
+
+        self.active_timers: Dict[str, ActiveTimer] = dict()
 
         self.enqueued_events: List[Tuple[Event, Any]] = list()
         self.enqueued_events_lock = Lock()
