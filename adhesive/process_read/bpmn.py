@@ -2,9 +2,10 @@ import re
 from typing import Tuple, Optional
 from xml.etree import ElementTree
 
+from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.Event import Event
 from adhesive.graph.ProcessTask import ProcessTask
-from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
+from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
@@ -299,8 +300,30 @@ def process_boundary_task(p: Process, xml_node) -> None:
 
             return
 
+        if node_name == "timerEventDefinition":
+            read_timer_event_definition(p, xml_node, task_name)
+            return
+
+
     raise Exception("Unable to find the type of the boundary event. Only "
-                    "<errorEventDefinition> is supported.")
+                    "<errorEventDefinition>, and <timerEventDefinition> are supported.")
+
+
+def read_timer_event_definition(p, xml_node, task_name):
+    boundary_task = ErrorBoundaryEvent(
+        parent_process=p,
+        id=xml_node.get("id"),
+        name=task_name)
+
+    boundary_task.attached_task_id = xml_node.get(
+        "attachedToRef", default="not attached")
+
+    boundary_task.cancel_activity = get_boolean(
+        xml_node, "cancelActivity", True)
+    boundary_task.parallel_multiple = get_boolean(
+        xml_node, "parallelMultiple", True)
+
+    p.add_boundary_event(boundary_task)
 
 
 def process_node_start_event(p: Process, xml_node) -> None:

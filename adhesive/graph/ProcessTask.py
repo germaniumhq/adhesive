@@ -1,7 +1,8 @@
-from typing import Optional
+from typing import Optional, Set
 
 from adhesive.graph.Loop import Loop
 from adhesive.graph.ProcessNode import ProcessNode
+from adhesive.graph.TimerBoundaryEvent import TimerBoundaryEvent
 
 
 class ProcessTask(ProcessNode):
@@ -22,7 +23,15 @@ class ProcessTask(ProcessNode):
             parent_process=parent_process)
 
         self.error_task: Optional['ErrorBoundaryEvent'] = None
+        self.timer_events: Optional[Set[TimerBoundaryEvent]] = None
+
         self.loop: Optional[Loop] = None
+
+    def add_timer(self, timer_boundary_event: TimerBoundaryEvent) -> None:
+        if not self.timer_events:
+            self.timer_events = set()
+
+        self.timer_events.add(timer_boundary_event)
 
     def __str__(self) -> str:
         return f"ProcessTask({self.id}): {self.name}"
