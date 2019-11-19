@@ -195,11 +195,16 @@ class TestReadingBpmn(unittest.TestCase):
     def test_reading_event_timeouts(self) -> None:
         process = read_bpmn_file("test/adhesive/xml/event-timeout.bpmn")
 
-        self.assertEqual(3, len(process.tasks))
-        self.assertEqual(2, len(process.edges))
-        self.assertEqual(0, len(process.start_events))
-        self.assertEqual(1, len(process.message_events))
-        self.assertEqual(1, len(process.end_events))
+        self.assertEqual(11, len(process.tasks))
+        self.assertEqual(9, len(process.edges))
+        self.assertEqual(1, len(process.start_events))
+        self.assertEqual(0, len(process.message_events))
+        self.assertEqual(2, len(process.end_events))
+
+        evented_task = process.tasks["_3"]
+
+        self.assertTrue(evented_task.timer_events)
+        self.assertEqual(5, len(evented_task.timer_events))
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):
