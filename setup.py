@@ -8,7 +8,7 @@ packages = find_packages()
 
 setup(
     name='adhesive',
-    version='0.1.master',
+    version='0.1.feature_publish-docker-image',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -20,6 +20,7 @@ setup(
         ]
     },
     install_requires=[
+        "addict",
         "networkx==2.3",
         "npyscreen==4.10.5",
         "colorama==0.4.1",
