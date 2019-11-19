@@ -91,6 +91,8 @@ def is_release_version(context):
         command="version-manager --tag",
         capture_stdout=True).strip()
 
+    context.data.current_version = current_version
+
     if ge_git.get_tag_version(current_version):
         context.data.release_version = True
     else:
@@ -118,4 +120,20 @@ def publish_to_pypi(context, registry):
             w.run(f"python setup.py bdist_wheel upload -r {registry}")
 
 
+@adhesive.task('Build Docker Image')
+def build_docker_image(context):
+    context.workspace.run(f"""
+        docker build -t germaniumhq/adhesive germaniumhq/adhesive:{context.data.current_version} .
+    """)
+
+
+@adhesive.task('Publish Docker Image')
+def publish_docker_image(context):
+    context.workspace.run(f"""
+        docker push germaniumhq/adhesive:{context.data.current_version}
+        docker push germaniumhq/adhesive
+    """)
+
+
 adhesive.bpmn_build("adhesive-self.bpmn")
+
