@@ -123,15 +123,18 @@ def publish_to_pypi(context, registry):
 @adhesive.task('Build Docker Image')
 def build_docker_image(context):
     context.workspace.run(f"""
-        docker build -t germaniumhq/adhesive germaniumhq/adhesive:{context.data.current_version} .
+        docker build -t germaniumhq/adhesive \\
+                     -t germaniumhq/adhesive:{context.data.current_version} \\
+                     .
     """)
 
 
+# FIXME: use secrets
 @adhesive.task('Publish Docker Image')
 def publish_docker_image(context):
     context.workspace.run(f"""
         docker push germaniumhq/adhesive:{context.data.current_version}
-        docker push germaniumhq/adhesive
+        docker push germaniumhq/adhesive:latest
     """)
 
 
