@@ -8,7 +8,7 @@ packages = find_packages()
 
 setup(
     name='adhesive',
-    version='0.1.feature_publish-docker-image',
+    version='0.11.4',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
