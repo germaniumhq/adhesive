@@ -6,7 +6,7 @@ from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NamedItem import NamedItem
-from adhesive.graph.TimerBoundaryEvent import TimerBoundaryEvent
+from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 from .Edge import Edge
 from .EndEvent import EndEvent
 from .Lane import Lane

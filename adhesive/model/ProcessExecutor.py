@@ -1,4 +1,3 @@
-import collections
 import logging
 import os
 import sys
@@ -7,7 +6,9 @@ import traceback
 import uuid
 from concurrent.futures import Future
 from threading import Lock
-from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
+from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set
+
+import schedule
 
 import adhesive
 from adhesive import logredirect, ExecutionMessageEvent, ExecutionMessageCallbackEvent
@@ -23,7 +24,6 @@ from adhesive.graph.Event import Event
 from adhesive.graph.Gateway import Gateway
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
-from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
@@ -32,6 +32,8 @@ from adhesive.model.GatewayController import GatewayController
 from adhesive.model.MessageEventExecutor import MessageEventExecutor
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_items
+from adhesive.model.time.ActiveTimer import ActiveTimer
+from adhesive.model.time.active_timer_factory import create_active_timer
 from adhesive.storage.ensure_folder import get_folder
 
 T = TypeVar('T')
@@ -87,10 +89,6 @@ def raise_unhandled_exception(_ev):
     sys.exit(1)
 
 
-class ActiveTimer:
-    pass
-
-
 class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -116,7 +114,7 @@ class ProcessExecutor:
         self.futures: Dict[Any, str] = dict()
         self.ut_provider = ut_provider
 
-        self.active_timers: Dict[str, ActiveTimer] = dict()
+        self.active_timers: Dict[str, Set[ActiveTimer]] = dict()
 
         self.enqueued_events: List[Tuple[Event, Any]] = list()
         self.enqueued_events_lock = Lock()
@@ -275,6 +273,9 @@ class ProcessExecutor:
                         "failed_event": self.events[token_id]
                     })
 
+            # we evaluate all timers that might still be pending
+            schedule.run_pending()
+
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
         """
@@ -307,6 +308,12 @@ class ProcessExecutor:
         lane_controller.deallocate_workspace(self.adhesive_process, event)
 
         LOG.debug(f"Unregister {event}")
+
+        # We unregister all the timers for this token.
+        timers = self.active_timers.get(event.token_id, None)
+        if timers:
+            schedule.clear(event.token_id)
+            del self.active_timers[event.token_id]
 
         del self.events[event.token_id]
 
@@ -581,6 +588,17 @@ class ProcessExecutor:
                 LOG.info(yellow("Run  ") + yellow(event.context.task_name, bold=True))
             except Exception as e:
                 raise Exception(f"Failure on {event.context.task_name}", e)
+
+            # When we start running, we must register now timer events against the
+            # schedule
+            if isinstance(event.task, ProcessTask) and event.task.timer_events:
+                timers = set()
+                self.active_timers[event.token_id] = timers
+
+                for timer_event in event.task.timer_events:
+                    timers.add( create_active_timer(
+                        event_id=event.token_id,
+                        boundary_event_definition=timer_event) )
 
             if isinstance(event.task, Process):
                 for start_task in event.task.start_events.values():

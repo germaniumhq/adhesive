@@ -2,13 +2,11 @@ import re
 from typing import Tuple, Optional
 from xml.etree import ElementTree
 
-from adhesive.graph.CycleTimerBoundaryEvent import CycleTimerBoundaryEvent
-from adhesive.graph.DateTimerBoundaryEvent import DateTimerBoundaryEvent
-from adhesive.graph.DurationTimerBoundaryEvent import DurationTimerBoundaryEvent
+from adhesive.graph.time.CycleTimerBoundaryEvent import CycleTimerBoundaryEvent
+from adhesive.graph.time.DateTimerBoundaryEvent import DateTimerBoundaryEvent
+from adhesive.graph.time.DurationTimerBoundaryEvent import DurationTimerBoundaryEvent
 from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
-from adhesive.graph.Event import Event
 from adhesive.graph.ProcessTask import ProcessTask
-from adhesive.graph.BoundaryEvent import BoundaryEvent
 from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent

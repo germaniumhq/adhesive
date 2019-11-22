@@ -1,5 +1,8 @@
-from adhesive.graph.TimerBoundaryEvent import TimerBoundaryEvent
+import datetime
+import time
+
 from adhesive.graph.time.ParsedDateDefinition import ParsedDateDefinition
+from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 
 
 class DateTimerBoundaryEvent(TimerBoundaryEvent):
@@ -16,3 +19,11 @@ class DateTimerBoundaryEvent(TimerBoundaryEvent):
         )
 
         self.definition = ParsedDateDefinition.from_str(expression)
+
+    def total_seconds(self) -> int:
+        # Currently we're computing a seconds offset to find out
+        # when to fire the event.
+        now = time.time()
+        date_seconds = (self.definition.date - datetime.datetime(1970,1,1)).total_seconds()
+
+        return date_seconds - now

@@ -2,7 +2,7 @@ from typing import Optional, Set
 
 from adhesive.graph.Loop import Loop
 from adhesive.graph.ProcessNode import ProcessNode
-from adhesive.graph.TimerBoundaryEvent import TimerBoundaryEvent
+from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 
 
 class ProcessTask(ProcessNode):
