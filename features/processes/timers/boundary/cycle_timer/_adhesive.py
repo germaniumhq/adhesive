@@ -1,15 +1,15 @@
 import adhesive
-import time
 import uuid
+import time
 import unittest
 
 
 test = unittest.TestCase()
 
 
-@adhesive.task('Sleep 2 Seconds')
+@adhesive.task('Sleep 3 Seconds')
 def sleep_2_seconds(context):
-    time.sleep(2)
+    time.sleep(2.5)
 
 
 @adhesive.task('Timeout was Called')
@@ -18,8 +18,8 @@ def timeout_was_called(context):
 
 
 data = adhesive.bpmn_build(
-    "one-second-timeout.bpmn",
+    "one-second-timer.bpmn",
     wait_tasks=False)
 
-test.assertTrue(data.timeout_was_called, "Timeout was not called :(")
-test.assertEqual(1, len(data.timeout_was_called), "The timeout should be called only once")
+test.assertTrue(data.timeout_was_called, "Timer was not called :(")
+test.assertEqual(2, len(data.timeout_was_called), "The cycle timer should be called twice")

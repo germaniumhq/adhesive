@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:tns="http://sourceforge.net/bpmn/definitions/_1574399150737" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:yaoqiang="http://bpmn.sourceforge.net" exporter="Yaoqiang BPMN Editor" exporterVersion="5.3" expressionLanguage="http://www.w3.org/1999/XPath" id="_1574399150737" name="" targetNamespace="http://sourceforge.net/bpmn/definitions/_1574399150737" typeLanguage="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://bpmn.sourceforge.net/schemas/BPMN20.xsd">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:yaoqiang="http://bpmn.sourceforge.net" exporter="Yaoqiang BPMN Editor" exporterVersion="5.3" expressionLanguage="http://www.w3.org/1999/XPath" id="_1574399150737" name="" targetNamespace="http://sourceforge.net/bpmn/definitions/_1574399150737" typeLanguage="http://www.w3.org/2001/XMLSchema" xsi:schemaLocation="http://www.omg.org/spec/BPMN/20100524/MODEL http://bpmn.sourceforge.net/schemas/BPMN20.xsd">
   <process id="PROCESS_1" isClosed="false" isExecutable="true" processType="None">
     <extensionElements>
       <yaoqiang:description/>
@@ -23,7 +23,7 @@
       <incoming>_7</incoming>
       <outgoing>_10</outgoing>
     </task>
-    <boundaryEvent attachedToRef="_3" cancelActivity="false" id="_6" name="1s timer" parallelMultiple="false">
+    <boundaryEvent attachedToRef="_3" cancelActivity="true" id="_6" name="1s timer" parallelMultiple="false">
       <extensionElements>
         <yaoqiang:style align="right" labelPosition="left" verticalAlign="middle" verticalLabelPosition="bottom"/>
         <yaoqiang:label offset-x="40.0" offset-y="-16.0" x="0.0" y="1.0"/>
@@ -44,7 +44,7 @@
       <bpmndi:BPMNShape bpmnElement="_2" id="Yaoqiang-_2">
         <dc:Bounds height="32.0" width="32.0" x="100.0" y="90.0"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds height="18.8" width="69.0" x="81.5" y="130.68"/>
+          <dc:Bounds height="18.8" width="69.0" x="81.5" y="130.6"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="_3" id="Yaoqiang-_3">
@@ -56,7 +56,7 @@
       <bpmndi:BPMNShape bpmnElement="_4" id="Yaoqiang-_4">
         <dc:Bounds height="32.0" width="32.0" x="400.0" y="80.0"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds height="18.8" width="62.0" x="385.0" y="120.68"/>
+          <dc:Bounds height="18.8" width="62.0" x="385.0" y="120.6"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="_5" id="Yaoqiang-_5">
@@ -78,18 +78,18 @@
           <dc:Bounds height="18.8" width="6.0" x="337.0" y="92.01"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="_8" id="Yaoqiang-_8">
-        <di:waypoint x="132.329860734269" y="106.0"/>
-        <di:waypoint x="185.33333333333326" y="107.5"/>
-        <bpmndi:BPMNLabel>
-          <dc:Bounds height="18.8" width="6.0" x="155.5" y="97.68"/>
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="_10" id="Yaoqiang-_10">
         <di:waypoint x="380.33333333333326" y="187.5"/>
         <di:waypoint x="400.3368059323975" y="96.0"/>
         <bpmndi:BPMNLabel>
           <dc:Bounds height="18.8" width="6.0" x="387.0" y="132.01"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="_8" id="Yaoqiang-_8">
+        <di:waypoint x="132.329860734269" y="106.0"/>
+        <di:waypoint x="185.33333333333326" y="107.5"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds height="18.8" width="6.0" x="155.5" y="97.68"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="_7" id="Yaoqiang-_7">
