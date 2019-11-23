@@ -36,5 +36,5 @@ class ExecutionBaseTask:
 
         if regex_expressions:
             for regex_expression in regex_expressions:
-                compiled_re = re.compile(generate_matching_re(expression))
+                compiled_re = re.compile(regex_expression)
                 self.re_expressions.append(compiled_re)
