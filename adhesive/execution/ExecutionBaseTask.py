@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Optional, List, Union
+from typing import Callable, Optional, List, Union, Pattern
 
 from adhesive.model.generate_methods import generate_matching_re
 
@@ -25,18 +25,16 @@ class ExecutionBaseTask:
 
         self.regex_expressions = regex_expressions
         self.expressions = expressions
-        self.re_expressions = []  # these one are actually checked
+        self.re_expressions: List[Pattern] = []  # these one are actually checked
         self.code = code
         self.used = False  # this is set by the process executor task validation
 
         if expressions:
             for expression in expressions:
-                self.re_expressions.append(
-                    re.compile(generate_matching_re(expression))
-                )
+                compiled_re = re.compile(generate_matching_re(expression))
+                self.re_expressions.append(compiled_re)
 
         if regex_expressions:
             for regex_expression in regex_expressions:
-                self.re_expressions.append(
-                    re.compile(regex_expression)
-                )
+                compiled_re = re.compile(regex_expression)
+                self.re_expressions.append(compiled_re)

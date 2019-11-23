@@ -3,6 +3,8 @@ import uuid
 from typing import Optional
 import logging
 
+from concurrent.futures import Future
+
 from adhesive.execution import token_utils
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine, ActiveEventState
@@ -59,7 +61,7 @@ class ActiveEvent:
         self.state = ActiveEventStateMachine()
         self.state.active_event = self
 
-        self.future = None
+        self.future: Optional[Future] = None
 
         self.loop_type: Optional[ActiveLoopType] = None
 

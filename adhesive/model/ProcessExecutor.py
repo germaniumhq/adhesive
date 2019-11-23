@@ -1,4 +1,3 @@
-import collections
 import logging
 import os
 import sys
@@ -7,7 +6,9 @@ import traceback
 import uuid
 from concurrent.futures import Future
 from threading import Lock
-from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union
+from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set
+
+import schedule
 
 import adhesive
 from adhesive import logredirect, ExecutionMessageEvent, ExecutionMessageCallbackEvent
@@ -23,15 +24,17 @@ from adhesive.graph.Event import Event
 from adhesive.graph.Gateway import Gateway
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
-from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.WaitingGateway import WaitingGateway
+from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.MessageEventExecutor import MessageEventExecutor
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.generate_methods import display_unmatched_items
+from adhesive.model.time.ActiveTimer import ActiveTimer
+from adhesive.model.time.active_timer_factory import create_active_timer
 from adhesive.storage.ensure_folder import get_folder
 
 T = TypeVar('T')
@@ -93,8 +96,8 @@ class ProcessExecutor:
     """
     pool_size = int(config.current.pool_size) if config.current.pool_size else None
     pool = concurrent.futures.ProcessPoolExecutor(max_workers=pool_size) \
-            if config.current.parallel_processing == "process" \
-            else concurrent.futures.ThreadPoolExecutor(max_workers=pool_size)
+        if config.current.parallel_processing == "process" \
+        else concurrent.futures.ThreadPoolExecutor(max_workers=pool_size)
 
     def __init__(self,
                  process: AdhesiveProcess,
@@ -112,6 +115,8 @@ class ProcessExecutor:
         self.futures: Dict[Any, str] = dict()
         self.ut_provider = ut_provider
 
+        self.active_timers: Dict[str, Set[ActiveTimer]] = dict()
+
         self.enqueued_events: List[Tuple[Event, Any]] = list()
         self.enqueued_events_lock = Lock()
 
@@ -127,7 +132,7 @@ class ProcessExecutor:
         generating for forked events.
         """
         process = self.adhesive_process.process
-        self.tasks_impl: Dict[str, ExecutionTask] = dict()
+        self.tasks_impl = dict()
 
         self._validate_tasks(process)
 
@@ -263,11 +268,14 @@ class ProcessExecutor:
                 try:
                     context = future.result()
                     self.events[token_id].state.route(context)
-                except Exception as e:
+                except Exception:
                     self.events[token_id].state.error({
                         "error": traceback.format_exc(),
                         "failed_event": self.events[token_id]
                     })
+
+            # we evaluate all timers that might still be pending
+            schedule.run_pending()
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
@@ -301,6 +309,12 @@ class ProcessExecutor:
         lane_controller.deallocate_workspace(self.adhesive_process, event)
 
         LOG.debug(f"Unregister {event}")
+
+        # We unregister all the timers for this token.
+        timers = self.active_timers.get(event.token_id, None)
+        if timers:
+            schedule.clear(event.token_id)
+            del self.active_timers[event.token_id]
 
         del self.events[event.token_id]
 
@@ -464,6 +478,23 @@ class ProcessExecutor:
 
         return None
 
+    def fire_timer(
+            self,
+            parent_token: ActiveEvent,
+            boundary_event: TimerBoundaryEvent) -> None:
+        """
+        Called when a timer was fired. If the event is supposed to be
+        cancelled, it will attempt to cancel it.
+        """
+        self.clone_event(parent_token, boundary_event)
+
+        if boundary_event.cancel_activity:
+            for future, token_id in self.futures.items():
+                if token_id != parent_token.token_id:
+                    continue
+
+                future.cancel()
+
     def clone_event(self,
                     old_event: ActiveEvent,
                     task: ProcessTask,
@@ -576,6 +607,18 @@ class ProcessExecutor:
             except Exception as e:
                 raise Exception(f"Failure on {event.context.task_name}", e)
 
+            # When we start running, we must register now timer events against the
+            # schedule
+            if isinstance(event.task, ProcessTask) and event.task.timer_events:
+                timers: Set[ActiveTimer] = set()
+                self.active_timers[event.token_id] = timers
+
+                for timer_event in event.task.timer_events:
+                    timers.add(create_active_timer(
+                        fire_timer=self.fire_timer,
+                        parent_token=event,
+                        boundary_event_definition=timer_event))
+
             if isinstance(event.task, Process):
                 for start_task in event.task.start_events.values():
                     # this automatically registers our events for execution
@@ -590,7 +633,7 @@ class ProcessExecutor:
                     LOG.fatal(red(error_message, bold=True))
                     raise Exception(error_message)
 
-                future = ProcessExecutor.pool.submit(
+                future: Future[ExecutionToken] = ProcessExecutor.pool.submit(
                     self.tasks_impl[event.task.id].invoke,
                     copy_event(event))
                 self.futures[future] = event.token_id

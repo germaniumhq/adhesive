@@ -2,9 +2,11 @@ import re
 from typing import Tuple, Optional
 from xml.etree import ElementTree
 
-from adhesive.graph.Event import Event
+from adhesive.graph.time.CycleTimerBoundaryEvent import CycleTimerBoundaryEvent
+from adhesive.graph.time.DateTimerBoundaryEvent import DateTimerBoundaryEvent
+from adhesive.graph.time.DurationTimerBoundaryEvent import DurationTimerBoundaryEvent
+from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ProcessTask import ProcessTask
-from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
 from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
@@ -269,9 +271,9 @@ def process_script_task(p: Process, xml_node) -> None:
     p.add_task(task)
 
 
-def process_boundary_task(p: Process, xml_node) -> None:
+def process_boundary_task(p: Process, boundary_event_node) -> None:
     """ Create a Task element from the process """
-    for node in list(xml_node):
+    for node in list(boundary_event_node):
         node_ns, node_name = parse_tag(node)
 
         if node_name in boundary_ignored_elements:
@@ -279,28 +281,78 @@ def process_boundary_task(p: Process, xml_node) -> None:
 
         # node is not ignored, we either found the type
         # or we die with exception.
-        task_name = normalize_name(xml_node.get("name"))
+        task_name = normalize_name(boundary_event_node.get("name"))
 
         if node_name == "errorEventDefinition":
             boundary_task = ErrorBoundaryEvent(
                 parent_process=p,
-                id=xml_node.get("id"),
+                id=boundary_event_node.get("id"),
                 name=task_name)
 
-            boundary_task.attached_task_id = xml_node.get(
+            boundary_task.attached_task_id = boundary_event_node.get(
                 "attachedToRef", default="not attached")
 
             boundary_task.cancel_activity = get_boolean(
-                xml_node, "cancelActivity", True)
+                boundary_event_node, "cancelActivity", True)
             boundary_task.parallel_multiple = get_boolean(
-                xml_node, "parallelMultiple", True)
+                boundary_event_node, "parallelMultiple", True)
 
             p.add_boundary_event(boundary_task)
 
             return
 
+        if node_name == "timerEventDefinition":
+            read_timer_event_definition(process=p,
+                                        boundary_event_node=boundary_event_node,
+                                        timer_event_definition_node=node,
+                                        task_name=task_name)
+            return
+
+
     raise Exception("Unable to find the type of the boundary event. Only "
-                    "<errorEventDefinition> is supported.")
+                    "<errorEventDefinition>, and <timerEventDefinition> are supported.")
+
+
+def read_timer_event_definition(*,
+            process,
+            boundary_event_node,
+            timer_event_definition_node,
+            task_name):
+
+    for node in list(timer_event_definition_node):
+        node_ns, node_name = parse_tag(node)
+
+        if "timeCycle" == node_name:
+            boundary_task = CycleTimerBoundaryEvent(
+                parent_process=process,
+                id=boundary_event_node.get("id"),
+                name=task_name,
+                expression=node.text)
+        elif "timeDuration" == node_name:
+            boundary_task = DurationTimerBoundaryEvent(
+                parent_process=process,
+                id=boundary_event_node.get("id"),
+                name=task_name,
+                expression=node.text)
+        elif "timeDate" == node_name:
+            boundary_task = DateTimerBoundaryEvent(
+                parent_process=process,
+                id=boundary_event_node.get("id"),
+                name=task_name,
+                expression=node.text)
+        elif node_name not in ignored_elements:
+            raise Exception(f"Invalid node <{node_name}>, only <timeCycle>, <timeDuration> "
+                            f"and <timeDate> are supported in a <timerEventDefinition>.")
+
+    boundary_task.attached_task_id = boundary_event_node.get(
+        "attachedToRef", default="not attached")
+
+    boundary_task.cancel_activity = get_boolean(
+        boundary_event_node, "cancelActivity", True)
+    boundary_task.parallel_multiple = get_boolean(
+        boundary_event_node, "parallelMultiple", True)
+
+    process.add_boundary_event(boundary_task)
 
 
 def process_node_start_event(p: Process, xml_node) -> None:

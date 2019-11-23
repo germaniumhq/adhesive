@@ -2,7 +2,7 @@ from typing import cast
 import unittest
 import textwrap
 
-from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
+from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Loop import Loop
@@ -191,6 +191,20 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(0, len(process.start_events))
         self.assertEqual(1, len(process.message_events))
         self.assertEqual(1, len(process.end_events))
+
+    def test_reading_event_timeouts(self) -> None:
+        process = read_bpmn_file("test/adhesive/xml/event-timeout.bpmn")
+
+        self.assertEqual(11, len(process.tasks))
+        self.assertEqual(9, len(process.edges))
+        self.assertEqual(1, len(process.start_events))
+        self.assertEqual(0, len(process.message_events))
+        self.assertEqual(2, len(process.end_events))
+
+        evented_task = process.tasks["_3"]
+
+        self.assertTrue(evented_task.timer_events)
+        self.assertEqual(5, len(evented_task.timer_events))
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):

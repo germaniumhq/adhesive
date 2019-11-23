@@ -2,9 +2,11 @@ from typing import Dict, List, Iterator
 
 import networkx as nx
 
-from adhesive.graph.BoundaryEvent import BoundaryEvent, ErrorBoundaryEvent
+from adhesive.graph.BoundaryEvent import BoundaryEvent
+from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NamedItem import NamedItem
+from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 from .Edge import Edge
 from .EndEvent import EndEvent
 from .Lane import Lane
@@ -92,6 +94,7 @@ class Process(NamedItem):
 
     def add_boundary_event(self, boundary_event: BoundaryEvent) -> None:
         self.add_task(boundary_event)
+
         self._graph.add_edge(
             boundary_event.attached_task_id,
             boundary_event.id,
@@ -99,6 +102,9 @@ class Process(NamedItem):
 
         if isinstance(boundary_event, ErrorBoundaryEvent):
             self._tasks[boundary_event.attached_task_id].error_task = boundary_event
+
+        if isinstance(boundary_event, TimerBoundaryEvent):
+            self._tasks[boundary_event.attached_task_id].add_timer(boundary_event)
 
     def add_edge(self, edge: Edge) -> None:
         """Add an edge into the graph. """
