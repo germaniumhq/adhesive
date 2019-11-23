@@ -1,22 +1,26 @@
-from typing import Optional
+from typing import Optional, Callable
 
 import schedule
 
 from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
+from adhesive.model.ActiveEvent import ActiveEvent
 
 
 class ActiveTimer:
     def __init__(self,
-                 event_id: str,
+                 *,
+                 fire_timer: Callable[[ActiveEvent, TimerBoundaryEvent], None],
+                 parent_token: ActiveEvent,
                  timer_boundary_event: TimerBoundaryEvent) -> None:
-        # FIXME: the active timer event should fire the event with the data
-        # cloned from the initial_event_id.
+        self.fire_timer = fire_timer
+        self.parent_token = parent_token
+
         self.timer_boundary_event = timer_boundary_event
         self.job = schedule\
             .every(timer_boundary_event.total_seconds())\
             .seconds\
-            .tag(event_id)\
+            .tag(parent_token.token_id)\
             .do(self.timer_triggered)
 
-    def timer_triggered(self)  -> Optional[schedule.CancelJob]:
-        raise NotImplementedError("Needs to fire the event")
+    def timer_triggered(self) -> Optional[schedule.CancelJob]:
+        self.fire_timer(self.parent_token, self.timer_boundary_event)

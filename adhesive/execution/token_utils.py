@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict, Optional
 
-from .ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionToken import ExecutionToken
 
 LOG = logging.getLogger(__name__)
 
@@ -9,6 +9,7 @@ LOG = logging.getLogger(__name__)
 # 1. an eval context for functions executions,
 # 2. a naming resolving function
 # 3. a name matching
+
 
 def parse_name(context: ExecutionToken,
                name: str) -> str:
@@ -19,7 +20,7 @@ def parse_name(context: ExecutionToken,
     try:
         eval_data = get_eval_data(context)
         return name.format(**eval_data)
-    except Exception as e:
+    except Exception:
         # LOG.warn(f"Failed to parse name {e}")
         return name
 
@@ -30,9 +31,9 @@ def get_eval_data(context: ExecutionToken) -> Dict:
     eval/exec statement from an execution token.
     """
     evaldata = dict(context.data._data)
-    context = context.as_mapping()
+    context_as_dict = context.as_mapping()
 
-    evaldata.update(context)
+    evaldata.update(context_as_dict)
 
     return evaldata
 
@@ -53,4 +54,3 @@ def matches(re_expressions: List,
             return list(m.groups())
 
     return None
-
