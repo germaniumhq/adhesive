@@ -1,5 +1,9 @@
 #!/bin/sh
 
+echo '#############################################################################'
+echo '# adhesive containerized build starting'
+echo '#############################################################################'
+
 docker run -it \
     --rm \
     -v /tmp:/tmp \
@@ -11,6 +15,6 @@ docker run -it \
     -w $(pwd) \
     -u $(id -u):$(id -g) \
     $(id -G | perl -pe 's/(\d+)/--group-add \1/g') \
-    germaniumhq/adhesive:0.11.3 \
+    germaniumhq/adhesive:0.12.0 \
     adhesive $@
 

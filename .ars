@@ -1,1 +1,4 @@
-{NAME: py3-exe, adhesive: true, arg0: adhesive}
+adhesive: true
+arg0: adhesive
+templates:
+- py3/exe

@@ -333,6 +333,13 @@ simply execute what we want, using the ``run()`` method. After the
 SSH Workspace
 -------------
 
+In order to have ssh, make sure you installed ``adhesive`` with SSH
+support:
+
+.. code:: sh
+
+    pip install -U adhesive[ssh]
+
 To have a SSH Workspace, it’s again the same approach:
 
 .. code:: python

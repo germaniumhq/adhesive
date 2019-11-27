@@ -9,4 +9,4 @@ __pycache__
 *.egg-info
 /.vscode
 /.adhesive
-README.pdf
+/README.pdf

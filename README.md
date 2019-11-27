@@ -305,6 +305,11 @@ statement the container will be teared down automatically.
 SSH Workspace
 -------------
 
+In order to have ssh, make sure you installed `adhesive` with SSH
+support:
+
+    pip install -U adhesive[ssh]
+
 To have a SSH Workspace, it’s again the same approach:
 
     from adhesive.workspace import ssh
