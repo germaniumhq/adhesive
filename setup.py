@@ -6,9 +6,13 @@ with open('README.rst') as readme_file:
 
 packages = find_packages()
 
+extras_require = {
+    'ssh': ['paramiko==2.6.0']
+}
+
 setup(
     name='adhesive',
-    version='0.11.4',
+    version='0.12.0',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -27,8 +31,11 @@ setup(
         "termcolor==1.1.0",
         "termcolor_util==1.0.1",
         "PyYAML >=5.1, <5.2",
-        "paramiko==2.6.0",
-        "click==7.0"],
+        "paramiko==2.6.0         # optional",
+        "click==7.0",
+        "schedule==0.6.0",
+        "python-dateutil==2.8.1"],
+    extras_require=extras_require,
     packages=packages,
     package_data={
         '': ['*.txt', '*.rst']
