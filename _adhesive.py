@@ -9,7 +9,7 @@ from adhesive.workspace import docker
 
 @adhesive.task("Read Parameters")
 def read_parameters(context) -> None:
-    context.data.run_mypy = False
+    context.data.run_mypy = True
     context.data.test_integration = True
 
 
