@@ -1,10 +1,10 @@
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, List
 
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
 class YamlMissing(YamlNavigator):
-    EMPTY_LIST = list()
+    EMPTY_LIST: List[str] = list()
 
     def __init__(self,
                  *args,

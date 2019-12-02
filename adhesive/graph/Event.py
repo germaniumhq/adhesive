@@ -1,5 +1,5 @@
-from adhesive.graph.ProcessNode import ProcessNode
+from adhesive.graph.ExecutableNode import ExecutableNode
 
 
-class Event(ProcessNode):
+class Event(ExecutableNode):
     pass

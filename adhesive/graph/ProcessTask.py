@@ -1,11 +1,11 @@
 from typing import Optional, Set
 
 from adhesive.graph.Loop import Loop
-from adhesive.graph.ProcessNode import ProcessNode
+from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 
 
-class ProcessTask(ProcessNode):
+class ProcessTask(ExecutableNode):
     """
     ProcessTask is anything that has a runnable task.
     """
@@ -36,6 +36,7 @@ class ProcessTask(ProcessNode):
     def __str__(self) -> str:
         return f"ProcessTask({self.id}): {self.name}"
 
+
 # FIXME: this import should be done, for mypy
-# from adhesive.graph.BoundaryEvent import ErrorBoundaryEvent
-# from adhesive.graph.Process import Process
+from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
+from adhesive.graph.Process import Process

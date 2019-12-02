@@ -44,10 +44,10 @@ class Workspace(ABC):
         pass
 
     @abstractmethod
-    def rm(self, path: Optional[str]=None) -> None:
+    def rm(self, path: Optional[str] = None) -> None:
         """
         Recursively remove the file or folder given as path. If no path is sent,
-        the whole workspace will be cleared.
+        the whole `pwd` will be cleared.
 
         :param path:
         :return:
@@ -55,9 +55,10 @@ class Workspace(ABC):
         pass
 
     @abstractmethod
-    def mkdir(self, path: str=None) -> None:
+    def mkdir(self, path: Optional[str] = None) -> None:
         """
-        Create a folder, including all its needed parents.
+        Create a folder, including all its needed parents. If no path is sent,
+        the current `pwd` will be used.
 
         :param path:
         :return:
@@ -139,5 +140,3 @@ class Workspace(ABC):
     @property
     def id(self) -> str:
         return f"{self.execution_id}:{self.token_id}"
-
-

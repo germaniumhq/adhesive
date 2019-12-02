@@ -21,5 +21,5 @@ class ProcessNode(NamedItem):
     def process_id(self) -> str:
         return self.parent_process.id
 
-# from adhesive.graph.Process import Process
 
+from adhesive.graph.Process import Process

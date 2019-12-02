@@ -2,7 +2,7 @@ from typing import Any, Optional
 
 import logging
 
-from adhesive.workspace import Workspace
+from adhesive.workspace.Workspace import Workspace
 from adhesive.execution.ExecutionLaneId import ExecutionLaneId
 
 LOG = logging.getLogger(__name__)
@@ -17,8 +17,8 @@ class AdhesiveLane:
             lane_id: ExecutionLaneId,
             workspace: Workspace,
             generator: Any,
-            parent_lane: Optional['AdhesiveLane']=None) -> None:
-        self.lane_id: str = lane_id
+            parent_lane: Optional['AdhesiveLane'] = None) -> None:
+        self.lane_id = lane_id
         self.workspace = workspace
         self.generator = generator
         self.references = 0

@@ -6,7 +6,7 @@ import sys
 import os
 import logging
 
-from .Workspace import Workspace
+from adhesive.workspace.Workspace import Workspace
 
 LOG = logging.getLogger(__name__)
 
@@ -91,6 +91,8 @@ class SshWorkspace(Workspace):
             if channel:
                 channel.close()
 
+        return None
+
     def write_file(
             self,
             file_name: str,
@@ -99,10 +101,18 @@ class SshWorkspace(Workspace):
         with self.sftp.file(file_name, "w") as f:
             f.write(content)
 
-    def rm(self, path: Optional[str]=None) -> None:
-        self.run(f'rm -fr {path}')
+    def rm(self, path: Optional[str] = None) -> None:
+        if path is None:
+            self.run(f'rm -fr {shlex.quote(self.pwd)}')
+            return
 
-    def mkdir(self, path: str = None) -> None:
+        self.run(f'rm -fr {shlex.quote(path)}')
+
+    def mkdir(self, path: Optional[str] = None) -> None:
+        if path is None:
+            self.run(f'mkdir -p {shlex.quote(self.pwd)}')
+            return
+
         self.run(f'mkdir -p {shlex.quote(path)}')
 
     def copy_to_agent(self,
@@ -129,13 +139,14 @@ class SshWorkspace(Workspace):
             self._sftp.close()
         self.ssh.close()
 
-# TypeError: Can't instantiate abstract class SshWorkspace with abstract methods clone, copy_from_agent, copy_to_agent, mkdir, rm, write_file
+# TypeError: Can't instantiate abstract class SshWorkspace with abstract
+# methods clone, copy_from_agent, copy_to_agent, mkdir, rm, write_file
 
 
 @contextmanager
 def inside(workspace: Workspace,
            ssh: str,
-           **kw: Dict[str, Any]):
+           **kw):
     w = None
 
     try:
@@ -147,4 +158,3 @@ def inside(workspace: Workspace,
     finally:
         if w is not None:
             w._destroy()
-

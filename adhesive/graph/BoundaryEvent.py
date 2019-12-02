@@ -16,3 +16,7 @@ class BoundaryEvent(Event):
 
         self.cancel_activity = True
         self.parallel_multiple = False
+
+
+from adhesive.graph.Process import Process
+

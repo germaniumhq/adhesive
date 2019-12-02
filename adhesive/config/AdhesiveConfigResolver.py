@@ -12,4 +12,4 @@ class AdhesiveConfigResolver:
         self.config = adhesive_config
 
     def __getattr__(self, item: str) -> Any:
-        return self.config.get_attribute(item)
+        return getattr(self.config, item)

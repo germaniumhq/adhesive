@@ -258,6 +258,8 @@ class ActiveEventStateMachine(object):
             assert self._currentState
             return self._currentState
 
+        assert self.active_event
+
         LOG.debug(
             f"Transition {self.active_event.token_id} "
             f"({self.active_event.task.id}):{self.active_event.context.task_name}: "

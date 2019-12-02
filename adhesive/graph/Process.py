@@ -1,4 +1,4 @@
-from typing import Dict, List, Iterator
+from typing import Dict, List, Iterator, cast
 
 import networkx as nx
 
@@ -7,11 +7,12 @@ from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NamedItem import NamedItem
 from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
-from .Edge import Edge
-from .EndEvent import EndEvent
-from .Lane import Lane
-from .ProcessTask import ProcessTask
-from .StartEvent import StartEvent
+from adhesive.graph.Edge import Edge
+from adhesive.graph.EndEvent import EndEvent
+from adhesive.graph.Lane import Lane
+from adhesive.graph.ExecutableNode import ExecutableNode
+from adhesive.graph.ProcessTask import ProcessTask
+from adhesive.graph.StartEvent import StartEvent
 
 
 # FIXME: revisit this since it's probably wrong
@@ -32,7 +33,7 @@ class Process(NamedItem):
 
         self._start_events: Dict[str, StartEvent] = dict()
         self._message_events: Dict[str, MessageEvent] = dict()
-        self._tasks: Dict[str, ProcessTask] = dict()
+        self._tasks: Dict[str, ExecutableNode] = dict()
         self._edges: Dict[str, Edge] = dict()
         self._end_events: Dict[str, EndEvent] = dict()
 
@@ -53,7 +54,7 @@ class Process(NamedItem):
         return self._message_events
 
     @property
-    def tasks(self) -> Dict[str, ProcessTask]:
+    def tasks(self) -> Dict[str, ExecutableNode]:
         return self._tasks
 
     @property
@@ -68,7 +69,7 @@ class Process(NamedItem):
     def end_events(self) -> Dict[str, EndEvent]:
         return self._end_events
 
-    def add_task(self, task: ProcessTask) -> None:
+    def add_task(self, task: ExecutableNode) -> None:
         """ Add a task into the graph. """
         self._tasks[task.id] = task
         self._graph.add_node(task.id)
@@ -101,10 +102,12 @@ class Process(NamedItem):
             _edge=None)
 
         if isinstance(boundary_event, ErrorBoundaryEvent):
-            self._tasks[boundary_event.attached_task_id].error_task = boundary_event
+            process_task = cast(ProcessTask, self._tasks[boundary_event.attached_task_id])
+            process_task.error_task = boundary_event
 
         if isinstance(boundary_event, TimerBoundaryEvent):
-            self._tasks[boundary_event.attached_task_id].add_timer(boundary_event)
+            process_task = cast(ProcessTask, self._tasks[boundary_event.attached_task_id])
+            process_task.add_timer(boundary_event)
 
     def add_edge(self, edge: Edge) -> None:
         """Add an edge into the graph. """
@@ -136,14 +139,14 @@ class Process(NamedItem):
 
         return result
 
-    def has_incoming_edges(self, task: ProcessTask) -> bool:
+    def has_incoming_edges(self, task: ExecutableNode) -> bool:
         for from_node, to_node, data in self._graph.in_edges(task.id, data=True):
             if data["_edge"]:
                 return True
 
         return False
 
-    def has_outgoing_edges(self, task: ProcessTask) -> bool:
+    def has_outgoing_edges(self, task: ExecutableNode) -> bool:
         for from_node, to_node, data in self._graph.out_edges(task.id, data=True):
             if data["_edge"]:
                 return True
@@ -151,8 +154,8 @@ class Process(NamedItem):
         return False
 
     def are_predecessors(self,
-                         task: ProcessTask,
-                         potential_predecessors: Iterator[ProcessTask]) -> bool:
+                         task: ExecutableNode,
+                         potential_predecessors: Iterator[ExecutableNode]) -> bool:
         predecessors = list(potential_predecessors)
         for potential_predecessor in predecessors:
             # FIXME: cross subprocess exceptions are handled as no predecessors
@@ -162,7 +165,7 @@ class Process(NamedItem):
                         potential_predecessor.id,
                         task.id):
                     return True
-            except Exception as e:
+            except Exception:
                 pass
 
         return False

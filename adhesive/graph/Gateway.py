@@ -1,5 +1,5 @@
-from adhesive.graph.ProcessNode import ProcessNode
+from adhesive.graph.ExecutableNode import ExecutableNode
 
 
-class Gateway(ProcessNode):
+class Gateway(ExecutableNode):
     pass
