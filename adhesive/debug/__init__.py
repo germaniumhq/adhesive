@@ -1,4 +1,4 @@
-from adhesive.graph import Process
+from adhesive.graph.Process import Process
 
 
 def write_dot_file(file_name: str,

@@ -5,6 +5,7 @@ from typing import Callable, Any, Optional, Union
 # references to the ActiveEvent
 from adhesive.execution import token_utils
 from adhesive.graph.ProcessTask import ProcessTask
+from adhesive.model.ActiveEvent import ActiveEvent
 
 
 class ExecutionLoop:

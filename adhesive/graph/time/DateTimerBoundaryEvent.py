@@ -8,7 +8,7 @@ from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 class DateTimerBoundaryEvent(TimerBoundaryEvent):
     def __init__(self,
                  *,
-                 parent_process: str,
+                 parent_process: 'Process',
                  id: str,
                  name: str,
                  expression: str) -> None:
@@ -27,3 +27,6 @@ class DateTimerBoundaryEvent(TimerBoundaryEvent):
         date_seconds = (self.definition.date - datetime.datetime(1970,1,1)).total_seconds()
 
         return date_seconds - now
+
+
+from adhesive.graph.Process import Process

@@ -1,15 +1,15 @@
 import abc
-from typing import TypeVar
+from typing import TypeVar, Any, Generic
 
 T = TypeVar('T')
 
 
-class YamlNavigator(abc.ABC):
+class YamlNavigator(abc.ABC, Generic[T]):
     @abc.abstractproperty
     def _raw(self) -> T:
         """
         Gets access to the underlying collection.
-        :return: 
+        :return:
         """
         raise Exception("Not implemented")
 

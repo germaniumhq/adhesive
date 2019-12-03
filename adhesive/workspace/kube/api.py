@@ -1,9 +1,9 @@
-from typing import Optional, Any, Union, Dict, List
+from typing import Optional, Any, Union, Dict, List, cast
 import yaml
 import shlex
 import uuid
 
-from adhesive.workspace import Workspace
+from adhesive.workspace.Workspace import Workspace
 from adhesive.workspace.kube.YamlDict import YamlDict
 from adhesive.workspace.kube.YamlList import YamlList
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
@@ -43,6 +43,8 @@ class KubeApi():
             command,
             capture_stdout=True)
 
+        assert object_data
+
         return YamlDict(
             property_name=f"{{kind:{kind}}}",
             content=yaml.safe_load(object_data))
@@ -79,6 +81,8 @@ class KubeApi():
         object_data = self._workspace.run(
             command,
             capture_stdout=True)
+
+        assert object_data
 
         content = YamlDict(content=yaml.safe_load(object_data))
 
@@ -224,7 +228,7 @@ class KubeApi():
             content = yaml.safe_dump_all(content)
 
         try:
-            self._workspace.write_file(file_name, content)
+            self._workspace.write_file(file_name, cast(str, content))
             self._workspace.run(command)
         finally:
             self._workspace.rm(file_name)

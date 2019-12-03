@@ -1,5 +1,5 @@
 # FIXME: move this to its own library: YamlDict seems a good name
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 import copy
 import yaml
 
@@ -8,7 +8,7 @@ from yaml import SafeDumper
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
-class YamlDict(YamlNavigator):
+class YamlDict(YamlNavigator[Dict[str, Any]]):
     """
     A property navigator that allows accessing a dictionary via
     properties.

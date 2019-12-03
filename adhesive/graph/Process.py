@@ -1,18 +1,18 @@
-from typing import Dict, List, Iterator, cast
+from typing import Dict, List, Iterator, cast, Optional
 
 import networkx as nx
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
-from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
-from adhesive.graph.MessageEvent import MessageEvent
-from adhesive.graph.NamedItem import NamedItem
-from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
-from adhesive.graph.Lane import Lane
+from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ExecutableNode import ExecutableNode
+from adhesive.graph.Lane import Lane
+from adhesive.graph.MessageEvent import MessageEvent
+from adhesive.graph.NamedItem import NamedItem
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.StartEvent import StartEvent
+from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 
 
 # FIXME: revisit this since it's probably wrong
@@ -43,7 +43,7 @@ class Process(NamedItem):
         self._lanes: Dict[str, Lane] = dict()
         self._graph = nx.MultiDiGraph()
 
-        self.error_task = None
+        self.error_task: Optional['ErrorBoundaryEvent'] = None
 
     @property
     def start_events(self) -> Dict[str, StartEvent]:

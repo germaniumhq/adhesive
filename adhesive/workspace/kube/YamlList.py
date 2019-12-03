@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 import copy
 import yaml
 
@@ -7,7 +7,7 @@ import yaml
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
-class YamlList(YamlNavigator):
+class YamlList(YamlNavigator[List[Any]]):
     """
     A property navigator that allows accessing a list and
     correctly wraps potentially nested dictionaries.

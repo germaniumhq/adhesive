@@ -1,12 +1,12 @@
 import logging
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, cast
 
 from adhesive.graph.Edge import Edge
 from adhesive.graph.EndEvent import EndEvent
+from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.graph.Lane import Lane
 from adhesive.graph.Loop import Loop
 from adhesive.graph.Process import Process
-from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.SubProcess import SubProcess
@@ -18,16 +18,18 @@ LOG = logging.getLogger(__name__)
 
 current_id = 0
 
+WiredNode = ExecutableNode
+
 
 class BranchDefinition:
     def __init__(self,
-                 start_task: ProcessTask):
+                 start_task: WiredNode):
         self.start_task = start_task
         self.last_task = start_task
 
 
 class BranchGroup:
-    """
+    """Sub
     A single parallel fork of branches.
     """
     def __init__(self, start_branch: BranchDefinition):
@@ -115,11 +117,10 @@ class BranchEndBuilder:
         """
         sub_process_builder = ProcessBuilder(
             parent_builder=self.process_builder,
-            desired_type=SubProcess,
             name=name,
         )
 
-        self._wire_task_list(sub_process_builder.process,
+        self._wire_task_list(cast(SubProcess, sub_process_builder.process),
                              when=when,
                              loop=loop,
                              lane=lane)
@@ -134,17 +135,17 @@ class BranchEndBuilder:
 
         return self._wire_task_list(new_task, lane=lane)
 
-    def sub_process_end(self, *args, **kw) -> 'ProcessBuilder':
+    def sub_process_end(self) -> 'ProcessBuilder':
         # FIXME: remove in version 1
         LOG.warn("sub_process_end() is deprecated and will be removed in version 1.0. "
                  "Use subprocess_end() instead.")
-        return self.subprocess_end(*args, **kw)
+        return self.subprocess_end()
 
     def subprocess_end(self) -> 'ProcessBuilder':
         return self.process_builder.subprocess_end()
 
     def _wire_task_list(self,
-                        new_task: ProcessTask,
+                        new_task: WiredNode,
                         when: Optional[str] = None,
                         loop: Optional[str] = None,
                         lane: Optional[str] = None):
@@ -154,7 +155,7 @@ class BranchEndBuilder:
         self.process_builder.nested_branches.pop()
 
         return self.process_builder._wire_task_list(
-            last_tasks,
+            cast(List[WiredNode], last_tasks),
             new_task,
             when=when,
             loop=loop,
@@ -164,26 +165,25 @@ class BranchEndBuilder:
 class ProcessBuilder:
     def __init__(self,
                  parent_builder: Optional['ProcessBuilder'],
-                 desired_type=Process,
                  _build: Optional[Callable] = None,
                  name: Optional[str] = None):
         self.parent_builder = parent_builder
 
-        if desired_type == Process:
-            self.process = desired_type(
+        if self.parent_builder is None:
+            self.process = Process(
                 id=next_id(),
                 name="<process>" if name is None else name)
         else:
             self.process = SubProcess(
                 id=next_id(),
                 name="<sub-process>" if name is None else name,
-                parent_process=parent_builder.process)
+                parent_process=self.parent_builder.process)
 
-        self.current_task = StartEvent(
+        self.current_task: WiredNode = StartEvent(
             parent_process=self.process,
             id=next_id(),
             name="<start>")
-        self.pre_current_when_task = self.current_task
+        self.pre_current_when_task: WiredNode = self.current_task
 
         self.process.add_start_event(self.current_task)
 
@@ -258,22 +258,21 @@ class ProcessBuilder:
         """
         sub_process_builder = ProcessBuilder(
             parent_builder=self,
-            desired_type=SubProcess,
             name=name,
         )
 
-        self._wire_task(sub_process_builder.process,
+        self._wire_task(cast(SubProcess, sub_process_builder.process),
                         loop=loop,
                         when=when,
                         lane=lane)
 
         return sub_process_builder
 
-    def sub_process_end(self, *args, **kw) -> 'ProcessBuilder':
+    def sub_process_end(self) -> 'ProcessBuilder':
         # FIXME: remove in version 1
         LOG.warn("sub_process_end() is deprecated and will be removed in version 1.0. "
                  "Use subprocess_end() instead.")
-        return self.subprocess_end(*args, **kw)
+        return self.subprocess_end()
 
     def subprocess_end(self) -> 'ProcessBuilder':
         """
@@ -285,7 +284,6 @@ class ProcessBuilder:
                             "start a subprocess definition.")
 
         self.process_end()
-        self.current_task = self.process
 
         return self.parent_builder
 
@@ -316,7 +314,7 @@ class ProcessBuilder:
         return self._build(*args, **kw)
 
     def _wire_task(self,
-                   new_task: ProcessNode,
+                   new_task: WiredNode,
                    when: Optional[str] = None,
                    loop: Optional[str] = None,
                    lane: Optional[str] = None) -> 'ProcessBuilder':
@@ -328,6 +326,7 @@ class ProcessBuilder:
         :return:
         """
         if loop is not None:
+            assert isinstance(new_task, SubProcess) or isinstance(new_task, ProcessTask)
             new_task.loop = Loop(loop, parallel=True)
 
         if isinstance(new_task, EndEvent):
@@ -379,8 +378,8 @@ class ProcessBuilder:
         return self
 
     def _wire_task_list(self,
-                        previous_tasks: List[ProcessTask],
-                        new_task: ProcessTask,
+                        previous_tasks: List[WiredNode],
+                        new_task: WiredNode,
                         when: Optional[str] = None,
                         loop: Optional[str] = None,
                         lane: Optional[str] = None) -> 'ProcessBuilder':
@@ -393,7 +392,8 @@ class ProcessBuilder:
         :return:
         """
         if loop is not None:
-            new_task.loop = Loop(loop)
+            assert isinstance(new_task, ProcessTask)
+            new_task.loop = Loop(loop, parallel=True)
 
         if isinstance(new_task, EndEvent):
             self.process.add_end_event(new_task)
@@ -453,6 +453,5 @@ def next_id():
 def generate_from_calls(_build) -> ProcessBuilder:
     return ProcessBuilder(
         parent_builder=None,
-        desired_type=Process,
         _build=_build,
     )

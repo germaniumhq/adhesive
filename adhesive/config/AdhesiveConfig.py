@@ -23,7 +23,6 @@ class AdhesiveConfig:
     def __getattr__(self, item) -> Any:
         pass
 
-    @abc.abstractmethod
     def secret_locations(self) -> List[str]:
         return [
             os.path.join(".", ".adhesive", "secrets"),

@@ -5,7 +5,7 @@ from adhesive.graph.time.ParsedDurationDefinition import ParsedDurationDefinitio
 class DurationTimerBoundaryEvent(TimerBoundaryEvent):
     def __init__(self,
                  *,
-                 parent_process: str,
+                 parent_process: 'Process',
                  id: str,
                  name: str,
                  expression: str) -> None:
@@ -24,3 +24,5 @@ class DurationTimerBoundaryEvent(TimerBoundaryEvent):
             self.definition.minute * 60 + \
             self.definition.hour * 3600 + \
             self.definition.day * 3600 * 24
+
+from adhesive.graph.Process import Process

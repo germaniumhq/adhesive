@@ -1,14 +1,14 @@
-from typing import Any, Union, Optional, List
+from typing import Any, Union, Optional, List, Dict
 
 from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 
 
-class YamlMissing(YamlNavigator):
+class YamlMissing(YamlNavigator[None]):
     EMPTY_LIST: List[str] = list()
 
     def __init__(self,
                  *args,
-                 parent_property: Optional[Union['YamlDict', 'YamlMissing']],
+                 parent_property: Union['YamlDict', 'YamlMissing'],
                  property_name: str,
                  full_property_name: str):
         if args:
@@ -77,7 +77,7 @@ class YamlMissing(YamlNavigator):
         if self.__property_name in parent:
             return parent[self.__property_name]
 
-        container = dict()
+        container: Dict[str, Any] = dict()
         parent[self.__property_name] = container
 
         return YamlDict(
