@@ -2,7 +2,7 @@ version:
   version: $(version-manager --tag)
   files:
     setup.py: version='**VERSION**',
-    Dockerfile: pip3 install adhesive==**VERSION$$
+    Dockerfile: pip3 install adhesive==**VERSION** mypy_extensions
 
 requirements:
   version: $(bin/requires_versions.py)

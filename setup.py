@@ -12,7 +12,7 @@ extras_require = {
 
 setup(
     name='adhesive',
-    version='0.12.0',
+    version='0.14.0',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -31,7 +31,6 @@ setup(
         "termcolor==1.1.0",
         "termcolor_util==1.0.1",
         "PyYAML >=5.1, <5.2",
-        "paramiko==2.6.0         # optional",
         "click==7.0",
         "schedule==0.6.0",
         "python-dateutil==2.8.1"],
