@@ -1,4 +1,4 @@
-from typing import Dict, List, Iterator, cast, Optional
+from typing import Dict, List, Iterator, cast, Optional, Union
 
 import networkx as nx
 
@@ -31,11 +31,11 @@ class Process(NamedItem):
             id=id,
             name=name)
 
-        self._start_events: Dict[str, StartEvent] = dict()
+        self._start_events: Dict[str, Union[StartEvent, ProcessTask]] = dict()
         self._message_events: Dict[str, MessageEvent] = dict()
         self._tasks: Dict[str, ExecutableNode] = dict()
         self._edges: Dict[str, Edge] = dict()
-        self._end_events: Dict[str, EndEvent] = dict()
+        self._end_events: Dict[str, Union[EndEvent, ProcessTask]] = dict()
 
         self._task_lane_map: Dict[str, Lane] = dict()
         self._default_lane = Lane(parent_process=self, id="root", name="default")
@@ -46,7 +46,7 @@ class Process(NamedItem):
         self.error_task: Optional['ErrorBoundaryEvent'] = None
 
     @property
-    def start_events(self) -> Dict[str, StartEvent]:
+    def start_events(self) -> Dict[str, Union[StartEvent, ProcessTask]]:
         return self._start_events
 
     @property
@@ -66,7 +66,7 @@ class Process(NamedItem):
         return self._edges
 
     @property
-    def end_events(self) -> Dict[str, EndEvent]:
+    def end_events(self) -> Dict[str, Union[ProcessTask, EndEvent]]:
         return self._end_events
 
     def add_task(self, task: ExecutableNode) -> None:

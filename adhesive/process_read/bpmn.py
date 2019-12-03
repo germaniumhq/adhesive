@@ -1,5 +1,5 @@
 import re
-from typing import Tuple, Optional
+from typing import Tuple, Optional, TypeVar, cast
 from xml.etree import ElementTree
 
 from adhesive.graph.time.CycleTimerBoundaryEvent import CycleTimerBoundaryEvent
@@ -24,6 +24,8 @@ from adhesive.graph.Lane import Lane
 
 TAG_NAME = re.compile(r'^(\{.+\})?(.+)$')
 SPACE = re.compile(r"\s+", re.IGNORECASE)
+
+PT = TypeVar('PT', bound=ProcessTask)
 
 ignored_elements = {
     # we obviously ignore extensions.
@@ -80,6 +82,7 @@ def read_process(parent_process: Optional[Process], process) -> Process:
             id=process.get('id')
         )
     elif "subProcess" == node_name:
+        assert parent_process
         result = SubProcess(
             parent_process=parent_process,
             id=process.get('id'),
@@ -114,6 +117,10 @@ def read_process(parent_process: Optional[Process], process) -> Process:
 
     for task_id, task in result.tasks.items():
         if not result.has_outgoing_edges(task):
+            if not isinstance(task, EndEvent) and not isinstance(task, ProcessTask):
+                raise Exception(f"Executable node {task} has no outgoing connections, but can't "
+                                f"be used as ae end task.")
+
             result.end_events[task.id] = task
 
     return result
@@ -362,12 +369,12 @@ def process_node_start_event(p: Process, xml_node) -> None:
     message_event_node = find_node(xml_node, "messageEventDefinition")
 
     if message_event_node is not None:
-        task = MessageEvent(
+        message_event = MessageEvent(
             parent_process=p,
             id=xml_node.get("id"),
             name=node_name)
 
-        p.add_message_event(task)
+        p.add_message_event(message_event)
         return
 
     task = StartEvent(
@@ -391,7 +398,7 @@ def process_node_end_event(p: Process, xml_node) -> None:
 
 
 def process_node_sub_process(p: Process, xml_node) -> None:
-    task = read_process(p, xml_node)
+    task = cast(SubProcess, read_process(p, xml_node))
     task = process_potential_loop(task, xml_node)
 
     p.add_task(task)
@@ -444,7 +451,7 @@ def process_complex_gateway(p: Process, xml_node) -> None:
     p.add_task(task)
 
 
-def process_potential_loop(task: ProcessTask, xml_node) -> ProcessTask:
+def process_potential_loop(task: PT, xml_node) -> PT:
     loop_node = find_node(xml_node, "standardLoopCharacteristics")
     multi_instance_loop = find_node(xml_node, "multiInstanceLoopCharacteristics")
 
