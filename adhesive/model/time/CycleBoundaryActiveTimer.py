@@ -27,7 +27,9 @@ class CycleBoundaryActiveTimer(ActiveTimer):
 
         self.execution_count += 1
         if self.timer_boundary_event.definition.repeat_count < 0:
-            return
+            return None
 
         if self.execution_count >= self.timer_boundary_event.definition.repeat_count:
             return schedule.CancelJob
+
+        return None

@@ -24,3 +24,4 @@ class ActiveTimer:
 
     def timer_triggered(self) -> Optional[schedule.CancelJob]:
         self.fire_timer(self.parent_token, self.timer_boundary_event)
+        return None

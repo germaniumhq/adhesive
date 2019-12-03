@@ -1,14 +1,11 @@
 import os
 import sys
 from contextlib import contextmanager
-from typing import Union, Any
 from threading import local
+from typing import Union, Any, TextIO, cast
 
-from adhesive.model.ActiveEvent import ActiveEvent
 from adhesive.logredirect import is_enabled
-from adhesive import config
-
-from threading import local
+from adhesive.model.ActiveEvent import ActiveEvent
 
 # Save the original stdout/stderr. This is what we initialize our
 # threadlocal, so python stays always happy on every thread.
@@ -29,6 +26,7 @@ class StdThreadLocal(local):
 
         self.stdout = python_stdout
         self.stderr = python_stderr
+
 
 # The data that's shared by the threads in order to have the
 # output redirected per each individual task.
@@ -57,8 +55,8 @@ class ObjectForward:
         data[self.__key].__setattr__(key, value)
 
 
-sys.stdout = ObjectForward("stdout")
-sys.stderr = ObjectForward("stderr")
+sys.stdout = cast(TextIO, ObjectForward("stdout"))
+sys.stderr = cast(TextIO, ObjectForward("stderr"))
 
 
 class StreamLogger:

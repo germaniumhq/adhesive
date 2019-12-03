@@ -2,7 +2,7 @@ from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 from adhesive.graph.time.ParsedDurationDefinition import ParsedDurationDefinition
 
 
-class DurationTimerBoundaryEvent(TimerBoundaryEvent):
+class DurationTimerBoundaryEvent(TimerBoundaryEvent[ParsedDurationDefinition]):
     def __init__(self,
                  *,
                  parent_process: 'Process',

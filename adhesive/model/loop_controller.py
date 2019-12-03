@@ -4,7 +4,7 @@ import logging
 
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLoop import ExecutionLoop
-from adhesive.graph import ProcessTask
+from adhesive.graph.ProcessTask import ProcessTask
 
 from .ActiveEvent import ActiveEvent
 from .ActiveLoopType import ActiveLoopType
@@ -25,6 +25,7 @@ def create_loop(event: ActiveEvent,
     new_event = clone_event(event, target_task)
 
     assert new_event.context
+    assert target_task.loop
 
     loop_id = str(uuid.uuid4())
 
@@ -33,7 +34,7 @@ def create_loop(event: ActiveEvent,
     # FIXME: task check should have just worked
     if event.context.loop and \
         event.context.loop.task.id == event.task.id:
-        owning_loop = owning_loop.parent_loop
+        owning_loop = event.context.loop.parent_loop
 
     new_event.loop_type = ActiveLoopType.INITIAL
     new_event.context.loop = ExecutionLoop(
@@ -53,6 +54,9 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
     COLLECTION type. If it returns a truthy, the loop creates a single
     CONDITION event. If it's falsy, the current event changes to INITIAL_EMPTY.
     """
+    assert event.task.loop
+    assert event.context.loop
+
     LOG.debug(f"Loop: Evaluate a new loop: {event.task.loop.loop_expression}")
     loop_data = evaluate_loop_expression(event)
 
@@ -74,7 +78,7 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
             task=event.task,
             item=loop_data,
             index=0,
-            expression=event.context.task.loop.loop_expression)
+            expression=event.task.loop.loop_expression)
 
         new_event.context.task_name = token_utils.parse_name(
                 new_event.context,
@@ -99,7 +103,7 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
             task=event.task,
             item=item,
             index=index,
-            expression=event.context.task.loop.loop_expression)
+            expression=event.task.loop.loop_expression)
 
         # if we're iterating over a map, we're going to store the
         # values as well.
@@ -144,6 +148,7 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
     new_event.loop_type = ActiveLoopType.CONDITION
 
     assert new_event.context
+    assert event.context.loop
 
     new_event.context.loop = ExecutionLoop(
         loop_id=event.context.loop.loop_id,
@@ -168,6 +173,8 @@ def evaluate_loop_expression(event: ActiveEvent) -> Any:
     """
     Evaluates a loop expression.
     """
+    assert event.task.loop
+
     eval_data = token_utils.get_eval_data(event.context)
     result = eval(event.task.loop.loop_expression, {}, eval_data)
 

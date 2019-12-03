@@ -21,6 +21,9 @@ class LocalLinuxWorkspace(Workspace):
                  execution_id: str,
                  token_id: str,
                  pwd: Optional[str]=None) -> None:
+        if pwd is None:
+            pwd = os.getcwd()
+
         super(LocalLinuxWorkspace, self).__init__(
             execution_id=execution_id,
             token_id=token_id,
@@ -49,6 +52,8 @@ class LocalLinuxWorkspace(Workspace):
             cwd=self.pwd,
             stdout=sys.stdout,
             stderr=sys.stderr)
+
+        return None
 
     def write_file(
             self,
@@ -80,7 +85,11 @@ class LocalLinuxWorkspace(Workspace):
 
     def mkdir(self, path: str=None) -> None:
         LOG.debug("mkdir {}", path)
-        full_path = os.path.join(self.pwd, path)
+
+        full_path = self.pwd
+
+        if path is not None:
+            full_path = os.path.join(self.pwd, path)
 
         if os.path.isdir(full_path):
             return
