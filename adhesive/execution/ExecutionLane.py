@@ -1,5 +1,5 @@
-from typing import Callable, Optional, List, Union, Tuple
 import re
+from typing import Callable, Optional, List, Union, Tuple, Pattern
 
 from adhesive.model.generate_methods import generate_matching_re
 
@@ -25,7 +25,7 @@ class ExecutionLane:
 
         self.regex_expressions = regex_expressions
         self.expressions = expressions
-        self.re_expressions = []  # these one are actually checked
+        self.re_expressions: List[Pattern] = []  # these one are actually checked
         self.code = code
         self.used = False  # this is set by the process executor task validation
 

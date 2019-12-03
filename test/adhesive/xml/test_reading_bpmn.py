@@ -1,16 +1,17 @@
-from typing import cast
-import unittest
 import textwrap
+import unittest
+from typing import cast
 
-from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ComplexGateway import ComplexGateway
+from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ExclusiveGateway import ExclusiveGateway
 from adhesive.graph.Loop import Loop
-from adhesive.graph.ScriptTask import ScriptTask
-from adhesive.graph.UserTask import UserTask
 from adhesive.graph.ParallelGateway import ParallelGateway
+from adhesive.graph.ProcessTask import ProcessTask
+from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.Task import Task
+from adhesive.graph.UserTask import UserTask
 from adhesive.process_read.bpmn import read_bpmn_file
 
 
@@ -180,7 +181,7 @@ class TestReadingBpmn(unittest.TestCase):
             Task
         ))
 
-        loop: Loop = process.tasks["_5"].loop
+        loop: Loop = cast(ProcessTask, process.tasks["_5"]).loop
         self.assertEqual("data.test_platforms", loop.loop_expression)
 
     def test_reading_message_event(self) -> None:
@@ -203,8 +204,8 @@ class TestReadingBpmn(unittest.TestCase):
 
         evented_task = process.tasks["_3"]
 
-        self.assertTrue(evented_task.timer_events)
-        self.assertEqual(5, len(evented_task.timer_events))
+        self.assertTrue(cast(ProcessTask, evented_task).timer_events)
+        self.assertEqual(5, len(cast(ProcessTask, evented_task).timer_events))
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):
