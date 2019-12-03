@@ -181,7 +181,8 @@ class TestReadingBpmn(unittest.TestCase):
             Task
         ))
 
-        loop: Loop = cast(ProcessTask, process.tasks["_5"]).loop
+        loop = cast(ProcessTask, process.tasks["_5"]).loop
+        assert loop
         self.assertEqual("data.test_platforms", loop.loop_expression)
 
     def test_reading_message_event(self) -> None:
@@ -202,10 +203,11 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(0, len(process.message_events))
         self.assertEqual(2, len(process.end_events))
 
-        evented_task = process.tasks["_3"]
+        evented_task = cast(ProcessTask, process.tasks["_3"])
 
-        self.assertTrue(cast(ProcessTask, evented_task).timer_events)
-        self.assertEqual(5, len(cast(ProcessTask, evented_task).timer_events))
+        self.assertTrue(evented_task.timer_events)
+        assert evented_task.timer_events
+        self.assertEqual(5, len(evented_task.timer_events))
 
     def test_reading_unsupported_elements_fails(self) -> None:
         with self.assertRaises(Exception):

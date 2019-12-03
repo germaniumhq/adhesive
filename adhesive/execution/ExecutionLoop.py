@@ -65,6 +65,8 @@ class ExecutionLoop:
     def create_loop(event: 'ActiveEvent',
                     clone_event: Callable[['ActiveEvent', 'ProcessTask'], 'ActiveEvent'],
                     target_task: 'ProcessTask') -> int:
+        assert target_task.loop
+
         expression = target_task.loop.loop_expression
 
         eval_data = token_utils.get_eval_data(event.context)
@@ -84,7 +86,8 @@ class ExecutionLoop:
                 parent_loop=parent_loop,
                 task=target_task,
                 item=item,
-                index=index)
+                index=index,
+                expression=expression)
 
             # if we're iterating over a map, we're going to store the
             # values as well.
@@ -120,7 +123,7 @@ def loop_id(event: 'ActiveEvent') -> Optional[str]:
     :param event:
     :return:
     """
-    loop: ExecutionLoop = event.context.loop
+    loop: Optional[ExecutionLoop] = event.context.loop
 
     if not loop:
         return None
