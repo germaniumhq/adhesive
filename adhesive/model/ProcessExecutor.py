@@ -6,7 +6,7 @@ import traceback
 import uuid
 from concurrent.futures import Future
 from threading import Lock
-from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set
+from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
 
 import schedule
 
@@ -14,15 +14,15 @@ import adhesive
 from adhesive import logredirect, ExecutionMessageEvent, ExecutionMessageCallbackEvent
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.execution import token_utils
-from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLane import ExecutionLane
 from adhesive.execution.ExecutionLoop import loop_id
 from adhesive.execution.ExecutionToken import ExecutionToken
+from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.execution.call_script_task import call_script_task
 from adhesive.graph.Event import Event
+from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.graph.Gateway import Gateway
-from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
@@ -32,7 +32,8 @@ from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.MessageEventExecutor import MessageEventExecutor
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
-from adhesive.model.generate_methods import display_unmatched_items
+from adhesive.model.UserTaskProvider import UserTaskProvider
+from adhesive.model.generate_methods import display_unmatched_items, MatchableItem
 from adhesive.model.time.ActiveTimer import ActiveTimer
 from adhesive.model.time.active_timer_factory import create_active_timer
 from adhesive.storage.ensure_folder import get_folder
@@ -44,7 +45,6 @@ import concurrent.futures
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.Process import Process
-from adhesive.graph.Lane import Lane
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
 
@@ -101,10 +101,11 @@ class ProcessExecutor:
 
     def __init__(self,
                  process: AdhesiveProcess,
-                 ut_provider: Optional['UserTaskProvider'] = None,
+                 ut_provider: Optional[UserTaskProvider] = None,
                  wait_tasks: bool = True) -> None:
         self.adhesive_process = process
         self.tasks_impl: Dict[str, ExecutionTask] = dict()
+        self.user_tasks_impl: Dict[str, ExecutionUserTask] = dict()
         self.mevent_impl: Dict[str, ExecutionMessageEvent] = dict()
         self.mevent_callback_impl: Dict[str, ExecutionMessageCallbackEvent] = dict()
 
@@ -159,7 +160,7 @@ class ProcessExecutor:
             parent_id=None,
             context=process_context
         )
-        fake_event.token_id = None  # FIXME: why
+        fake_event.token_id = ""  # FIXME: why
 
         root_event = self.clone_event(fake_event, process)
         self.root_event = root_event
@@ -200,11 +201,11 @@ class ProcessExecutor:
         for mevent_id, mevent in self.mevent_callback_impl.items():
             create_callback_code(mevent_id, mevent)
 
-        for mevent_id, mevent in self.mevent_impl.items():
+        for callback_event_id, callback_event in self.mevent_impl.items():
             executor = MessageEventExecutor(
                 root_event=root_event,
-                message_event=self.adhesive_process.process.message_events[mevent_id],
-                execution_message_event=mevent,
+                message_event=self.adhesive_process.process.message_events[callback_event_id],
+                execution_message_event=callback_event,
                 enqueue_event=self.enqueue_event)
 
             self.futures[executor.future] = "__message_executor"
@@ -218,7 +219,8 @@ class ProcessExecutor:
         :return: data from the last execution token.
         """
         while self.events or self.futures:
-            pending_events = list(filter(lambda e: e.state.state == ActiveEventState.NEW,
+            pending_events: List[ActiveEvent] = \
+                list(filter(lambda e: e.state.state == ActiveEventState.NEW,
                                          self.events.values()))
 
             # we ensure we have only events to be processed
@@ -353,13 +355,15 @@ class ProcessExecutor:
         :return:
         """
         event = self.events[token_id]
+        assert event.parent_id
+
         parent = self.events[event.parent_id]
 
         return parent
 
     def _validate_tasks(self,
                         process: Process,
-                        missing_dict: Optional[Dict[str, Union[ProcessTask, Lane]]]=None) -> None:
+                        missing_dict: Optional[Dict[str, MatchableItem]]=None) -> None:
         """
         Recursively traverse the graph, and print to the user if it needs to implement
         some tasks.
@@ -367,10 +371,12 @@ class ProcessExecutor:
         :param process:
         :return:
         """
+        unmatched_items: Dict[str, MatchableItem]
+
         if missing_dict is not None:
             unmatched_items = missing_dict
         else:
-            unmatched_items: Dict[str, Union[ProcessTask, Lane, MessageEvent]] = dict()
+            unmatched_items = dict()
 
         for task_id, task in process.tasks.items():
             if isinstance(task, SubProcess):
@@ -389,14 +395,27 @@ class ProcessExecutor:
                 raise Exception(f"Unknown script task language: {task.language}. Only python and "
                                 f"text/python are supported.")
 
-            adhesive_task = self._match_task(task)
+            if isinstance(task, Task):
+                adhesive_task = self._match_task(task)
 
-            if not adhesive_task:
-                unmatched_items[f"task:{task.name}"] = task
+                if not adhesive_task:
+                    unmatched_items[f"task:{task.name}"] = task
+                    continue
+
+                self.tasks_impl[task_id] = adhesive_task
+                adhesive_task.used = True
                 continue
 
-            self.tasks_impl[task_id] = adhesive_task
-            adhesive_task.used = True
+            if isinstance(task, UserTask):
+                adhesive_user_task = self._match_user_task(task)
+
+                if not adhesive_user_task:
+                    unmatched_items[f"usertask:{task.name}"] = task
+                    continue
+
+                self.user_tasks_impl[task_id] = adhesive_user_task
+                adhesive_user_task.used = True
+                continue
 
         for lane_id, lane in process.lanes.items():
             lane_definition = self._match_lane(lane.name)
@@ -441,9 +460,9 @@ class ProcessExecutor:
             if not lane_definition.used:
                 LOG.warning(f"Unused lane: {lane_definition}")
 
-        for message_event in self.adhesive_process.message_definitions:
-            if not message_event.used:
-                LOG.warning(f"Unused message: {message_event}")
+        for execution_message_event in self.adhesive_process.message_definitions:
+            if not execution_message_event.used:
+                LOG.warning(f"Unused message: {execution_message_event}")
 
         for message_event_callback in self.adhesive_process.message_callback_definitions:
             if not message_event_callback.used:
@@ -453,8 +472,15 @@ class ProcessExecutor:
             display_unmatched_items(unmatched_items.values())
             sys.exit(1)
 
-    def _match_task(self, task: ProcessTask) -> Optional[ExecutionBaseTask]:
+    def _match_task(self, task: ProcessTask) -> Optional[ExecutionTask]:
         for task_definition in self.adhesive_process.task_definitions:
+            if token_utils.matches(task_definition.re_expressions, task.name) is not None:
+                return task_definition
+
+        return None
+
+    def _match_user_task(self, task: ProcessTask) -> Optional[ExecutionUserTask]:
+        for task_definition in self.adhesive_process.user_task_definitions:
             if token_utils.matches(task_definition.re_expressions, task.name) is not None:
                 return task_definition
 
@@ -472,9 +498,9 @@ class ProcessExecutor:
             if token_utils.matches(message_definition.re_expressions, message_event_name) is not None:
                 return message_definition
 
-        for message_definition in self.adhesive_process.message_callback_definitions:
-            if token_utils.matches(message_definition.re_expressions, message_event_name) is not None:
-                return message_definition
+        for message_callback_definition in self.adhesive_process.message_callback_definitions:
+            if token_utils.matches(message_callback_definition.re_expressions, message_event_name) is not None:
+                return message_callback_definition
 
         return None
 
@@ -497,19 +523,23 @@ class ProcessExecutor:
 
     def clone_event(self,
                     old_event: ActiveEvent,
-                    task: ProcessTask,
+                    task: ExecutableNode,
                     parent_id: Optional[str] = None) -> ActiveEvent:
 
         if parent_id is None:
             parent_id = old_event.parent_id
 
+        assert parent_id
+
         event = old_event.clone(task, parent_id)
         self.register_event(event)
+
+        process: Process
 
         if parent_id is None:
             process = self.adhesive_process.process
         else:
-            process = self.events[parent_id].task
+            process = cast(Process, self.events[parent_id].task)
 
         def process_event(_event) -> ActiveEventState:
             # if there is no processing needed, we skip to routing
@@ -590,7 +620,7 @@ class ProcessExecutor:
 
             return None
 
-        def run_task(_event) -> None:
+        def run_task(_event) -> Optional[ActiveEventState]:
             if event.loop_type == ActiveLoopType.INITIAL:
                 loop_controller.evaluate_initial_loop(event, self.clone_event)
 
@@ -599,7 +629,7 @@ class ProcessExecutor:
                 else:
                     event.state.done()
 
-                return
+                return None
 
             # FIXME: probably this try/except should be longer than just the LOG
             try:
@@ -623,7 +653,7 @@ class ProcessExecutor:
                 for start_task in event.task.start_events.values():
                     # this automatically registers our events for execution
                     self.clone_event(event, start_task, parent_id=event.token_id)
-                return
+                return None
 
             if isinstance(event.task, Task):
                 if event.task.id not in self.tasks_impl:
@@ -638,7 +668,7 @@ class ProcessExecutor:
                     copy_event(event))
                 self.futures[future] = event.token_id
                 event.future = future
-                return
+                return None
 
             if isinstance(event.task, ScriptTask):
                 future = ProcessExecutor.pool.submit(
@@ -646,16 +676,18 @@ class ProcessExecutor:
                     copy_event(event))
                 self.futures[future] = event.token_id
                 event.future = future
-                return
+                return None
 
             if isinstance(event.task, UserTask):
                 future = Future()
                 self.futures[future] = event.token_id
                 event.future = future
 
+                assert self.ut_provider
+
                 self.ut_provider.register_event(self, event)
 
-                return
+                return None
 
             return event.state.route(event.context)
 
@@ -684,8 +716,10 @@ class ProcessExecutor:
                     # potential_child.state.error(_event.data)
                     potential_child.state.done()
 
-        def error_task(_event) -> None:
+        def error_task(_event) -> Optional[ActiveEventState]:
             # if we have a boundary error task, we use that one for processing.
+            assert isinstance(event.task, ProcessTask)
+
             if event.task.error_task:
                 new_event = self.clone_event(event, event.task.error_task)
                 new_event.context.data._error = _event.data['error']
@@ -695,10 +729,12 @@ class ProcessExecutor:
                 else:
                     event.state.route()
 
-                return
+                return None
 
             error_parent_task(event, _event.data)
             # event.state.done_check(None)  # we kill the current event
+
+            return None
 
         def route_task(_event) -> None:
             try:
@@ -723,7 +759,7 @@ class ProcessExecutor:
 
                 for outgoing_edge in outgoing_edges:
                     target_task = process.tasks[outgoing_edge.target_id]
-                    if hasattr(target_task, "loop") and target_task.loop:
+                    if isinstance(target_task, ProcessTask) and target_task.loop:
                         # we start a loop by firing the loop events, and consume this event.
                         loop_controller.create_loop(event, self.clone_event, target_task)
                     else:
@@ -736,7 +772,7 @@ class ProcessExecutor:
                     "failed_event": self.events[event.token_id]
                 })
 
-        def done_check(_event) -> None:
+        def done_check(_event) -> Optional[ActiveEventState]:
             outgoing_edges = _event.data
 
             if not outgoing_edges:

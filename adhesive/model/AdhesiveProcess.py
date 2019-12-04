@@ -1,9 +1,10 @@
 from typing import List, Dict
 
-from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
-from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
 from adhesive.execution.ExecutionLane import ExecutionLane
+from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
 from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
+from adhesive.execution.ExecutionTask import ExecutionTask
+from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.graph.Process import Process
 from .AdhesiveLane import AdhesiveLane
 
@@ -15,7 +16,8 @@ class AdhesiveProcess:
     """
     def __init__(self, id: str) -> None:
         self.lane_definitions: List[ExecutionLane] = []
-        self.task_definitions: List[ExecutionBaseTask] = []
+        self.task_definitions: List[ExecutionTask] = []
+        self.user_task_definitions: List[ExecutionUserTask] = []
         self.message_definitions: List[ExecutionMessageEvent] = []
         self.message_callback_definitions: List[ExecutionMessageCallbackEvent] = []
 

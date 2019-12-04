@@ -1,17 +1,17 @@
 import copy
-import uuid
-from typing import Optional
 import logging
-
+import uuid
 from concurrent.futures import Future
+from typing import Optional
 
+from adhesive import config
+from adhesive.consoleui.color_print import red
 from adhesive.execution import token_utils
+from adhesive.execution.ExecutionLoop import loop_id
+from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine, ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
-from adhesive.execution.ExecutionLoop import parent_loop_id, loop_id, ExecutionLoop
-from adhesive.consoleui.color_print import red
-from adhesive import config
 
 LOG = logging.getLogger(__name__)
 
@@ -75,7 +75,7 @@ class ActiveEvent:
         }
 
     def clone(self,
-              task: ProcessTask,
+              task: ExecutableNode,
               parent_id: str) -> 'ActiveEvent':
         """
         Clone the current event for another task id target.
@@ -92,7 +92,9 @@ class ActiveEvent:
         # FIXME: this probably doesn't belong here
         # FIXME: the self.task != task is probably wrong, since we want to support
         # boolean looping expressions.
-        if hasattr(self.context.task, "loop")\
+
+        # only ProcessTasks have loops.
+        if isinstance(self.context.task, ProcessTask) \
                 and self.context.task.loop \
                 and self.context.loop \
                 and self.context.loop.task == self.context.task \
@@ -109,7 +111,7 @@ class ActiveEvent:
         return result
 
     @property
-    def task(self) -> ProcessTask:
+    def task(self) -> ExecutableNode:
         return self._task
 
     @task.setter

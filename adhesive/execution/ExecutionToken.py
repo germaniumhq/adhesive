@@ -1,10 +1,10 @@
 from typing import Optional, Dict, Any
 
-from adhesive.graph.ProcessTask import ProcessTask
-from adhesive.execution.ExecutionData import ExecutionData
-from adhesive.workspace.Workspace import Workspace
 from adhesive.execution import token_utils
+from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLaneId import ExecutionLaneId
+from adhesive.graph.ExecutableNode import ExecutableNode
+from adhesive.workspace.Workspace import Workspace
 
 
 class ExecutionToken:
@@ -20,7 +20,7 @@ class ExecutionToken:
     """
     def __init__(self,
                  *,
-                 task: 'ProcessTask',
+                 task: ExecutableNode,
                  execution_id: str,
                  token_id: str,
                  data: Optional[Dict],
@@ -45,7 +45,7 @@ class ExecutionToken:
         self.loop: Optional[ExecutionLoop] = None
         self.task_name = token_utils.parse_name(self, self.task.name)
 
-    def clone(self, task: 'ProcessTask') -> 'ExecutionToken':
+    def clone(self, task: ExecutableNode) -> 'ExecutionToken':
         result = ExecutionToken(
             task=task,
             execution_id=self.execution_id,

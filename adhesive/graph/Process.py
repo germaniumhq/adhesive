@@ -1,4 +1,4 @@
-from typing import Dict, List, Iterator, cast, Optional, Union
+from typing import Dict, List, cast, Optional, Union, Iterable
 
 import networkx as nx
 
@@ -9,14 +9,12 @@ from adhesive.graph.ErrorBoundaryEvent import ErrorBoundaryEvent
 from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.graph.Lane import Lane
 from adhesive.graph.MessageEvent import MessageEvent
-from adhesive.graph.NamedItem import NamedItem
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.StartEvent import StartEvent
 from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 
 
-# FIXME: revisit this since it's probably wrong
-class Process(NamedItem):
+class Process(ExecutableNode):
     """
     A process for the build
     """
@@ -29,7 +27,8 @@ class Process(NamedItem):
 
         super(Process, self).__init__(
             id=id,
-            name=name)
+            name=name,
+            parent_process=None)
 
         self._start_events: Dict[str, Union[StartEvent, ProcessTask]] = dict()
         self._message_events: Dict[str, MessageEvent] = dict()
@@ -155,7 +154,7 @@ class Process(NamedItem):
 
     def are_predecessors(self,
                          task: ExecutableNode,
-                         potential_predecessors: Iterator[ExecutableNode]) -> bool:
+                         potential_predecessors: Iterable[ExecutableNode]) -> bool:
         predecessors = list(potential_predecessors)
         for potential_predecessor in predecessors:
             # FIXME: cross subprocess exceptions are handled as no predecessors

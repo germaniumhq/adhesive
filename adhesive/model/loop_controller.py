@@ -1,11 +1,10 @@
-from typing import Any
-import uuid
 import logging
+import uuid
+from typing import Any, cast
 
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLoop import ExecutionLoop
 from adhesive.graph.ProcessTask import ProcessTask
-
 from .ActiveEvent import ActiveEvent
 from .ActiveLoopType import ActiveLoopType
 
@@ -13,7 +12,8 @@ LOG = logging.getLogger(__name__)
 
 
 def is_top_loop_event(event: ActiveEvent):
-    return event.task.loop and (not event.context.loop or event.context.loop.task != event.task)
+    return isinstance(event.task, ProcessTask) and \
+           (not event.context.loop or event.context.loop.task != event.task)
 
 
 def create_loop(event: ActiveEvent,
@@ -54,6 +54,7 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
     COLLECTION type. If it returns a truthy, the loop creates a single
     CONDITION event. If it's falsy, the current event changes to INITIAL_EMPTY.
     """
+    assert isinstance(event.task, ProcessTask)
     assert event.task.loop
     assert event.context.loop
 
@@ -153,7 +154,7 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
     new_event.context.loop = ExecutionLoop(
         loop_id=event.context.loop.loop_id,
         parent_loop=event.context.loop.parent_loop,
-        task=event.task,
+        task=cast(ProcessTask, event.task),
         item=result,
         index=event.context.loop.index + 1,
         expression=event.context.loop.expression)
@@ -173,6 +174,7 @@ def evaluate_loop_expression(event: ActiveEvent) -> Any:
     """
     Evaluates a loop expression.
     """
+    assert isinstance(event.task, ProcessTask)
     assert event.task.loop
 
     eval_data = token_utils.get_eval_data(event.context)

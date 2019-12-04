@@ -55,7 +55,7 @@ def usertask(*task_names: str,
             loop=loop,
             when=when,
             lane=lane)
-        process.task_definitions.append(usertask)
+        process.user_task_definitions.append(usertask)
         return f
 
     return wrapper_builder

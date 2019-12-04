@@ -1,3 +1,5 @@
+from typing import Optional
+
 from adhesive.graph.NamedItem import NamedItem
 
 
@@ -6,7 +8,7 @@ class ProcessNode(NamedItem):
                  *args,
                  id: str,
                  name: str,
-                 parent_process: 'Process') -> None:
+                 parent_process: Optional['Process']) -> None:
         if args:
             raise Exception("You need to pass named arguments.")
 
@@ -19,6 +21,9 @@ class ProcessNode(NamedItem):
 
     @property
     def process_id(self) -> str:
+        if not self.parent_process:
+            return ""
+
         return self.parent_process.id
 
 

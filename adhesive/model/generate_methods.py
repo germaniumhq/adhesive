@@ -5,6 +5,7 @@ import re
 from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.ProcessTask import ProcessTask
+from adhesive.graph.Task import Task
 from adhesive.graph.UserTask import UserTask
 from adhesive.graph.Lane import Lane
 
@@ -14,6 +15,9 @@ MULTIPLE_UNDERSCORES = re.compile(r'_+')
 
 LABEL_EXPRESSION = re.compile(r'\\\{.*?\\\}')
 SPACES = re.compile(r'\\ ')
+
+
+MatchableItem = Union[Task, UserTask, Lane, MessageEvent]
 
 
 def generate_task_name(name: str) -> str:
@@ -37,7 +41,7 @@ def escape_string(name: str) -> str:
     return repr(name)
 
 
-def display_unmatched_items(unmatched_items: Iterable[Union[ProcessTask, Lane]]) -> None:
+def display_unmatched_items(unmatched_items: Iterable[MatchableItem]) -> None:
     print("Missing tasks implementations. Generate with:\n")
 
     for unmatched_item in unmatched_items:

@@ -1,14 +1,13 @@
 import uuid
-from typing import Optional, List, Dict, Any, cast, Tuple, Union, Iterable, Set
+from typing import Optional, List, Dict, Any, Tuple, Union, Iterable, Set
 
 import npyscreen as npyscreen
 
+from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.model.UiBuilderApi import UiBuilderApi
 from adhesive.model.UserTaskProvider import UserTaskProvider
-from adhesive.model.ProcessExecutor import ProcessExecutor
-from adhesive.execution.ExecutionUserTask import ExecutionUserTask
-from adhesive.execution.ExecutionData import ExecutionData
 
 
 class UiBuilderButton:
@@ -303,7 +302,7 @@ class ConsoleUserTaskProvider(UserTaskProvider):
 
         ui = UIBuilder(event)
 
-        adhesive_task = cast(ExecutionUserTask, executor.tasks_impl[event.task.id])
+        adhesive_task = executor.user_tasks_impl[event.task.id]
         context = adhesive_task.invoke_usertask(event, ui)
 
         # redirecting logs, and initializing ncurses is prolly a bad idea
