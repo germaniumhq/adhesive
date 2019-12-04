@@ -1,7 +1,7 @@
-from typing import Callable, Optional, List, Union, Tuple
+from typing import Callable, Optional
 
 from adhesive.execution import token_utils
-from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask
+from adhesive.execution.ExecutionBaseTask import ExecutionBaseTask, ExpressionList, RegexList
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive.model.ActiveEvent import ActiveEvent
 from .ExecutionToken import ExecutionToken
@@ -14,8 +14,8 @@ class ExecutionTask(ExecutionBaseTask):
     def __init__(self,
                  *args,
                  code: Callable,
-                 expressions: Union[List[str], Tuple[str,...]],
-                 regex_expressions: Optional[Union[str, List[str]]],
+                 expressions: ExpressionList,
+                 regex_expressions: RegexList,
                  loop: Optional[str] = None,
                  when: Optional[str] = None,
                  lane: Optional[str] = None) -> None:

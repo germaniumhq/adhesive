@@ -85,8 +85,12 @@ def fill_in_lane_id(process: AdhesiveProcess,
     if hasattr(event.task, "parent_process"):
         parent_process = event.task.parent_process
 
+    # FIXME: if we don't have a `parent_process` the current event should
+    # target the root process. Not sure why the `isinstance` is still necessary,
     if not parent_process and isinstance(event.task, Process):
         parent_process = event.task
+
+    assert parent_process
 
     lane_definition = parent_process.get_lane_definition(event.task.id)
 
@@ -98,8 +102,13 @@ def fill_in_lane_id(process: AdhesiveProcess,
 def find_existing_lane_for_event(process: AdhesiveProcess,
                                  event: ActiveEvent) -> Optional[AdhesiveLane]:
     """
-    Finds out the lane for an event (if it exists)
+    Finds out the lane for an event (if it exists). This function
+    happens after the `fill_lane_id` in the `allocate_workspace`, or
+    in `deallocate_workspace`, so at this stage we always have a
+    lane.
     """
+    assert event.context.lane
+
     if event.context.lane.key not in process.lanes:
         return None
 
@@ -108,10 +117,14 @@ def find_existing_lane_for_event(process: AdhesiveProcess,
 
 def create_lane_for_event(process: AdhesiveProcess,
                           event: ActiveEvent,
-                          execution_lane_id: ExecutionLaneId) -> None:
+                          execution_lane_id: Optional[ExecutionLaneId]) -> AdhesiveLane:
     """
-    Creates the lane object and the associated workspace.
+    Creates the lane object and the associated workspace. Happens
+    in the `allocate_workspace` after the `fill_lane_id` se we're guaranteed to
+    have an assigned lane.
     """
+    assert event.context.lane
+
     for lane_definition in process.lane_definitions:
         params = token_utils.matches(lane_definition.re_expressions,
                                      event.context.lane.name)
@@ -134,11 +147,11 @@ def create_lane_for_event(process: AdhesiveProcess,
         if not isinstance(workspace, Workspace):
             raise Exception(f"The lane yielded the wrong type {type(workspace)} instead of a Workspace")
 
+        parent_lane: Optional[AdhesiveLane] = None
+
         # We have to create the lane being called from a different lane?
         if execution_lane_id and execution_lane_id.key != DEFAULT_LANE_ID.key:
             parent_lane = process.lanes[execution_lane_id.key]
-        else:
-            parent_lane = None
 
         lane = AdhesiveLane(
             lane_id=event.context.lane,

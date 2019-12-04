@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Pattern
 
 from adhesive.execution.ExecutionToken import ExecutionToken
 
@@ -38,7 +38,7 @@ def get_eval_data(context: ExecutionToken) -> Dict:
     return evaldata
 
 
-def matches(re_expressions: List,
+def matches(re_expressions: List[Pattern],
             resolved_name: str) -> Optional[List[str]]:
     """
     Checks if this implementation matches any of the expressions bounded to

@@ -52,7 +52,7 @@ class ObjectForward:
         if key == "_ObjectForward__key":
             return super(ObjectForward, self).__setattr__(key, value)
 
-        data[self.__key].__setattr__(key, value)
+        data[self.__key].__setattr__(key, value)  # type: ignore
 
 
 sys.stdout = cast(TextIO, ObjectForward("stdout"))

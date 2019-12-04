@@ -1,6 +1,7 @@
 import re
-from typing import Callable, Optional, List, Union, Tuple, Pattern
+from typing import Callable, List, Pattern
 
+from adhesive.execution.ExecutionBaseTask import ExpressionList, RegexList
 from adhesive.model.generate_methods import generate_matching_re
 
 
@@ -11,8 +12,8 @@ class ExecutionMessageCallbackEvent:
     def __init__(self,
                  *args,
                  code: Callable,
-                 expressions: Union[List[str], Tuple[str,...]],
-                 regex_expressions: Optional[Union[str, List[str]]]) -> None:
+                 expressions: ExpressionList,
+                 regex_expressions: RegexList) -> None:
 
         if args:
             raise Exception("You need to pass in the arguments by name")

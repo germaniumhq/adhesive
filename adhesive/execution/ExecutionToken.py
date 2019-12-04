@@ -19,24 +19,22 @@ class ExecutionToken:
     A process context it's an execution token that's being passed around.
     """
     def __init__(self,
-                 *args,
+                 *,
                  task: 'ProcessTask',
                  execution_id: str,
                  token_id: str,
                  data: Optional[Dict],
                  workspace: Optional[Workspace] = None,
                  lane: Optional[ExecutionLaneId] = None) -> None:
-        if args:
-            raise Exception("You need to pass the parameters by name")
-
         self.task = task
         self.data = ExecutionData(data)
         self.execution_id = execution_id
         self.token_id = token_id
+
         # we need to define it before calling token_utils.parse_name. That's
         # since parse_name() will read this object using as_mapping(), that in
         # turn reads the task_name
-        self.task_name: Optional[str] = None
+        self.task_name = ""
 
         # These are None until the task is assgined to a lane
         self.workspace: Optional[Workspace] = workspace
