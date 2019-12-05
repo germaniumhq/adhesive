@@ -1,5 +1,5 @@
 from contextlib import contextmanager, _GeneratorContextManager
-from typing import Callable, TypeVar, Optional, Union, List, Tuple, Any, Generator, Sequence
+from typing import Callable, TypeVar, Optional, Union, List, Tuple, Any, Generator, Sequence, Generic
 
 from adhesive.graph.ProcessTask import ProcessTask
 from mypy_extensions import VarArg
@@ -24,10 +24,10 @@ T = TypeVar('T')
 process = AdhesiveProcess('_root')
 
 
-class Token(ExecutionToken):
+class Token(ExecutionToken, Generic[T]):
     workspace: Workspace
     task: ProcessTask
-
+    data: T  # type: ignore
 
 
 _DecoratedFunction = Union[  # FIXME: this is terrible

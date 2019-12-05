@@ -37,5 +37,6 @@ setup(
     extras_require=extras_require,
     packages=packages,
     package_data={
-        '': ['*.txt', '*.rst']
+        '': ['*.txt', '*.rst'],
+        'adhesive': ['py.typed'],
     })
