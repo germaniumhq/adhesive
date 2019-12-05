@@ -458,6 +458,10 @@ class ProcessExecutor:
             if not task_definition.used:
                 LOG.warning(f"Unused task: {task_definition}")
 
+        for user_task_definition in self.adhesive_process.user_task_definitions:
+            if not user_task_definition.used:
+                LOG.warning(f"Unused usertask: {user_task_definition}")
+
         for lane_definition in self.adhesive_process.lane_definitions:
             if not lane_definition.used:
                 LOG.warning(f"Unused lane: {lane_definition}")
