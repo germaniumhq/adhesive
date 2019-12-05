@@ -76,7 +76,7 @@ class ActiveEvent:
 
     def clone(self,
               task: ExecutableNode,
-              parent_id: str) -> 'ActiveEvent':
+              parent_id: Optional[str]) -> 'ActiveEvent':
         """
         Clone the current event for another task id target.
         """

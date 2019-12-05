@@ -531,8 +531,6 @@ class ProcessExecutor:
         if parent_id is None:
             parent_id = old_event.parent_id
 
-        # assert parent_id
-
         event = old_event.clone(task, parent_id)
         self.register_event(event)
 
