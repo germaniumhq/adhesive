@@ -47,24 +47,24 @@ def display_unmatched_items(unmatched_items: Iterable[MatchableItem]) -> None:
     for unmatched_item in unmatched_items:
         if isinstance(unmatched_item, UserTask):
             print(f"@adhesive.usertask({escape_string(unmatched_item.name)})")
-            print(f"def {generate_task_name(unmatched_item.name)}(context, ui):")
+            print(f"def {generate_task_name(unmatched_item.name)}(context: adhesive.Token, ui) -> None:")
             print("    pass\n\n")
             continue
 
         if isinstance(unmatched_item, Lane):
             print(f"@adhesive.lane({escape_string(unmatched_item.name)})")
-            print(f"def lane_{generate_task_name(unmatched_item.name)}(context):")
+            print(f"def lane_{generate_task_name(unmatched_item.name)}(context: adhesive.Token) -> adhesive.WorkspaceGenerator:")
             print("    yield context.workspace.clone()\n\n")
             continue
 
         if isinstance(unmatched_item, MessageEvent):
             print(f"@adhesive.message({escape_string(unmatched_item.name)})")
-            print(f"def message_{generate_task_name(unmatched_item.name)}(context):")
+            print(f"def message_{generate_task_name(unmatched_item.name)}(context: adhesive.Token):")
             print("    message_data = 'data'")
             print("    yield message_data")
             print("# or ")
             print(f"@adhesive.message_callback({escape_string(unmatched_item.name)})")
-            print(f"def message_{generate_task_name(unmatched_item.name)}(context, callback):")
+            print(f"def message_{generate_task_name(unmatched_item.name)}(context: adhesive.Token, callback):")
             print("    # save the callback, and just use it to push events")
             print("    callback('data')\n\n")
             continue
@@ -74,5 +74,5 @@ def display_unmatched_items(unmatched_items: Iterable[MatchableItem]) -> None:
         else:
             print(f"@adhesive.task({escape_string(unmatched_item.name)})")
 
-        print(f"def {generate_task_name(unmatched_item.name)}(context):")
+        print(f"def {generate_task_name(unmatched_item.name)}(context: adhesive.Token) -> None:")
         print("    pass\n\n")

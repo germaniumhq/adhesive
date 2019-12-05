@@ -5,13 +5,13 @@ import uuid
 import unittest
 
 from adhesive.execution.ExecutionToken import ExecutionToken
-from adhesive.workspace import Workspace
+from adhesive import WorkspaceGenerator
 
 test = unittest.TestCase()
 
 
 @adhesive.lane(re="docker: (.*)")
-def docker_lane(context, image_name) -> Workspace:
+def docker_lane(context, image_name) -> WorkspaceGenerator:
     if not context.workspace:
         raise Exception("No workspace is defined.")
 
@@ -86,7 +86,7 @@ def store_current_execution_id(context: ExecutionToken):
 
 
 @adhesive.task(re='^sh:(.*)$')
-def execute_sh_command(context: ExecutionToken, command: str):
+def execute_sh_command(context: adhesive.Token, command: str):
     add_current_task(context)
     context.workspace.run(command)
 

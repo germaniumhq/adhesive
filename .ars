@@ -1,5 +1,4 @@
 adhesive: true
 arg0: adhesive
 templates:
-- py3/exe
-- adhesive
+- pyi/setuptools
