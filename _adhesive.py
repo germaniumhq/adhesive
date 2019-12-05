@@ -18,12 +18,26 @@ def gbs_ensure_tooling(context, tool_name) -> None:
     ge_tooling.ensure_tooling(context, tool_name)
 
 
-@adhesive.task(re="^Run tool: (.*?)$")
-def gbs_run_tool(context, command: str) -> None:
+@adhesive.task(re="Run tool: mypy")
+def gbs_run_tool(context) -> None:
+    image_name = gbs.test(
+        context,
+        platform="python:3.7",
+        gbs_prefix=f"/_gbs/lin64/")
+
+    command = f"MYPYPATH=./stubs:. " \
+              f"mypy --shadow-file _adhesive.py setup.py ."
+
+    with docker.inside(context.workspace, image_name) as w:
+        w.run(command)
+
+
+@adhesive.task('Run tool: version-manager')
+def run_tool_version_manager(context):
     ge_tooling.run_tool(
         context,
-        tool=command,
-        command=command)
+        tool="version-manager",
+        command="version-manager")
 
 
 @adhesive.task("Checkout Code")
