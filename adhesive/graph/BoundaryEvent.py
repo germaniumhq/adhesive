@@ -1,10 +1,11 @@
 from adhesive.graph.Event import Event
+import adhesive
 
 
 class BoundaryEvent(Event):
     def __init__(self,
                  *,
-                 parent_process: 'Process',
+                 parent_process: 'adhesive.graph.Process.Process',
                  id: str,
                  name: str) -> None:
         super(BoundaryEvent, self).__init__(
@@ -16,7 +17,3 @@ class BoundaryEvent(Event):
 
         self.cancel_activity = True
         self.parallel_multiple = False
-
-
-from adhesive.graph.Process import Process
-

@@ -1,11 +1,10 @@
 import uuid
 from typing import Callable, Any, Optional, Union
 
-# from adhesive.model.ActiveEvent import ActiveEvent  # FIXME move from here
-# references to the ActiveEvent
+import adhesive
+
 from adhesive.execution import token_utils
 from adhesive.graph.ProcessTask import ProcessTask
-from adhesive.model.ActiveEvent import ActiveEvent
 
 
 class ExecutionLoop:
@@ -62,8 +61,8 @@ class ExecutionLoop:
         return f"Loop[ loop_id: {self.loop_id}, index: {self.index}, key: {self._key}, value: {self._value}"
 
     @staticmethod
-    def create_loop(event: 'ActiveEvent',
-                    clone_event: Callable[['ActiveEvent', 'ProcessTask'], 'ActiveEvent'],
+    def create_loop(event: 'adhesive.model.ActiveEvent.ActiveEvent',
+                    clone_event: Callable[['adhesive.model.ActiveEvent.ActiveEvent', 'ProcessTask'], 'adhesive.model.ActiveEvent.ActiveEvent'],
                     target_task: 'ProcessTask') -> int:
         assert target_task.loop
 
@@ -107,7 +106,7 @@ class ExecutionLoop:
         return index
 
 
-def parent_loop_id(e: 'ActiveEvent') -> Optional[str]:
+def parent_loop_id(e: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]:
     if not e.context.loop:
         return None
 
@@ -117,7 +116,7 @@ def parent_loop_id(e: 'ActiveEvent') -> Optional[str]:
     return f"{e.context.loop.parent_loop.loop_id}:{e.context.loop.parent_loop.index}"
 
 
-def loop_id(event: 'ActiveEvent') -> Optional[str]:
+def loop_id(event: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]:
     """
     Finds the loop id where this event executes. This is the owning loop ID.
     :param event:
