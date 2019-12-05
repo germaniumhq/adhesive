@@ -2,7 +2,6 @@ from contextlib import contextmanager, _GeneratorContextManager
 from typing import Callable, TypeVar, Optional, Union, List, Tuple, Any, Generator, Sequence, Generic
 
 from adhesive.graph.ProcessTask import ProcessTask
-from mypy_extensions import VarArg
 
 from adhesive import config
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
@@ -19,6 +18,7 @@ from adhesive.process_read.bpmn import read_bpmn_file
 from adhesive.process_read.programmatic import generate_from_calls
 from adhesive.process_read.tasks import generate_from_tasks
 from adhesive.workspace.Workspace import Workspace
+from adhesive.model.UiBuilderApi import UiBuilderApi
 
 T = TypeVar('T')
 process = AdhesiveProcess('_root')
@@ -40,7 +40,7 @@ _DecoratedFunction = Union[  # FIXME: this is terrible
 
 WorkspaceGenerator = Generator[Workspace, Workspace, None]
 LaneFunction = _DecoratedFunction[WorkspaceGenerator]
-
+UI = UiBuilderApi
 
 #FIXME: move decorators into their own place
 
