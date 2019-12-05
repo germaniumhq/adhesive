@@ -27,7 +27,9 @@ class KubeWorkspace(Workspace):
         if pod_name is None:
             raise Exception("You need to pass the pod name")
 
-        self.pod_name = pod_name
+        assert pod_name
+
+        self.pod_name: str = pod_name
         self.namespace = namespace
 
     def run(self,
@@ -37,11 +39,27 @@ class KubeWorkspace(Workspace):
         LOG.debug(f"Workspace: kube({self.id}).run: {command}")
         parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
 
-        return self.parent_workspace.run(
-                f"kubectl exec {shlex.quote(self.pod_name)} "
-                f"--namespace {shlex.quote(self.namespace)} "
-                f"-- /bin/sh -c {shlex.quote(parsed_command)}",
-                capture_stdout=capture_stdout)
+        exec_command = f"kubectl exec {shlex.quote(self.pod_name)} "
+
+        if self.namespace:
+            exec_command += f"--namespace {shlex.quote(self.namespace)} "
+
+        exec_command += f"-- /bin/sh -c {shlex.quote(parsed_command)}"
+
+        return self.parent_workspace.run(exec_command, capture_stdout=capture_stdout)
+
+    def run_output(self, command: str) -> str:
+        LOG.debug(f"Workspace: kube({self.id}).run: {command}")
+        parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
+
+        exec_command = f"kubectl exec {shlex.quote(self.pod_name)} "
+
+        if self.namespace:
+            exec_command += f"--namespace {shlex.quote(self.namespace)} "
+
+        exec_command += f"-- /bin/sh -c {shlex.quote(parsed_command)}"
+
+        return self.parent_workspace.run_output(exec_command)
 
     def write_file(
             self,
@@ -76,22 +94,34 @@ class KubeWorkspace(Workspace):
         self.run(f"rm -fr {shlex.quote(path)}")
 
     def mkdir(self, path: str = None) -> None:
-        full_path = os.path.join(self.pwd, path)
+        if path is not None:
+            full_path = os.path.join(self.pwd, path)
+        else:
+            full_path = self.pwd
+
         self.run(f"mkdir -p {shlex.quote(full_path)}")
 
     def copy_to_agent(self,
                       from_path: str,
                       to_path: str):
-        self.parent_workspace.run(
+        if self.namespace is not None:
+            self.parent_workspace.run(
                 f"kubectl cp --namespace {shlex.quote(self.namespace)} "
                 f"{from_path} {self.pod_name}:{to_path}")
+            return
+
+        self.parent_workspace.run(
+                f"kubectl cp {from_path} {self.pod_name}:{to_path}")
 
     def copy_from_agent(self,
                         from_path: str,
                         to_path: str):
-        self.parent_workspace.run(
-                f"kubectl cp --namespace {shlex.quote(self.namespace)} "
-                f"{self.pod_name}:{from_path} {to_path}")
+        if self.namespace is not None:
+            self.parent_workspace.run(
+                    f"kubectl cp --namespace {shlex.quote(self.namespace)} "
+                    f"{self.pod_name}:{from_path} {to_path}")
+
+        self.parent_workspace.run(f"kubectl cp {self.pod_name}:{from_path} {to_path}")
 
     def clone(self) -> 'KubeWorkspace':
         # FIXME: should return the parent workspace somehow

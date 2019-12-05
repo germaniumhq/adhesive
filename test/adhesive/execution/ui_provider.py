@@ -29,7 +29,7 @@ class UIBuilder(UiBuilderApi):
                      title: Optional[str] = None,
                      value: Optional[str]=None,
                      values: Optional[Iterable[Union[Tuple[str, str], str]]]=None) -> None:
-        self.context.data[name] = values[0]
+        self.context.data[name] = values[0]  # type: ignore
 
     def add_checkbox_group(
             self,
@@ -48,7 +48,8 @@ class UIBuilder(UiBuilderApi):
 
     def add_default_button(self,
                            name: str,
-                           title: Optional[str]=None) -> None:
+                           title: Optional[str]=None,
+                           value: Optional[Any]=None) -> None:
         self.context.data[name] = name
 
 
@@ -56,10 +57,12 @@ class TestUserTaskProvider(UserTaskProvider):
     def register_event(self,
                        executor: ProcessExecutor,
                        event: ActiveEvent) -> None:
+        assert event.future
+
         try:
             ui = UIBuilder(event.context)
 
-            adhesive_task = executor.tasks_impl[event.task.id]
+            adhesive_task = executor.user_tasks_impl[event.task.id]
             context = adhesive_task.invoke_usertask(event, ui)
 
             event.future.set_result(context)

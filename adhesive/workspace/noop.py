@@ -23,6 +23,9 @@ class NoopWorkspace(Workspace):
             capture_stdout: bool = False) -> Union[str, None]:
         return self.parent_workspace.run(command, capture_stdout=capture_stdout)
 
+    def run_output(self, command: str) -> str:
+        return self.parent_workspace.run_output(command)
+
     def write_file(
             self,
             file_name: str,
@@ -52,4 +55,3 @@ class NoopWorkspace(Workspace):
 @contextmanager
 def inside(workspace: Workspace):
     yield NoopWorkspace(workspace)
-

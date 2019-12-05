@@ -93,6 +93,39 @@ class SshWorkspace(Workspace):
 
         return None
 
+    def run_output(self, command: str) -> str:
+
+        channel = None
+
+        try:
+            parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
+
+            LOG.debug(f"Workspace: ssh({self.id}).run: {parsed_command}")
+
+            stdin, stdout, stderr = self.ssh.exec_command(parsed_command)
+            channel = stdout.channel
+
+            result = bytes()
+
+            while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
+                while channel.recv_ready():
+                    result += channel.recv(1024)
+
+                while channel.recv_stderr_ready():
+                    os.write(sys.stderr.fileno(), channel.recv_stderr(1024))
+
+            exit_status = channel.recv_exit_status()
+
+            if exit_status != 0:
+                raise Exception(f"Exit status is not zero, instead is {exit_status}")
+
+            return result.decode('utf-8')
+        finally:
+            if channel:
+                channel.close()
+
+        return None
+
     def write_file(
             self,
             file_name: str,

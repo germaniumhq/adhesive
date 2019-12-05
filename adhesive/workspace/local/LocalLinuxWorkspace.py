@@ -55,6 +55,15 @@ class LocalLinuxWorkspace(Workspace):
 
         return None
 
+    def run_output(self, command: str) -> str:
+        return subprocess.check_output(
+            [
+                "/bin/sh", "-c", command
+            ],
+            cwd=self.pwd,
+            stderr=sys.stderr,
+        ).decode('utf-8')
+
     def write_file(
             self,
             file_name: str,

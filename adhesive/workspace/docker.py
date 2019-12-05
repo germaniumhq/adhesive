@@ -2,7 +2,7 @@ import os
 import shlex
 import sys
 from contextlib import contextmanager
-from typing import Optional, Union, Iterable
+from typing import Optional, Union, Iterable, Generator
 from uuid import uuid4
 import logging
 
@@ -33,9 +33,9 @@ class DockerWorkspace(Workspace):
 
         pwd = workspace.pwd
 
-        uid = workspace.run("id -u", capture_stdout=True).strip()
-        gid = workspace.run("id -g", capture_stdout=True).strip()
-        groups = workspace.run("id -G", capture_stdout=True).strip().split(" ")
+        uid = workspace.run_output("id -u").strip()
+        gid = workspace.run_output("id -g").strip()
+        groups = workspace.run_output("id -G").strip().split(" ")
 
         if groups:
             groups_str = ""
@@ -56,10 +56,7 @@ class DockerWorkspace(Workspace):
         command += f"{extra_docker_params} "
         command += f"{shlex.quote(image_name)}"
 
-        self.container_id = workspace.run(
-            command,
-            capture_stdout=True
-        ).strip()
+        self.container_id = workspace.run_output(command).strip()
 
     def run(self,
             command: str,
@@ -70,6 +67,13 @@ class DockerWorkspace(Workspace):
         return self.parent_workspace.run(
                 f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} /bin/sh -c {shlex.quote(command)}",
                 capture_stdout=capture_stdout)
+
+    def run_output(self, command: str) -> str:
+
+        LOG.debug(f"Workspace: docker({self.id}).run: {command}")
+
+        return self.parent_workspace.run_output(
+                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} /bin/sh -c {shlex.quote(command)}")
 
     def write_file(
             self,
@@ -104,7 +108,11 @@ class DockerWorkspace(Workspace):
         self.run(f"rm -fr {shlex.quote(path)}")
 
     def mkdir(self, path: str = None) -> None:
-        full_path = os.path.join(self.pwd, path)
+        if path is None:
+            full_path = self.pwd
+        else:
+            full_path = os.path.join(self.pwd, path)
+
         self.run(f"mkdir -p {shlex.quote(full_path)}")
 
     def copy_to_agent(self,
@@ -149,7 +157,6 @@ def inside(workspace: Workspace,
             w._destroy()
 
 
-@contextmanager
 def build(workspace: Workspace,
           tags: Union[str, Iterable[str]]) -> str:
 
@@ -164,4 +171,4 @@ def build(workspace: Workspace,
 
     command += "."
 
-    return workspace.run(command)
+    return workspace.run_output(command)

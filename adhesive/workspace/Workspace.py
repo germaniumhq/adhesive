@@ -30,12 +30,26 @@ class Workspace(ABC):
             content: str) -> None:
         pass
 
+    # FIXME: split this into two methods, instead of the `capture_stdout` flag
     @abstractmethod
     def run(self,
             command: str,
             capture_stdout: bool = False) -> Union[str, None]:
         """
         Run a new command in the current workspace.
+
+        :param capture_stdout:
+        :param command:
+        :return:
+        """
+        pass
+
+    @abstractmethod
+    def run_output(self,
+            command: str) -> str:
+        """
+        Run a new command in the current workspace, and returns the stdout as a string.
+        If the command returns a non-zero exit code, an exception is thrown.
 
         :param capture_stdout:
         :param command:

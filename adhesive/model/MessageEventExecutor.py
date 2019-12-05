@@ -28,7 +28,7 @@ class MessageEventExecutor:
 
         # Future used to signal the termination of the message ingestion, so the
         # process can finish.
-        self.future = Future()
+        self.future: Future = Future()
 
         Thread(target=self.run_thread_loop).start()
 

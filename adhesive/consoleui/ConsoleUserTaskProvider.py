@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional, List, Dict, Any, Tuple, Union, Iterable, Set
+from typing import Optional, List, Dict, Any, Tuple, Union, Iterable, Set, Callable
 
 import npyscreen as npyscreen
 
@@ -92,7 +92,7 @@ class UIBuilder(UiBuilderApi):
         self.buttons = DEFAULT_BUTTONS
         self.selected_button = None
 
-        self.ncurses_calls = []
+        self.ncurses_calls: List[Callable] = []
 
     @property
     def data(self) -> ExecutionData:
@@ -117,6 +117,7 @@ class UIBuilder(UiBuilderApi):
             result_dict[name] = ui_control.value
 
         if self.buttons is not DEFAULT_BUTTONS:
+            assert self.selected_button
             result_dict[self.selected_button.name] = self.selected_button.value
 
         return ExecutionData(result_dict)

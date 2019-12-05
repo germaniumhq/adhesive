@@ -1,5 +1,7 @@
 import logging
-from typing import Optional
+from typing import Optional, Any, Generator
+
+from adhesive.execution.ExecutionToken import ExecutionToken
 
 import adhesive
 from adhesive.execution import token_utils
@@ -24,7 +26,7 @@ def ensure_default_lane(process: AdhesiveProcess) -> None:
         return
 
     @adhesive.lane('default')
-    def lane_default(context):
+    def lane_default(context: adhesive.Token) -> adhesive.WorkspaceGenerator:
         yield context.workspace
 
 

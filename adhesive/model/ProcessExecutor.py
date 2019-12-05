@@ -782,7 +782,7 @@ class ProcessExecutor:
 
         def done_end_task(_event) -> None:
             # we should check all the WAITING processes if they finished.
-            event_count: Dict[ProcessTask, int] = dict()
+            event_count: Dict[ExecutableNode, int] = dict()
             waiting_events: List[ActiveEvent] = list()
 
             for id, self_event in self.events.items():

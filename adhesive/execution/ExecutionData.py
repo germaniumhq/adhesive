@@ -51,6 +51,9 @@ class ExecutionData:
     def __setitem__(self, key, value):
         self._data[key] = value
 
+    def __getitem__(self, key):
+        return self._data[key]
+
     def __html__(self):
         return self.as_dict()
 
