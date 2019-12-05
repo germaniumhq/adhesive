@@ -21,14 +21,16 @@ class Process(ExecutableNode):
     def __init__(self,
                  *args,
                  id: str,
-                 name: str = '[root process]') -> None:
+                 name: str = '[root process]',
+                 # parent_process is needed for subprocesses
+                 parent_process: Optional['Process'] = None) -> None:
         if args:
             raise Exception("You need to pass in named arguments")
 
         super(Process, self).__init__(
             id=id,
             name=name,
-            parent_process=None)
+            parent_process=parent_process)
 
         self._start_events: Dict[str, Union[StartEvent, ProcessTask]] = dict()
         self._message_events: Dict[str, MessageEvent] = dict()

@@ -15,8 +15,8 @@ class ProcessNode(NamedItem):
 
         super(ProcessNode, self).__init__(id=id, name=name)
 
-        if not parent_process:
-            raise Exception(f"A process node ({self}) was created without an actual parent process.")
+        #if not parent_process:
+        #    raise Exception(f"A process node ({self}) was created without an actual parent process.")
 
         self.parent_process = parent_process
 
