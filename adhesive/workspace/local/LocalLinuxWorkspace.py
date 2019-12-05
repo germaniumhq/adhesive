@@ -20,10 +20,7 @@ class LocalLinuxWorkspace(Workspace):
     def __init__(self,
                  execution_id: str,
                  token_id: str,
-                 pwd: Optional[str]=None) -> None:
-        if pwd is None:
-            pwd = os.getcwd()
-
+                 pwd: str="") -> None:
         super(LocalLinuxWorkspace, self).__init__(
             execution_id=execution_id,
             token_id=token_id,
