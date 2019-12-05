@@ -3,7 +3,7 @@ import uuid
 from enum import Enum
 from typing import Any, Dict, Optional, Callable, Union
 
-from adhesive.model.ActiveEvent import ActiveEvent
+import adhesive
 
 LOG = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ class ActiveEventStateMachine(object):
         self._currentState = None  # type: Optional[ActiveEventState]
         self._current_change_state_event = None  # type: Optional[ActiveEventStateChangeEvent]
 
-        self.active_event: Optional[ActiveEvent] = None
+        self.active_event: Optional['adhesive.model.ActiveEvent.ActiveEvent'] = None
 
     @property
     def state(self) -> ActiveEventState:

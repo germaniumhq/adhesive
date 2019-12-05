@@ -3,9 +3,9 @@ import uuid
 from concurrent.futures import Future
 from threading import Thread
 
-from adhesive import ExecutionMessageEvent
 from adhesive.consoleui.color_print import green, red, yellow
 from adhesive.execution import token_utils
+from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.model.ActiveEvent import ActiveEvent
 

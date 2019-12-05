@@ -11,12 +11,14 @@ from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
 import schedule
 
 import adhesive
-from adhesive import logredirect, ExecutionMessageEvent, ExecutionMessageCallbackEvent
+from adhesive import logredirect
 from adhesive.consoleui.color_print import green, red, yellow, white
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLane import ExecutionLane
 from adhesive.execution.ExecutionLoop import loop_id
+from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
+from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.execution.call_script_task import call_script_task
