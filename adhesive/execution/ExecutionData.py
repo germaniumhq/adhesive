@@ -23,7 +23,6 @@ def merge_dict(dict1: Dict, dict2: Dict) -> None:
 
         dict1[k2] = v2
 
-
 class ExecutionData:
     def __init__(self,
                  initial_data: Optional[Dict] = None):

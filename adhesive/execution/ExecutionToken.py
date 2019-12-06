@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Generic, TypeVar, cast
 
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionData import ExecutionData
@@ -6,8 +6,10 @@ from adhesive.execution.ExecutionLaneId import ExecutionLaneId
 from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.workspace.Workspace import Workspace
 
+T = TypeVar('T')
 
-class ExecutionToken:
+
+class ExecutionToken(Generic[T]):
     """
     A context passed to an execution of a task. It holds the information
     about:
@@ -27,7 +29,7 @@ class ExecutionToken:
                  workspace: Optional[Workspace] = None,
                  lane: Optional[ExecutionLaneId] = None) -> None:
         self.task = task
-        self.data = ExecutionData(data)
+        self.data: T = cast(T, ExecutionData(data))
         self.execution_id = execution_id
         self.token_id = token_id
 
@@ -45,12 +47,12 @@ class ExecutionToken:
         self.loop: Optional[ExecutionLoop] = None
         self.task_name = token_utils.parse_name(self, self.task.name)
 
-    def clone(self, task: ExecutableNode) -> 'ExecutionToken':
-        result = ExecutionToken(
+    def clone(self, task: ExecutableNode) -> 'ExecutionToken[T]':
+        result: ExecutionToken[T] = ExecutionToken(
             task=task,
             execution_id=self.execution_id,
             token_id=self.token_id,   # FIXME: probably a new token?
-            data=self.data.as_dict(),
+            data=cast(ExecutionData, self.data).as_dict(),
             workspace=self.workspace.clone() if self.workspace else None,
             lane=self.lane,
         )

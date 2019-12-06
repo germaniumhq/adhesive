@@ -150,7 +150,7 @@ class ProcessExecutor:
 
         # FIXME: it's getting pretty crowded
         token_id = str(uuid.uuid4())
-        process_context = ExecutionToken(
+        process_context: ExecutionToken = ExecutionToken(
             task=process,
             execution_id=self.execution_id,
             token_id=token_id,

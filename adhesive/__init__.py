@@ -1,7 +1,5 @@
-from contextlib import contextmanager, _GeneratorContextManager
-from typing import Callable, TypeVar, Optional, Union, List, Tuple, Any, Generator, Sequence, Generic
-
-from adhesive.graph.ProcessTask import ProcessTask
+from contextlib import contextmanager
+from typing import Callable, TypeVar, Optional, Union, List, Generator, Any, cast
 
 from adhesive import config
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
@@ -11,36 +9,58 @@ from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionUserTask import ExecutionUserTask
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.logging import configure_logging
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 from adhesive.model.ProcessExecutor import ProcessExecutor
+from adhesive.model.UiBuilderApi import UiBuilderApi
 from adhesive.process_read.bpmn import read_bpmn_file
 from adhesive.process_read.programmatic import generate_from_calls
 from adhesive.process_read.tasks import generate_from_tasks
 from adhesive.workspace.Workspace import Workspace
-from adhesive.model.UiBuilderApi import UiBuilderApi
 
 T = TypeVar('T')
+V = TypeVar('V')
+
 process = AdhesiveProcess('_root')
 
 
-class Token(ExecutionToken, Generic[T]):
+UI = UiBuilderApi
+
+class Token(ExecutionToken[T]):
     workspace: Workspace
     task: ProcessTask
-    data: T  # type: ignore
 
 
 _DecoratedFunction = Union[  # FIXME: this is terrible
-    Callable[[Token], T],
-    Callable[[Token, str], T],
-    Callable[[Token, str, str], T],
-    Callable[[Token, str, str, str], T],
-    Callable[[Token, str, str, str, str], T],
+    Callable[[Token[T]], V],
+    Callable[[Token[T], str], V],
+    Callable[[Token[T], str, str], V],
+    Callable[[Token[T], str, str, str], V],
+    Callable[[Token[T], str, str, str, str], V],
+]
+
+_DecoratedUiFunction = Union[  # FIXME: this is terrible
+    Callable[[Token[T], UI], V],
+    Callable[[Token[T], UI, str], V],
+    Callable[[Token[T], UI, str, str], V],
+    Callable[[Token[T], UI, str, str, str], V],
+    Callable[[Token[T], UI, str, str, str, str], V],
+]
+
+_DecoratedCallbackFunction = Union[  # FIXME: this is terrible
+    Callable[[Token[T], Callable[[Any], None]], V],
+    Callable[[Token[T], Callable[[Any], None], str], V],
+    Callable[[Token[T], Callable[[Any], None], str, str], V],
+    Callable[[Token[T], Callable[[Any], None], str, str, str], V],
+    Callable[[Token[T], Callable[[Any], None], str, str, str, str], V],
 ]
 
 WorkspaceGenerator = Generator[Workspace, Workspace, None]
-LaneFunction = _DecoratedFunction[WorkspaceGenerator]
-UI = UiBuilderApi
+MessageGenerator = Generator[Any, Any, None]
+
+LaneFunction = _DecoratedFunction[T, WorkspaceGenerator]
+MessageFunction = _DecoratedFunction[T, MessageGenerator]
 
 #FIXME: move decorators into their own place
 
@@ -48,8 +68,8 @@ def task(*task_names: str,
          re: Optional[Union[str, List[str]]] = None,
          loop: Optional[str] = None,
          when: Optional[str] = None,
-         lane: Optional[str] = None) -> Callable[..., Callable[..., T]]:
-    def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
+         lane: Optional[str] = None) -> Callable[[_DecoratedFunction[T, None]], _DecoratedFunction[T, None]]:
+    def wrapper_builder(f: _DecoratedFunction[T, None]) -> _DecoratedFunction[T, None]:
         process.task_definitions.append(
             ExecutionTask(code=f,
                           expressions=task_names,
@@ -69,8 +89,8 @@ def usertask(*task_names: str,
              re: Optional[Union[str, List[str]]] = None,
              loop: Optional[str] = None,
              when: Optional[str] = None,
-             lane: Optional[str] = None) -> Callable[..., Callable[..., T]]:
-    def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
+             lane: Optional[str] = None) -> Callable[[_DecoratedUiFunction[T, None]], _DecoratedUiFunction[T, None]]:
+    def wrapper_builder(f: _DecoratedUiFunction[T, None]) -> _DecoratedUiFunction[T, None]:
         usertask = ExecutionUserTask(
             code=f,
             expressions=task_names,
@@ -83,6 +103,7 @@ def usertask(*task_names: str,
 
     return wrapper_builder
 
+
 def lane(*lane_names:str,
          re: Optional[Union[str, List[str]]] = None,
          ) -> Callable[[LaneFunction], WorkspaceGenerator]:
@@ -93,19 +114,19 @@ def lane(*lane_names:str,
     the yield will be executed.
     """
     def wrapper_builder(f: LaneFunction) -> WorkspaceGenerator:
-        newf = contextmanager(f)  # type: ignore
+        newf: WorkspaceGenerator = cast(WorkspaceGenerator, contextmanager(f))
         process.lane_definitions.append(ExecutionLane(
-            code=newf,
+            code=newf,  # type: ignore
             expressions=lane_names,
             regex_expressions=re))
-        return newf  # type: ignore
+        return newf
 
     return wrapper_builder
 
 
 def message(*message_names: str,
-             re: Optional[Union[str, List[str]]] = None):
-    def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
+             re: Optional[Union[str, List[str]]] = None) -> Callable[[MessageFunction], MessageFunction]:
+    def wrapper_builder(f: MessageFunction) -> MessageFunction:
         message_definition = ExecutionMessageEvent(
             code=f,
             expressions=message_names,
@@ -119,14 +140,15 @@ def message(*message_names: str,
 
 
 def message_callback(*message_names: str,
-                     re: Optional[Union[str, List[str]]] = None):
+                     re: Optional[Union[str, List[str]]] = None) \
+        -> Callable[[_DecoratedCallbackFunction], _DecoratedCallbackFunction]:
     """
     Obtain a message callback, that can push the
     :param message_names:
     :param re:
     :return:
     """
-    def wrapper_builder(f: Callable[..., T]) -> Callable[..., T]:
+    def wrapper_builder(f: _DecoratedCallbackFunction) -> _DecoratedCallbackFunction:
         message_definition = ExecutionMessageCallbackEvent(
             code=f,
             expressions=message_names,
