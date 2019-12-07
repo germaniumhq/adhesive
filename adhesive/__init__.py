@@ -70,13 +70,17 @@ def task(*task_names: str,
          when: Optional[str] = None,
          lane: Optional[str] = None) -> Callable[[_DecoratedFunction[T, None]], _DecoratedFunction[T, None]]:
     def wrapper_builder(f: _DecoratedFunction[T, None]) -> _DecoratedFunction[T, None]:
-        process.task_definitions.append(
-            ExecutionTask(code=f,
-                          expressions=task_names,
-                          regex_expressions=re,
-                          loop=loop,
-                          when=when,
-                          lane=lane))
+        task = ExecutionTask(
+            code=f,
+            expressions=task_names,
+            regex_expressions=re,
+            loop=loop,
+            when=when,
+            lane=lane)
+
+        process.task_definitions.append(task)
+        process.chained_task_definitions.append(task)
+
         return f
 
     return wrapper_builder
@@ -99,6 +103,7 @@ def usertask(*task_names: str,
             when=when,
             lane=lane)
         process.user_task_definitions.append(usertask)
+        process.chained_task_definitions.append(usertask)
         return f
 
     return wrapper_builder

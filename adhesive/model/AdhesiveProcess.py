@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from adhesive.execution.ExecutionLane import ExecutionLane
 from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
@@ -20,6 +20,8 @@ class AdhesiveProcess:
         self.user_task_definitions: List[ExecutionUserTask] = []
         self.message_definitions: List[ExecutionMessageEvent] = []
         self.message_callback_definitions: List[ExecutionMessageCallbackEvent] = []
+
+        self.chained_task_definitions: List[Union[ExecutionTask, ExecutionUserTask]] = []
 
         self.process: Process = Process(id=id)
 

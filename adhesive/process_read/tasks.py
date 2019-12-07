@@ -6,13 +6,13 @@ from adhesive.process_read.programmatic import generate_from_calls
 
 
 def generate_from_tasks(process: AdhesiveProcess) -> Process:
-    if not process.task_definitions:
+    if not process.chained_task_definitions:
         raise Exception("No task was defined. You need to create "
                         "tasks with @adhesive.task or @adhesive.usertask .")
 
     builder = generate_from_calls(None)
 
-    for task in process.task_definitions:
+    for task in process.chained_task_definitions:
         if isinstance(task, ExecutionTask):
             builder.task(task.expressions[0],
                          when=task.when,
