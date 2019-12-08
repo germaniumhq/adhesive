@@ -722,7 +722,9 @@ class ProcessExecutor:
 
         def error_task(_event) -> Optional[ActiveEventState]:
             # if we have a boundary error task, we use that one for processing.
-            assert isinstance(event.task, ProcessTask)
+            if not isinstance(event.task, ProcessTask):
+                error_parent_task(event, _event.data)
+                return None
 
             if event.task.error_task:
                 new_event = self.clone_event(event, event.task.error_task)
