@@ -2,6 +2,7 @@ import adhesive
 import gbs
 import ge_tooling
 import ge_git
+import time
 from adhesive import scm
 from adhesive.secrets import secret
 from adhesive.workspace import docker
@@ -133,6 +134,25 @@ def publish_to_pypi(context, registry):
             w.run(f"python setup.py bdist_wheel upload -r {registry}")
 
 
+@adhesive.task('Wait for pypi availability')
+def wait_for_pypi_availability(context: adhesive.Token) -> None:
+    # wait at most ~2 minutes for the package to appear
+    for i in range(10):
+        try:
+            with docker.inside(context.workspace,
+                               'python:3.8') as w:
+                w.run("""
+                    pip install adhesive=={context.data.current_version}
+                """)
+
+                return
+        except Exception:
+            time.sleep(10)
+
+    raise Exception(f"Timeouted waiting for adhesive=={context.data.current_version} "
+                    f"to appear.")
+
+
 @adhesive.task('Build Docker Image')
 def build_docker_image(context):
     context.workspace.run(f"""
@@ -152,4 +172,3 @@ def publish_docker_image(context):
 
 
 adhesive.bpmn_build("adhesive-self.bpmn")
-
