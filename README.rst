@@ -387,11 +387,11 @@ Kubernetes API
 --------------
 
 Adhesive also packs a kubernetes api, that’s available on the
-``adhesive.workspace.kube.api``:
+``adhesive.kubeapi``:
 
 .. code:: python
 
-    from adhesive.workspace.kube.api import KubeApi
+    from adhesive.kubeapi import KubeApi
 
 To use it, we need to create an instance against a workspace.
 

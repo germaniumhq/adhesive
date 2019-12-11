@@ -1,7 +1,8 @@
-from typing import Optional, Any, Union, Dict, List, cast
-import yaml
 import shlex
 import uuid
+from typing import Optional, Any, Union, Dict, List, cast
+
+import yaml
 
 from adhesive.workspace.Workspace import Workspace
 from adhesive.workspace.kube.YamlDict import YamlDict
@@ -12,7 +13,7 @@ from adhesive.workspace.kube.YamlNavigator import YamlNavigator
 class KubeApi():
     def __init__(self,
                  workspace: Workspace,
-                 namespace: str = "default") -> None:
+                 namespace: Optional[str] = None) -> None:
         self._workspace = workspace
         self._namespace = namespace
 
@@ -36,7 +37,7 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
-        else:
+        elif self._namespace is not None:
             command += f" --namespace={self._namespace}"
 
         object_data = self._workspace.run(
@@ -75,7 +76,7 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
-        else:
+        elif self._namespace is not None:
             command += f" --namespace={self._namespace}"
 
         object_data = self._workspace.run(
@@ -114,7 +115,7 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
-        else:
+        elif self._namespace is not None:
             command += f" --namespace={self._namespace}"
 
         try:
@@ -144,7 +145,7 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
-        else:
+        elif self._namespace is not None:
             command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
@@ -170,7 +171,7 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
-        else:
+        elif self._namespace is not None:
             command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
@@ -197,7 +198,7 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace={namespace}"
-        else:
+        elif self._namespace is not None:
             command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
@@ -215,7 +216,7 @@ class KubeApi():
 
         if namespace:
             command += f" --namespace {namespace}"
-        else:
+        elif self._namespace is not None:
             command += f" --namespace={self._namespace}"
 
         if isinstance(content, YamlNavigator):
