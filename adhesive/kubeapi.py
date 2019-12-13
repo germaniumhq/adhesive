@@ -5,9 +5,8 @@ from typing import Optional, Any, Union, Dict, List, cast
 import yaml
 
 from adhesive.workspace.Workspace import Workspace
-from adhesive.workspace.kube.YamlDict import YamlDict
-from adhesive.workspace.kube.YamlList import YamlList
-from adhesive.workspace.kube.YamlNavigator import YamlNavigator
+from yamldict import YamlDict, YamlList
+from yamldict.YamlNavigator import YamlNavigator
 
 
 class KubeApi():

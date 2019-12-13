@@ -9,3 +9,4 @@ paramiko==2.6.0         # optional
 click==7.0
 schedule==0.6.0
 python-dateutil==2.8.1
+yamldict==1.1.0
