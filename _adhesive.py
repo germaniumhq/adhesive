@@ -141,7 +141,7 @@ def wait_for_pypi_availability(context: adhesive.Token) -> None:
         try:
             with docker.inside(context.workspace,
                                'python:3.8') as w:
-                w.run("""
+                w.run(f"""
                     pip install adhesive=={context.data.current_version}
                 """)
 

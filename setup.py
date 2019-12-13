@@ -12,7 +12,7 @@ extras_require = {
 
 setup(
     name='adhesive',
-    version='1.0.4',
+    version='1.1.1',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -33,7 +33,8 @@ setup(
         "PyYAML >=5.1, <5.2",
         "click==7.0",
         "schedule==0.6.0",
-        "python-dateutil==2.8.1"],
+        "python-dateutil==2.8.1",
+        "yamldict==1.1.0"],
     extras_require=extras_require,
     packages=packages,
     package_data={
