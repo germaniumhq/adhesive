@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Any, cast
+from typing import Any, cast, Optional
 
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLoop import ExecutionLoop
@@ -18,11 +18,12 @@ def is_top_loop_event(event: ActiveEvent):
 
 def create_loop(event: ActiveEvent,
                 clone_event,
-                target_task: ProcessTask) -> None:
+                target_task: ProcessTask,
+                parent_id: Optional[str] = None) -> None:
     """
     Create a loop event.
     """
-    new_event = clone_event(event, target_task)
+    new_event = clone_event(event, target_task, parent_id=parent_id)
 
     assert new_event.context
     assert target_task.loop

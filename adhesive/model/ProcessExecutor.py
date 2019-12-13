@@ -655,8 +655,15 @@ class ProcessExecutor:
 
             if isinstance(event.task, Process):
                 for start_task in event.task.start_events.values():
-                    # this automatically registers our events for execution
-                    self.clone_event(event, start_task, parent_id=event.token_id)
+                    if isinstance(start_task, ProcessTask) and start_task.loop:
+                        # we start a loop by firing the loop events, and consume this event.
+                        loop_controller.create_loop(event,
+                                                    self.clone_event,
+                                                    start_task,
+                                                    parent_id=event.token_id)
+                    else:
+                        self.clone_event(event, start_task, parent_id=event.token_id)
+
                 return None
 
             if isinstance(event.task, Task):
