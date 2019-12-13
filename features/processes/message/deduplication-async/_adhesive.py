@@ -51,7 +51,7 @@ def deduplicate_events(context):
 
     # If we did a loop and we returned with the done event, and nothing
     # else is waiting we return
-    if context.data.event["state"] == "done" and not pending_events:
+    if context.data.event["state"] == "done" and event_id not in pending_events:
         return context.data
 
     # we have either a new event, or a done event arriving
