@@ -50,7 +50,7 @@ class MessageEventExecutor:
                 )
         except Exception as e:
             LOG.error(red("Failed ") + red(event_name_parsed, bold=True))
-            LOG.debug(e)
+            LOG.error(e)
             self.future.set_exception(e)
         else:
             LOG.info(green("Done ") + green(event_name_parsed, bold=True))

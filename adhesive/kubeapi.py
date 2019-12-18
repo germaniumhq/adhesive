@@ -10,6 +10,8 @@ from yamldict.YamlNavigator import YamlNavigator
 
 
 class KubeApi():
+    ALL: str = ":all:"
+
     def __init__(self,
                  workspace: Workspace,
                  namespace: Optional[str] = None) -> None:
@@ -34,10 +36,12 @@ class KubeApi():
 
         command = f"kubectl get {kind} {name} -o yaml"
 
-        if namespace:
+        namespace = namespace if namespace is not None else self._namespace
+
+        if namespace == KubeApi.ALL:
+            command += f" --all-namespaces"
+        elif namespace:
             command += f" --namespace={namespace}"
-        elif self._namespace is not None:
-            command += f" --namespace={self._namespace}"
 
         object_data = self._workspace.run(
             command,
@@ -73,10 +77,12 @@ class KubeApi():
         if filter:
             command += f" -l {shlex.quote(filter)}"
 
-        if namespace:
+        namespace = namespace if namespace is not None else self._namespace
+
+        if namespace == KubeApi.ALL:
+            command += f" --all-namespaces"
+        elif namespace:
             command += f" --namespace={namespace}"
-        elif self._namespace is not None:
-            command += f" --namespace={self._namespace}"
 
         object_data = self._workspace.run(
             command,
@@ -112,10 +118,12 @@ class KubeApi():
 
         command = f"kubectl get {kind} {name}"
 
-        if namespace:
+        namespace = namespace if namespace is not None else self._namespace
+
+        if namespace == KubeApi.ALL:
+            command += f" --all-namespaces"
+        elif namespace:
             command += f" --namespace={namespace}"
-        elif self._namespace is not None:
-            command += f" --namespace={self._namespace}"
 
         try:
             self._workspace.run(command)
@@ -142,10 +150,12 @@ class KubeApi():
 
         command = f"kubectl delete {kind} {name}"
 
-        if namespace:
+        namespace = namespace if namespace is not None else self._namespace
+
+        if namespace == KubeApi.ALL:
+            command += f" --all-namespaces"
+        elif namespace:
             command += f" --namespace={namespace}"
-        elif self._namespace is not None:
-            command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
 
@@ -168,10 +178,12 @@ class KubeApi():
 
         command = f"kubectl create {kind} {name}"
 
-        if namespace:
+        namespace = namespace if namespace is not None else self._namespace
+
+        if namespace == KubeApi.ALL:
+            command += f" --all-namespaces"
+        elif namespace:
             command += f" --namespace={namespace}"
-        elif self._namespace is not None:
-            command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
 
@@ -195,10 +207,12 @@ class KubeApi():
 
         command = f"kubectl scale {kind} {name} --replicas={replicas}"
 
-        if namespace:
+        namespace = namespace if namespace is not None else self._namespace
+
+        if namespace == KubeApi.ALL:
+            command += f" --all-namespaces"
+        elif namespace:
             command += f" --namespace={namespace}"
-        elif self._namespace is not None:
-            command += f" --namespace={self._namespace}"
 
         self._workspace.run(command)
 
@@ -213,10 +227,12 @@ class KubeApi():
         file_name = f"/tmp/{str(uuid.uuid4())}.yml"
         command = f"kubectl apply -f {file_name}"
 
-        if namespace:
-            command += f" --namespace {namespace}"
-        elif self._namespace is not None:
-            command += f" --namespace={self._namespace}"
+        namespace = namespace if namespace is not None else self._namespace
+
+        if namespace == KubeApi.ALL:
+            command += f" --all-namespaces"
+        elif namespace:
+            command += f" --namespace={namespace}"
 
         if isinstance(content, YamlNavigator):
             content = content._raw

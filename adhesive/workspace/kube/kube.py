@@ -16,7 +16,7 @@ class KubeWorkspace(Workspace):
                  workspace: Workspace,
                  pwd: Optional[str] = None,
                  pod_name: Optional[str] = None,
-                 namespace: Optional[str] = "default") -> None:
+                 namespace: Optional[str] = None) -> None:
         super(KubeWorkspace, self).__init__(
             execution_id=workspace.execution_id,
             token_id=workspace.token_id,
@@ -142,9 +142,7 @@ class KubeWorkspace(Workspace):
 @contextmanager
 def inside(workspace: Workspace,
            pod_name: str,
-           namespace: Optional[str] = "default"):
-    w = None
-
+           namespace: Optional[str] = None):
     try:
         w = KubeWorkspace(workspace=workspace,
                           pod_name=pod_name,
@@ -153,5 +151,3 @@ def inside(workspace: Workspace,
         yield w
     finally:
         pass
-        # if w is not None:
-        #     w._destroy()

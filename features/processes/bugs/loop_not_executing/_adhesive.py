@@ -76,9 +76,9 @@ def stop_http_server(context: adhesive.Token) -> None:
     server_running = False
 
 
-@adhesive.task('Create Secret {namespace}-le')
-def create_secret(context: adhesive.Token[Data]) -> None:
-    pass
+@adhesive.task('Create Secret {ingress_object}')
+def create_secret_ingress_object_(context: adhesive.Token) -> None:
+        pass
 
 
 @adhesive.task('Log Error')

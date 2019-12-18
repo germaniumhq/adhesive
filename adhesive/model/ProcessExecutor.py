@@ -47,6 +47,7 @@ import concurrent.futures
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.Process import Process
+from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
 
@@ -543,7 +544,15 @@ class ProcessExecutor:
         if parent_id is None:
             process = self.adhesive_process.process
         else:
-            process = cast(Process, self.events[parent_id].task)
+            if parent_id not in self.events:
+                LOG.warn(f"Event {parent_id} not found.")
+                process = self.adhesive_process.process
+            elif not isinstance(self.events[parent_id].task, Process):
+                LOG.warn(f"Task {self.events[parent_id].task} for parent {parent_id} "
+                         f"is not a process.")
+                process = self.adhesive_process.process
+            else:
+                process = cast(Process, self.events[parent_id].task)
 
         def process_event(_event) -> ActiveEventState:
             # if there is no processing needed, we skip to routing
