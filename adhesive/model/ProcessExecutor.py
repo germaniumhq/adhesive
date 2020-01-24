@@ -74,21 +74,21 @@ def raise_unhandled_exception(_ev):
         stdout_file = os.path.join(log_path, "stdout")
         if os.path.isfile(stdout_file):
             with open(stdout_file) as f:
-                print(white("STDOUT:", bold=True))
-                print(white(f.read()))
+                LOG.error(white("STDOUT:", bold=True))
+                LOG.error(white(f.read()))
         else:
-            print(white("STDOUT:", bold=True) + white(" not found"))
+            LOG.error(white("STDOUT:", bold=True) + white(" not found"))
 
         stderr_file = os.path.join(log_path, "stderr")
         if os.path.isfile(stderr_file):
             with open(stderr_file) as f:
-                print(red("STDERR:", bold=True))
-                print(red(f.read()), file=sys.stderr)
+                LOG.error(red("STDERR:", bold=True))
+                LOG.error(red(f.read()), file=sys.stderr)
         else:
-            print(red("STDERR:", bold=True) + red(" not found"))
+            LOG.error(red("STDERR:", bold=True) + red(" not found"))
 
-    print(red("Exception:", bold=True))
-    print(red(_ev.data['error']), file=sys.stderr)
+    LOG.error(red("Exception:", bold=True))
+    LOG.error(red(_ev.data['error']), file=sys.stderr)
 
     sys.exit(1)
 
@@ -176,13 +176,13 @@ class ProcessExecutor:
         return root_event.context.data
 
     def print_state(self, x, y) -> None:
-        print("Events:")
+        LOG.info("Events list:")
         for event in self.events.values():
-            print(event)
+            LOG.info(event)
 
-        print("Futures:")
+        LOG.info("Futures:")
         for f in self.futures:
-            print(f)
+            LOG.info(f)
 
     def start_message_event_listeners(self, root_event: ActiveEvent):
         def create_callback_code(mevent_id, mevent):
