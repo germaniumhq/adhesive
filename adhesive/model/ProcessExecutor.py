@@ -65,6 +65,10 @@ import signal
 LOG = logging.getLogger(__name__)
 
 
+class TimerException(Exception):
+    pass
+
+
 def raise_unhandled_exception(_ev):
     log_path = get_folder(_ev.data['failed_event'])
 
@@ -273,9 +277,10 @@ class ProcessExecutor:
                 try:
                     context = future.result()
                     self.events[token_id].state.route(context)
-                except Exception:
+                except Exception as e:
                     self.events[token_id].state.error({
                         "error": traceback.format_exc(),
+                        "exception": e,
                         "failed_event": self.events[token_id]
                     })
 
@@ -526,7 +531,7 @@ class ProcessExecutor:
                 if token_id != parent_token.token_id:
                     continue
 
-                future.cancel()
+                future.set_exception(TimerException())
 
     def clone_event(self,
                     old_event: ActiveEvent,
@@ -740,6 +745,11 @@ class ProcessExecutor:
             # if we have a boundary error task, we use that one for processing.
             if not isinstance(event.task, ProcessTask):
                 error_parent_task(event, _event.data)
+                return None
+
+            # if we have a timer exception, we simply ignore it.
+            if isinstance(_event.data['exception'], TimerException):
+                event.state.done_check(None)
                 return None
 
             if event.task.error_task:
