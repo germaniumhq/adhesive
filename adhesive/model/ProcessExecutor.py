@@ -7,7 +7,8 @@ import uuid
 from concurrent.futures import Future
 from threading import Lock
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
-import pebble
+
+import pebble.pool
 
 import schedule
 
@@ -48,7 +49,6 @@ import concurrent.futures
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.Process import Process
-from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
 
@@ -99,7 +99,8 @@ class ProcessExecutor:
     An executor of AdhesiveProcesses.
     """
     pool_size = int(config.current.pool_size) if config.current.pool_size else 8
-    pool = pebble.pool.ProcessPool(max_workers=pool_size) \
+    pool: Union[pebble.pool.ProcessPool, pebble.pool.ThreadPool] = \
+        pebble.pool.ProcessPool(max_workers=pool_size) \
         if config.current.parallel_processing == "process" \
         else pebble.pool.ThreadPool(max_workers=pool_size)
 
@@ -528,10 +529,12 @@ class ProcessExecutor:
                 if token_id != parent_token.token_id:
                     continue
 
-                if config.current.parallel_processing == "process":
+                if config.current.parallel_processing != "process":
                     LOG.warning(f"Cancel task on boundary event was requested, "
                                 f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
-                                f"to 'process', but '{config.current.parallel_processing}'.")
+                                f"to 'process', but '{config.current.parallel_processing}'. "
+                                f"The result of the task is ignored, but the thread "
+                                f"keeps running in the background.")
 
                 future.set_exception(concurrent.futures.CancelledError())
                 future.cancel()

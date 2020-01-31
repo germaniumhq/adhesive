@@ -2,10 +2,15 @@ import concurrent
 import time
 import unittest
 
+import pebble
+
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
 from .test_tasks import adhesive
+
+# FIXME: These "unit tests" are changing the default executor. Move them to some
+# from of integration test.
 
 
 class TestParallelProcessExecutor(unittest.TestCase):
@@ -14,7 +19,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         Load a bunch of tasks in parallel.
         :return:
         """
-        ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
+        ProcessExecutor.pool = pebble.pool.ProcessPool(max_workers=6)
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
@@ -33,7 +38,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         Load a bunch of tasks in parallel.
         :return:
         """
-        ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
+        ProcessExecutor.pool = pebble.pool.ProcessPool(max_workers=6)
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
 
         start_time = time.time() * 1000.0
@@ -52,7 +57,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         Load a bunch of tasks in parallel.
         :return:
         """
-        ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
+        ProcessExecutor.pool = pebble.pool.ProcessPool(max_workers=6)
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5.bpmn")
 
         start_time = time.time() * 1000.0
@@ -71,7 +76,7 @@ class TestParallelProcessExecutor(unittest.TestCase):
         Load a bunch of tasks in parallel.
         :return:
         """
-        ProcessExecutor.pool = concurrent.futures.ProcessPoolExecutor(max_workers=6)
+        ProcessExecutor.pool = pebble.pool.ProcessPool(max_workers=6)
         adhesive.process.process = read_bpmn_file("test/adhesive/xml/parallel5-sub-processes.bpmn")
 
         start_time = time.time() * 1000.0
