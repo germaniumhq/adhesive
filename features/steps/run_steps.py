@@ -51,13 +51,14 @@ def the_adhesive_process_has_passed(context):
 
 @step("there is in the (.*?) the text '(.*?)'")
 def check_the_text_in_stdouterr(context, where, searched_text):
+    print("STDOUT")
+    print(context.process_stdout)
+    print("STDERR")
+    print(context.process_stderr)
+
     if where == "stdout":
-        print("STDOUT")
-        print(context.process_stdout)
         assert searched_text in context.process_stdout
     else:
-        print("STDERR")
-        print(context.process_stderr)
         assert searched_text in context.process_stderr
 
 

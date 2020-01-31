@@ -8,6 +8,8 @@ from concurrent.futures import Future
 from threading import Lock
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
 
+import pebble.pool
+
 import schedule
 
 import adhesive
@@ -47,7 +49,6 @@ import concurrent.futures
 from adhesive.graph.SubProcess import SubProcess
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.graph.Process import Process
-from adhesive.graph.ProcessNode import ProcessNode
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive import config
 
@@ -82,13 +83,13 @@ def raise_unhandled_exception(_ev):
         stderr_file = os.path.join(log_path, "stderr")
         if os.path.isfile(stderr_file):
             with open(stderr_file) as f:
-                LOG.error(red("STDERR:", bold=True))
-                LOG.error(red(f.read()), file=sys.stderr)
+                LOG.error(red("STDERR:"))
+                LOG.error(red(f.read()))
         else:
             LOG.error(red("STDERR:", bold=True) + red(" not found"))
 
     LOG.error(red("Exception:", bold=True))
-    LOG.error(red(_ev.data['error']), file=sys.stderr)
+    LOG.error(red(_ev.data['error']))
 
     sys.exit(1)
 
@@ -97,10 +98,11 @@ class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
     """
-    pool_size = int(config.current.pool_size) if config.current.pool_size else None
-    pool = concurrent.futures.ProcessPoolExecutor(max_workers=pool_size) \
+    pool_size = int(config.current.pool_size) if config.current.pool_size else 8
+    pool: Union[pebble.pool.ProcessPool, pebble.pool.ThreadPool] = \
+        pebble.pool.ProcessPool(max_workers=pool_size) \
         if config.current.parallel_processing == "process" \
-        else concurrent.futures.ThreadPoolExecutor(max_workers=pool_size)
+        else pebble.pool.ThreadPool(max_workers=pool_size)
 
     def __init__(self,
                  process: AdhesiveProcess,
@@ -273,9 +275,10 @@ class ProcessExecutor:
                 try:
                     context = future.result()
                     self.events[token_id].state.route(context)
-                except Exception:
+                except Exception as e:
                     self.events[token_id].state.error({
                         "error": traceback.format_exc(),
+                        "exception": e,
                         "failed_event": self.events[token_id]
                     })
 
@@ -526,6 +529,14 @@ class ProcessExecutor:
                 if token_id != parent_token.token_id:
                     continue
 
+                if config.current.parallel_processing != "process":
+                    LOG.warning(f"Cancel task on boundary event was requested, "
+                                f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
+                                f"to 'process', but '{config.current.parallel_processing}'. "
+                                f"The result of the task is ignored, but the thread "
+                                f"keeps running in the background.")
+
+                future.set_exception(concurrent.futures.CancelledError())
                 future.cancel()
 
     def clone_event(self,
@@ -621,7 +632,9 @@ class ProcessExecutor:
             # this should return for initial loops
 
             # if we have predecessors, we stay in waiting
-            if process.are_predecessors(event.task, potential_predecessors):
+            predecessor_id = process.are_predecessors(event.task, potential_predecessors)
+            if predecessor_id:
+                LOG.debug(f"Predecessor found for {event}. Waiting for {predecessor_id}.")
                 return None
 
             if not other_waiting:
@@ -631,6 +644,7 @@ class ProcessExecutor:
                     tasks_waiting_count == 1:
                 other_waiting.state.run()
 
+            LOG.debug("Waiting for none, yet staying in WAITING?")
             return None
 
         def run_task(_event) -> Optional[ActiveEventState]:
@@ -683,17 +697,17 @@ class ProcessExecutor:
                     LOG.fatal(red(error_message, bold=True))
                     raise Exception(error_message)
 
-                future: Future[ExecutionToken] = ProcessExecutor.pool.submit(
+                future: Future[ExecutionToken] = ProcessExecutor.pool.schedule(
                     self.tasks_impl[event.task.id].invoke,
-                    copy_event(event))
+                    args=(copy_event(event),))
                 self.futures[future] = event.token_id
                 event.future = future
                 return None
 
             if isinstance(event.task, ScriptTask):
-                future = ProcessExecutor.pool.submit(
+                future = ProcessExecutor.pool.schedule(
                     call_script_task,
-                    copy_event(event))
+                    args=(copy_event(event),))
                 self.futures[future] = event.token_id
                 event.future = future
                 return None
@@ -740,6 +754,11 @@ class ProcessExecutor:
             # if we have a boundary error task, we use that one for processing.
             if not isinstance(event.task, ProcessTask):
                 error_parent_task(event, _event.data)
+                return None
+
+            # if we have a timer exception, we simply ignore it.
+            if isinstance(_event.data['exception'], concurrent.futures.CancelledError):
+                event.state.done_check(None)
                 return None
 
             if event.task.error_task:

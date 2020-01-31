@@ -97,11 +97,6 @@ class Process(ExecutableNode):
     def add_boundary_event(self, boundary_event: BoundaryEvent) -> None:
         self.add_task(boundary_event)
 
-        self._graph.add_edge(
-            boundary_event.attached_task_id,
-            boundary_event.id,
-            _edge=None)
-
         if isinstance(boundary_event, ErrorBoundaryEvent):
             process_task = cast(ProcessTask, self._tasks[boundary_event.attached_task_id])
             process_task.error_task = boundary_event
@@ -156,7 +151,7 @@ class Process(ExecutableNode):
 
     def are_predecessors(self,
                          task: ExecutableNode,
-                         potential_predecessors: Iterable[ExecutableNode]) -> bool:
+                         potential_predecessors: Iterable[ExecutableNode]) -> Optional[str]:
         predecessors = list(potential_predecessors)
         for potential_predecessor in predecessors:
             # FIXME: cross subprocess exceptions are handled as no predecessors
@@ -165,11 +160,11 @@ class Process(ExecutableNode):
                         self._graph,
                         potential_predecessor.id,
                         task.id):
-                    return True
+                    return potential_predecessor.id
             except Exception:
                 pass
 
-        return False
+        return None
 
     @property
     def process_id(self) -> str:
