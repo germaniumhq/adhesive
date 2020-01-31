@@ -1,6 +1,9 @@
 import adhesive
 import uuid
 import unittest
+import logging
+
+LOG = logging.getLogger(__name__)
 
 test = unittest.TestCase()
 
@@ -15,7 +18,8 @@ def message_generate_event(context):
 def process_event(context):
     context.data.executions = set()
     context.data.executions.add(str(uuid.uuid4()))
-    print(f"event data: {context.data.event}")
+
+    LOG.info(f"event data: {context.data.event}")
 
 
 data = adhesive.bpmn_build("basic-read.bpmn",
