@@ -75,21 +75,21 @@ def raise_unhandled_exception(_ev):
         stdout_file = os.path.join(log_path, "stdout")
         if os.path.isfile(stdout_file):
             with open(stdout_file) as f:
-                print(white("STDOUT:", bold=True))
-                print(white(f.read()))
+                LOG.error(white("STDOUT:", bold=True))
+                LOG.error(white(f.read()))
         else:
-            print(white("STDOUT:", bold=True) + white(" not found"))
+            LOG.error(white("STDOUT:", bold=True) + white(" not found"))
 
         stderr_file = os.path.join(log_path, "stderr")
         if os.path.isfile(stderr_file):
             with open(stderr_file) as f:
-                print(red("STDERR:", bold=True))
-                print(red(f.read()), file=sys.stderr)
+                LOG.error(red("STDERR:"))
+                LOG.error(red(f.read()))
         else:
-            print(red("STDERR:", bold=True) + red(" not found"))
+            LOG.error(red("STDERR:", bold=True) + red(" not found"))
 
-    print(red("Exception:", bold=True))
-    print(red(_ev.data['error']), file=sys.stderr)
+    LOG.error(red("Exception:", bold=True))
+    LOG.error(red(_ev.data['error']))
 
     sys.exit(1)
 
@@ -98,7 +98,7 @@ class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
     """
-    pool_size = int(config.current.pool_size) if config.current.pool_size else None
+    pool_size = int(config.current.pool_size) if config.current.pool_size else 8
     pool = pebble.pool.ProcessPool(max_workers=pool_size) \
         if config.current.parallel_processing == "process" \
         else pebble.pool.ThreadPool(max_workers=pool_size)
@@ -521,7 +521,6 @@ class ProcessExecutor:
         Called when a timer was fired. If the event is supposed to be
         cancelled, it will attempt to cancel it.
         """
-        LOG.info("FIRE timer")
         self.clone_event(parent_token, boundary_event)
 
         if boundary_event.cancel_activity:
@@ -534,6 +533,7 @@ class ProcessExecutor:
                                 f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
                                 f"to 'process', but '{config.current.parallel_processing}'.")
 
+                future.set_exception(concurrent.futures.CancelledError())
                 future.cancel()
 
     def clone_event(self,
@@ -629,7 +629,9 @@ class ProcessExecutor:
             # this should return for initial loops
 
             # if we have predecessors, we stay in waiting
-            if process.are_predecessors(event.task, potential_predecessors):
+            predecessor_id = process.are_predecessors(event.task, potential_predecessors)
+            if predecessor_id:
+                LOG.debug(f"Predecessor found for {event}. Waiting for {predecessor_id}.")
                 return None
 
             if not other_waiting:
@@ -639,6 +641,7 @@ class ProcessExecutor:
                     tasks_waiting_count == 1:
                 other_waiting.state.run()
 
+            LOG.debug("Waiting for none, yet staying in WAITING?")
             return None
 
         def run_task(_event) -> Optional[ActiveEventState]:
