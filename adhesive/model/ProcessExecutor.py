@@ -7,6 +7,7 @@ import uuid
 from concurrent.futures import Future
 from threading import Lock
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
+import pebble
 
 import schedule
 
@@ -65,10 +66,6 @@ import signal
 LOG = logging.getLogger(__name__)
 
 
-class TimerException(Exception):
-    pass
-
-
 def raise_unhandled_exception(_ev):
     log_path = get_folder(_ev.data['failed_event'])
 
@@ -102,9 +99,9 @@ class ProcessExecutor:
     An executor of AdhesiveProcesses.
     """
     pool_size = int(config.current.pool_size) if config.current.pool_size else None
-    pool = concurrent.futures.ProcessPoolExecutor(max_workers=pool_size) \
+    pool = pebble.pool.ProcessPool(max_workers=pool_size) \
         if config.current.parallel_processing == "process" \
-        else concurrent.futures.ThreadPoolExecutor(max_workers=pool_size)
+        else pebble.pool.ThreadPool(max_workers=pool_size)
 
     def __init__(self,
                  process: AdhesiveProcess,
@@ -524,6 +521,7 @@ class ProcessExecutor:
         Called when a timer was fired. If the event is supposed to be
         cancelled, it will attempt to cancel it.
         """
+        LOG.info("FIRE timer")
         self.clone_event(parent_token, boundary_event)
 
         if boundary_event.cancel_activity:
@@ -531,7 +529,12 @@ class ProcessExecutor:
                 if token_id != parent_token.token_id:
                     continue
 
-                future.set_exception(TimerException())
+                if config.current.parallel_processing == "process":
+                    LOG.warning(f"Cancel task on boundary event was requested, "
+                                f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
+                                f"to 'process', but '{config.current.parallel_processing}'.")
+
+                future.cancel()
 
     def clone_event(self,
                     old_event: ActiveEvent,
@@ -688,17 +691,17 @@ class ProcessExecutor:
                     LOG.fatal(red(error_message, bold=True))
                     raise Exception(error_message)
 
-                future: Future[ExecutionToken] = ProcessExecutor.pool.submit(
+                future: Future[ExecutionToken] = ProcessExecutor.pool.schedule(
                     self.tasks_impl[event.task.id].invoke,
-                    copy_event(event))
+                    args=(copy_event(event),))
                 self.futures[future] = event.token_id
                 event.future = future
                 return None
 
             if isinstance(event.task, ScriptTask):
-                future = ProcessExecutor.pool.submit(
+                future = ProcessExecutor.pool.schedule(
                     call_script_task,
-                    copy_event(event))
+                    args=(copy_event(event),))
                 self.futures[future] = event.token_id
                 event.future = future
                 return None
@@ -748,7 +751,7 @@ class ProcessExecutor:
                 return None
 
             # if we have a timer exception, we simply ignore it.
-            if isinstance(_event.data['exception'], TimerException):
+            if isinstance(_event.data['exception'], concurrent.futures.CancelledError):
                 event.state.done_check(None)
                 return None
 
