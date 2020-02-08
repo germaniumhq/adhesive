@@ -9,7 +9,7 @@
     <subProcess completionQuantity="1" id="_3" isForCompensation="false" name="Timeout in 1s SubProcess" startQuantity="1" triggeredByEvent="false">
       <incoming>_8</incoming>
       <outgoing>_9</outgoing>
-      <task completionQuantity="1" id="_4" isForCompensation="false" name="Sleep 10&#10;seconds" startQuantity="1"/>
+      <task completionQuantity="1" id="_4" isForCompensation="false" name="Sleep 2&#10;seconds" startQuantity="1"/>
     </subProcess>
     <task completionQuantity="1" id="_6" isForCompensation="false" name="Should not&#10;execute" startQuantity="1">
       <incoming>_9</incoming>
