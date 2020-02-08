@@ -139,7 +139,7 @@ class ProcessExecutor:
         # the parent of an event, since from it we can also derive the current parent
         # process.
         self.events: Dict[str, ActiveEvent] = dict()
-        self.futures: Dict[Any, str] = dict()
+        self.futures: Dict[Future, str] = dict()
         self.ut_provider = ut_provider
 
         self.active_timers: Dict[str, Set[ActiveTimer]] = dict()
@@ -578,6 +578,17 @@ class ProcessExecutor:
 
         parent_event.state.done_check(e)
 
+    @property
+    def are_active_futures(self) -> bool:
+        if not self.futures:
+            return False
+
+        for future in self.futures:
+            if future.running():
+                return True
+
+        return False
+
     def clone_event(self,
                     old_event: ActiveEvent,
                     task: ExecutableNode,
@@ -890,7 +901,7 @@ class ProcessExecutor:
                     found = True
                     break
 
-            if not found and parent_id == self.root_event.token_id and self.futures:
+            if not found and parent_id == self.root_event.token_id and self.are_active_futures:
                 event.state.done()
                 return  # ==> if we still have running futures, we don't kill the main process
 
