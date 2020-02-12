@@ -66,10 +66,21 @@ import signal
 LOG = logging.getLogger(__name__)
 
 
+class TaskError:
+    def __init__(self,
+                 *,
+                 error: str,
+                 exception: Exception,
+                 failed_event: ActiveEvent) -> None:
+        self.error = error
+        self.exception = exception
+        self.failed_event = failed_event
+
+
 class TaskFinishMode:
     """
     Defines how a task is being finishing. Depending of this,
-    we can decide what needs to be done
+    we can decide what needs to be done when cleaning up the
     """
     pass
 
@@ -77,8 +88,10 @@ class TaskFinishMode:
 class CancelTaskFinishModeException(Exception, TaskFinishMode):
     def __init__(self,
                  *,
-                 root_node: bool = False) -> None:
+                 root_node: bool = False,
+                 task_error: Optional[TaskError] = None) -> None:
         self.root_node = root_node
+        self.task_error = task_error
 
 
 class OutgoingEdgesFinishMode(TaskFinishMode):
@@ -87,10 +100,10 @@ class OutgoingEdgesFinishMode(TaskFinishMode):
         self.outgoing_edges = outgoing_edges
 
 
-def raise_unhandled_exception(_ev):
-    log_path = get_folder(_ev.data['failed_event'])
+def raise_unhandled_exception(task_error: TaskError):
+    log_path = get_folder(task_error.failed_event)
 
-    LOG.error(red("Process execution failed. Unhandled error."))
+    LOG.error(red(f"Process execution failed. Unhandled error from {task_error.failed_event}."))
 
     if logredirect.is_enabled:
         stdout_file = os.path.join(log_path, "stdout")
@@ -110,7 +123,7 @@ def raise_unhandled_exception(_ev):
             LOG.error(red("STDERR:", bold=True) + red(" not found"))
 
     LOG.error(red("Exception:", bold=True))
-    LOG.error(red(_ev.data['error']))
+    LOG.error(red(task_error.error))
 
     sys.exit(1)
 
@@ -190,8 +203,6 @@ class ProcessExecutor:
 
         root_event = self.clone_event(fake_event, process)
         self.root_event = root_event
-
-        root_event.state.after_enter(ActiveEventState.ERROR, raise_unhandled_exception)
 
         self.start_message_event_listeners(root_event=root_event)
         self.execute_process_event_loop()
@@ -299,11 +310,13 @@ class ProcessExecutor:
                 except CancelTaskFinishModeException:
                     pass
                 except Exception as e:
-                    self.events[token_id].state.error({
-                        "error": traceback.format_exc(),
-                        "exception": e,
-                        "failed_event": self.events[token_id]
-                    })
+                    self.handle_task_error(
+                        TaskError(
+                            error = traceback.format_exc(),
+                            exception = e,
+                            failed_event = self.events[token_id],
+                        )
+                    )
 
             # we evaluate all timers that might still be pending
             schedule.run_pending()
@@ -551,14 +564,6 @@ class ProcessExecutor:
         if not boundary_event.cancel_activity:
             return
 
-        # cancel the task for this event
-        if config.current.parallel_processing != "process":
-            LOG.warning(f"Cancel task on boundary event was requested, "
-                        f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
-                        f"to 'process', but '{config.current.parallel_processing}'. "
-                        f"The result of the task is ignored, but the thread "
-                        f"keeps running in the background.")
-
         self.cancel_subtree(parent_event,
                             CancelTaskFinishModeException(root_node=True))
 
@@ -570,11 +575,23 @@ class ProcessExecutor:
             if potential_child.parent_id != parent_event.token_id:
                 continue
 
-            self.cancel_subtree(potential_child, CancelTaskFinishModeException())
+            self.cancel_subtree(potential_child, CancelTaskFinishModeException(task_error=e.task_error))
 
         if parent_event.future:
+            # cancel the task for this event
+            if config.current.parallel_processing != "process":
+                LOG.warning(f"Cancel task on boundary event was requested, "
+                            f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
+                            f"to 'process', but '{config.current.parallel_processing}'. "
+                            f"The result of the task is ignored, but the thread "
+                            f"keeps running in the background.")
+
             parent_event.future.set_exception(e)
             parent_event.future.cancel()
+
+        if e.task_error:
+            parent_event.state.error(e.task_error)
+            return
 
         parent_event.state.done_check(e)
 
@@ -588,6 +605,58 @@ class ProcessExecutor:
                 return True
 
         return False
+
+    def handle_task_error(self,
+                          task_error: TaskError) -> None:
+        handling_event = task_error.failed_event
+
+        if not isinstance(handling_event.task, ProcessTask):
+            handling_event = self.get_parent(handling_event.token_id)
+
+        process_task: ProcessTask = cast(ProcessTask, handling_event.task)
+
+        while not process_task.error_task and handling_event != self.root_event:
+            handling_event = self.get_parent(handling_event.token_id)
+            process_task = cast(ProcessTask, handling_event.task)
+
+        if handling_event == self.root_event:
+            self.root_error_handling(task_error)
+            return
+
+        self.task_error_handling(handling_event, task_error)
+
+    def root_error_handling(self,
+                            task_error: TaskError) -> None:
+        """
+        Error handling that happens when no other task had error handling
+        configured, and the error event bubbled to the top.
+        """
+        self.cancel_subtree(self.root_event,
+                            CancelTaskFinishModeException(
+                                root_node=True,
+                                task_error=task_error))
+        raise_unhandled_exception(task_error)
+
+    def task_error_handling(self,
+                            event: ActiveEvent,
+                            task_error: TaskError) -> None:
+        """
+        Error handling that happens on a task that has at least one associated
+        boundary event.
+        """
+        if not isinstance(event.task, ProcessTask):
+            raise Exception(f"Adhesive BUG: error in {event} handling. Called on a wrong task type.")
+
+        process_task = cast(ProcessTask, event.task)
+
+        if not process_task.error_task:
+            raise Exception(f"Adhesive BUG: error in {event} handling. Called on a process task "
+                            f"without an associated error boundary event.")
+
+        new_event = self.clone_event(event, process_task.error_task)
+        new_event.context.data._error = task_error.error
+
+        self.cancel_subtree(event, CancelTaskFinishModeException(root_node=True, task_error=task_error))
 
     def clone_event(self,
                     old_event: ActiveEvent,
@@ -606,11 +675,11 @@ class ProcessExecutor:
             process = self.adhesive_process.process
         else:
             if parent_id not in self.events:
-                LOG.warn(f"Event {parent_id} not found.")
+                LOG.warning(f"Event {parent_id} not found.")
                 process = self.adhesive_process.process
             elif not isinstance(self.events[parent_id].task, Process):
-                LOG.warn(f"Task {self.events[parent_id].task} for parent {parent_id} "
-                         f"is not a process.")
+                LOG.warning(f"Task {self.events[parent_id].task} for parent {parent_id} "
+                            f"is not a process.")
                 process = self.adhesive_process.process
             else:
                 process = cast(Process, self.events[parent_id].task)
@@ -776,43 +845,23 @@ class ProcessExecutor:
             return event.state.route(event.context)
 
         def log_running_done(_event):
-            if _event.target_state == ActiveEventState.ERROR:
-                LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
-                return
-
             if event.loop_type in (ActiveLoopType.INITIAL, ActiveLoopType.INITIAL_EMPTY):
                 return
 
-            LOG.info(green("Done ") + green(event.context.task_name, bold=True))
+            if _event.target_state != ActiveEventState.ERROR:
+                LOG.info(green("Done ") + green(event.context.task_name, bold=True))
+                return
 
-        def error_parent_task(event, e):
-            if event.parent_id in self.events:
-                parent_event = self.get_parent(event.token_id)
-                self.cancel_subtree(parent_event, e)
+            task_error: TaskError = _event.data
 
-        def error_task(_event) -> Optional[ActiveEventState]:
-            # if we're not running against a task (ie complex gateway)
-            # we bubble the error to the parent.
-            if not isinstance(event.task, ProcessTask):
-                error_parent_task(event, _event.data)
-                return None
+            if task_error.failed_event != event:
+                LOG.info(red("Term ") + red(event.context.task_name, bold=True))
+                return
 
-            # if we have a boundary error task, we use that one for processing.
-            if event.task.error_task:
-                new_event = self.clone_event(event, event.task.error_task)
-                new_event.context.data._error = _event.data['error']
+            LOG.info(red("Fail ") + red(event.context.task_name, bold=True))
 
-                if event.task.error_task.cancel_activity:
-                    event.state.done_check(CancelTaskFinishModeException(root_node=True))
-                else:
-                    event.state.route()
-
-                return None
-
-            error_parent_task(event, _event.data)
-            # event.state.done_check(None)  # we kill the current event
-
-            return None
+        def error_task(_event) -> None:
+            event.state.done_check(_event.data)
 
         def route_task(_event) -> None:
             try:
@@ -845,10 +894,12 @@ class ProcessExecutor:
 
                 event.state.done_check(OutgoingEdgesFinishMode(outgoing_edges))
             except Exception as e:
-                error_parent_task(event, {
-                    "error": traceback.format_exc(),
-                    "failed_event": self.events[event.token_id]
-                })
+                self.handle_task_error(
+                    TaskError(
+                        error=traceback.format_exc(),
+                        exception=e,
+                        failed_event=event
+                    ))
 
         def done_check(_event) -> Optional[ActiveEventState]:
             """
@@ -903,7 +954,7 @@ class ProcessExecutor:
 
             if not found and parent_id == self.root_event.token_id and self.are_active_futures:
                 event.state.done()
-                return  # ==> if we still have running futures, we don't kill the main process
+                return None # ==> if we still have running futures, we don't kill the main process
 
             # we merge into the parent event if it's an end state.
             if parent_id is not None and not isinstance(finish_mode, CancelTaskFinishModeException):
@@ -917,6 +968,7 @@ class ProcessExecutor:
                     parent_event.state.route(parent_event.context)
 
             event.state.done()
+            return None
 
         def done_task(_event) -> None:
             self.unregister_event(event)

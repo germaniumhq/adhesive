@@ -3,8 +3,8 @@ import unittest
 from adhesive.model.ProcessExecutor import ProcessExecutor
 from adhesive.process_read.bpmn import read_bpmn_file
 
-from .test_tasks import adhesive
-from .check_equals import assert_equal_execution
+from test.adhesive.execution.test_tasks import adhesive
+from test.adhesive.execution.check_equals import assert_equal_execution
 
 
 class TestErrorEventPropagatesUp(unittest.TestCase):
