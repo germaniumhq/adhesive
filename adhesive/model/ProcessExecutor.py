@@ -103,7 +103,8 @@ class OutgoingEdgesFinishMode(TaskFinishMode):
 def raise_unhandled_exception(task_error: TaskError):
     log_path = get_folder(task_error.failed_event)
 
-    LOG.error(red(f"Process execution failed. Unhandled error from {task_error.failed_event}."))
+    LOG.error(red("Process execution failed. Unhandled error from ") +
+              red(str(task_error.failed_event), bold=True))
 
     if logredirect.is_enabled:
         stdout_file = os.path.join(log_path, "stdout")
@@ -856,10 +857,13 @@ class ProcessExecutor:
             task_error: TaskError = _event.data.task_error
 
             if task_error.failed_event != event:
-                LOG.info(red("Term ") + red(event.context.task_name, bold=True))
+                LOG.info(red("Terminated ") +
+                         red(event.context.task_name, bold=True) +
+                         red(" reason: ") +
+                         red(str(task_error.failed_event), bold=True))
                 return
 
-            LOG.info(red("Fail ") + red(event.context.task_name, bold=True))
+            LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
 
         def error_task(_event) -> None:
             event.state.done_check(_event.data)
