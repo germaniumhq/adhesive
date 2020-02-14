@@ -12,7 +12,7 @@ extras_require = {
 
 setup(
     name='adhesive',
-    version='0.1.feature_cancel-running-task',
+    version='1.2.1',
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
