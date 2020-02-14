@@ -306,6 +306,7 @@ class ProcessExecutor:
 
                 try:
                     context = future.result()
+
                     self.events[token_id].state.route(context)
                 except CancelTaskFinishModeException:
                     pass
@@ -586,8 +587,8 @@ class ProcessExecutor:
                             f"The result of the task is ignored, but the thread "
                             f"keeps running in the background.")
 
-            # parent_event.future.set_exception(e)
             parent_event.future.cancel()
+            parent_event.future.set_exception(e)
 
         if e.task_error:
             parent_event.state.error(e)
