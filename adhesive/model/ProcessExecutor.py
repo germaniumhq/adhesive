@@ -586,11 +586,11 @@ class ProcessExecutor:
                             f"The result of the task is ignored, but the thread "
                             f"keeps running in the background.")
 
-            parent_event.future.set_exception(e)
+            # parent_event.future.set_exception(e)
             parent_event.future.cancel()
 
         if e.task_error:
-            parent_event.state.error(e.task_error)
+            parent_event.state.error(e)
             return
 
         parent_event.state.done_check(e)
@@ -852,7 +852,7 @@ class ProcessExecutor:
                 LOG.info(green("Done ") + green(event.context.task_name, bold=True))
                 return
 
-            task_error: TaskError = _event.data
+            task_error: TaskError = _event.data.task_error
 
             if task_error.failed_event != event:
                 LOG.info(red("Term ") + red(event.context.task_name, bold=True))
