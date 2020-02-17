@@ -311,6 +311,8 @@ class ProcessExecutor:
                     self.events[token_id].state.route(context)
                 except CancelTaskFinishModeException:
                     pass
+                except concurrent.futures.CancelledError:
+                    pass
                 except Exception as e:
                     self.handle_task_error(
                         TaskError(
@@ -589,7 +591,13 @@ class ProcessExecutor:
                             f"keeps running in the background.")
 
             parent_event.future.cancel()
-            parent_event.future.set_exception(e)
+            # FIXME: hack. It seems that the `set_exception` is not needed, but
+            # if cancel isn't called, the process isn't terminated. If it's called
+            # after set_exception, again it isn't terminated.
+            try:
+                parent_event.future.set_exception(e)
+            except Exception:
+                pass
 
         if e.task_error:
             parent_event.state.error(e)
