@@ -33,6 +33,7 @@ from adhesive.graph.WaitingGateway import WaitingGateway
 from adhesive.graph.time.TimerBoundaryEvent import TimerBoundaryEvent
 from adhesive.model.GatewayController import GatewayController
 from adhesive.model.MessageEventExecutor import MessageEventExecutor
+from adhesive.model.ProcessEvents import ProcessEvents
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.UserTaskProvider import UserTaskProvider
 from adhesive.model.process_validator import _validate_tasks
@@ -54,7 +55,8 @@ from adhesive.model import loop_controller
 
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
-from adhesive.model.ActiveEvent import ActiveEvent, PRE_RUN_STATES, is_potential_predecessor, copy_event, DONE_STATES
+from adhesive.model.ActiveEvent import ActiveEvent, PRE_RUN_STATES, is_potential_predecessor, copy_event, DONE_STATES, \
+    ACTIVE_STATES
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 
 import signal
@@ -126,6 +128,25 @@ def raise_unhandled_exception(task_error: TaskError):
     sys.exit(1)
 
 
+def log_running_done(event: ActiveEvent,
+                     task_error: Optional[TaskError] = None):
+    if event.loop_type in (ActiveLoopType.INITIAL, ActiveLoopType.INITIAL_EMPTY):
+        return
+
+    if not task_error:
+        LOG.info(green("Done ") + green(event.context.task_name, bold=True))
+        return
+
+    if task_error.failed_event != event:
+        LOG.info(red("Terminated ") +
+                 red(event.context.task_name, bold=True) +
+                 red(" reason: ") +
+                 red(str(task_error.failed_event), bold=True))
+        return
+
+    LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
+
+
 class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -149,7 +170,7 @@ class ProcessExecutor:
         # A dictionary of events that are currently active. This is just to find out
         # the parent of an event, since from it we can also derive the current parent
         # process.
-        self.events: Dict[str, ActiveEvent] = dict()
+        self.events: ProcessEvents = ProcessEvents()
         self.futures: Dict[Future, str] = dict()
         self.ut_provider = ut_provider
 
@@ -161,8 +182,6 @@ class ProcessExecutor:
         self.config = ProcessExecutorConfig(wait_tasks=wait_tasks)
         self.execution_id = str(uuid.uuid4())
 
-    # FIXME: reintroduce async? Since the tasks are executing on the
-    # thread pool without async, they shouldn't impact log redirection.
     def execute(self,
                 initial_data=None) -> ExecutionData:
         """
@@ -245,6 +264,20 @@ class ProcessExecutor:
 
             self.futures[executor.future] = "__message_executor"
 
+    def consume_events(self,
+                       state: ActiveEventState,
+                       callback):
+        event, data = self.events.pop(state)
+        while event:
+            callback(event, data)
+            event, data = self.events.pop(state)
+
+    def new_event(self,
+                  event: ActiveEvent,
+                  data: Any):
+        self.events.transition(event=event,
+                               state=ActiveEventState.PROCESSING)
+
     def execute_process_event_loop(self) -> None:
         """
         Main event loop. Processes the events from a process until no more
@@ -254,20 +287,14 @@ class ProcessExecutor:
         :return: data from the last execution token.
         """
         while self.events or self.futures:
-            pending_events: List[ActiveEvent] = \
-                list(filter(lambda e: e.state.state == ActiveEventState.NEW,
-                                         self.events.values()))
-
             # we ensure we have only events to be processed
-            while pending_events:
-                # except for new processes, and processes that are running with futures
-                # the states should transition automatically.
-                processed_events = list(pending_events)
-                for pending_event in processed_events:
-                    pending_event.state.process()
-
-                pending_events = list(filter(lambda e: e.state.state == ActiveEventState.NEW,
-                                             self.events.values()))
+            self.consume_events(ActiveEventState.NEW, self.new_event)
+            self.consume_events(ActiveEventState.PROCESSING, self.process_event)
+            self.consume_events(ActiveEventState.WAITING, self.wait_task)
+            self.consume_events(ActiveEventState.RUNNING, self.run_task)
+            self.consume_events(ActiveEventState.ROUTING, self.route_task)
+            self.consume_events(ActiveEventState.DONE_CHECK, self.done_check)
+            self.consume_events(ActiveEventState.DONE, self.done_task)
 
             if not self.futures:
                 time.sleep(0.1)
@@ -297,15 +324,22 @@ class ProcessExecutor:
                             found = True
                             break
 
+                    # FIXME: why could this be not found?
                     if not found:
-                        self.root_event.state.route(self.root_event.context)
+                        self.events.transition(
+                            event=self.root_event,
+                            state=ActiveEventState.ROUTING,
+                            data=self.root_event.context)
 
                     continue
 
                 try:
                     context = future.result()
 
-                    self.events[token_id].state.route(context)
+                    self.events.transition(
+                        event=token_id,
+                        state=ActiveEventState.ROUTING,
+                        data=context)
                 except CancelTaskFinishModeException:
                     pass
                 except concurrent.futures.CancelledError:
@@ -450,10 +484,18 @@ class ProcessExecutor:
                 pass
 
         if e.task_error:
-            parent_event.state.error(e)
+            self.events.transition(
+                event=parent_event,
+                state=ActiveEventState.ERROR,
+                data=e
+            )
             return
 
-        parent_event.state.done_check(e)
+        self.events.transition(
+            event=parent_event,
+            state=ActiveEventState.DONE_CHECK,
+            data=e,
+        )
 
     @property
     def are_active_futures(self) -> bool:
@@ -518,6 +560,341 @@ class ProcessExecutor:
 
         self.cancel_subtree(event, CancelTaskFinishModeException(root_node=True, task_error=task_error))
 
+    def process_event(self, event, data) -> None:
+        # if there is no processing needed, we skip to routing
+        if isinstance(event.task, Event) or \
+                isinstance(event.task, NonWaitingGateway):
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.ROUTING,
+                data=event.context,
+            )
+            return
+
+        # if we need to wait, we wait.
+        if isinstance(event.task, WaitingGateway):
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.WAITING
+            )
+            return
+
+        # normally we shouldn't wait for tasks, since it's counter BPMN, so
+        # we allow configuring waiting for it.
+        if self.config.wait_tasks and (
+                isinstance(event.task, ProcessTask) or
+                isinstance(event.task, Process)
+        ):
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.WAITING
+            )
+            return
+
+        self.events.transition(
+            event=event,
+            state=ActiveEventState.RUNNING
+        )
+
+    def get_other_task_waiting(
+                self,
+                source: ActiveEvent) -> \
+            Tuple[Optional[ActiveEvent], int]:
+        """
+        Get any other task that is waiting to be executed on the
+        same task that's waiting.
+        :param source:
+        :return:
+        """
+        result = None
+        count = 0
+
+        if source.context.loop and \
+                source.context.loop.task.id == source.task.id and \
+                source.context.loop.index >= 0:
+            return result, count
+
+        for ev in self.events.iterate(PRE_RUN_STATES):
+            if ev == source:
+                continue
+
+            if ev.task == source.task and loop_id(ev) == loop_id(source):
+                if not result:
+                    result = ev
+
+                count += 1
+
+        return result, count
+
+    def get_process(self,
+                    event: ActiveEvent) -> Process:
+        if not event.parent_id:
+            return self.adhesive_process.process
+
+        process = cast(Process, self.events[event.parent_id].task)
+
+        return process
+
+    def wait_task(self, event: ActiveEvent, data: Any) -> None:
+        # is another waiting task already present?
+        other_waiting, tasks_waiting_count = self.get_other_task_waiting(event)
+
+        potential_predecessors = list(map(
+            lambda e: e.task,
+            filter(lambda e: is_potential_predecessor(self, event, e),
+                   self.events.iterate(ACTIVE_STATES))))
+
+        if other_waiting:
+            new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
+            other_waiting.context.data = new_data
+
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.DONE
+            )
+
+        # this should return for initial loops
+        process = self.get_process(event)
+
+        # if we have predecessors, we stay in waiting
+        predecessor_id = process.are_predecessors(event.task, potential_predecessors)
+
+        if predecessor_id:
+            LOG.debug(f"Predecessor found for {event}. Waiting for {predecessor_id}.")
+            return None
+
+        if not other_waiting:
+            self.events.transition(event=event,
+                                   state=ActiveEventState.RUNNING)
+            return
+
+        if other_waiting.state.state == ActiveEventState.WAITING and \
+                tasks_waiting_count == 1:
+            self.events.transition(event=event,
+                                   state=ActiveEventState.RUNNING)
+            return
+
+        LOG.debug("Waiting for none, yet staying in WAITING?")
+        return None
+
+    def run_task(self, event: ActiveEvent, data: Any) -> None:
+        if event.loop_type == ActiveLoopType.INITIAL:
+            loop_controller.evaluate_initial_loop(event, self.clone_event)
+
+            if event.loop_type == ActiveLoopType.INITIAL_EMPTY:
+                self.events.transition(event=event,
+                                       state=ActiveEventState.ROUTING)
+            else:
+                self.events.transition(event=event,
+                                       state=ActiveEventState.DONE)
+
+            return
+
+        # FIXME: probably this try/except should be longer than just the LOG
+        try:
+            LOG.info(yellow("Run  ") + yellow(event.context.task_name, bold=True))
+        except Exception as e:
+            raise Exception(f"Failure on {event.context.task_name}", e)
+
+        # When we start running, we must register now timer events against the
+        # schedule
+        if isinstance(event.task, ProcessTask) and event.task.timer_events:
+            timers: Set[ActiveTimer] = set()
+            self.active_timers[event.token_id] = timers
+
+            for timer_event in event.task.timer_events:
+                timers.add(create_active_timer(
+                    fire_timer=self.fire_timer,
+                    parent_token=event,
+                    boundary_event_definition=timer_event))
+
+        if isinstance(event.task, Process):
+            for start_task in event.task.start_events.values():
+                if isinstance(start_task, ProcessTask) and start_task.loop:
+                    # we start a loop by firing the loop events, and consume this event.
+                    loop_controller.create_loop(event,
+                                                self.clone_event,
+                                                start_task,
+                                                parent_id=event.token_id)
+                else:
+                    self.clone_event(event, start_task, parent_id=event.token_id)
+
+            return None
+
+        if isinstance(event.task, Task):
+            if event.task.id not in self.tasks_impl:
+                error_message = f"BUG: Task id {event.task.id} ({event.task.name}) " \
+                                f"not found in implementations {self.tasks_impl}"
+
+                LOG.fatal(red(error_message, bold=True))
+                raise Exception(error_message)
+
+            future: Future[ExecutionToken] = ProcessExecutor.pool.schedule(
+                self.tasks_impl[event.task.id].invoke,
+                args=(copy_event(event),))
+            self.futures[future] = event.token_id
+            event.future = future
+            return None
+
+        if isinstance(event.task, ScriptTask):
+            future = ProcessExecutor.pool.schedule(
+                call_script_task,
+                args=(copy_event(event),))
+            self.futures[future] = event.token_id
+            event.future = future
+            return None
+
+        if isinstance(event.task, UserTask):
+            future = Future()
+            self.futures[future] = event.token_id
+            event.future = future
+
+            assert self.ut_provider
+
+            self.ut_provider.register_event(self, event)
+
+            return None
+
+        return event.state.route(event.context)
+
+    def route_task(self,
+                   event: ActiveEvent,
+                   data: Any) -> None:
+
+        try:
+            # Since we're in routing, we passed the actual running, so we need to update the
+            # context with the new execution token.
+            event.context = data
+
+            # we don't route, since we have live events created from the
+            # INITIAL loop type
+            if event.loop_type == ActiveLoopType.INITIAL:
+                self.events.transition(event=event,
+                                       state=ActiveEventState.DONE)
+                return
+
+            if loop_controller.next_conditional_loop_iteration(event, self.clone_event):
+                # obviously the done checks are not needed, since we're
+                # still in the loop
+                self.events.transition(event=event,
+                                       state=ActiveEventState.DONE)
+
+                return
+
+            process = self.get_process(event)
+
+            outgoing_edges = GatewayController.compute_outgoing_edges(process, event)
+
+            for outgoing_edge in outgoing_edges:
+                target_task = process.tasks[outgoing_edge.target_id]
+                if isinstance(target_task, ProcessTask) and target_task.loop:
+                    # we start a loop by firing the loop events, and consume this event.
+                    loop_controller.create_loop(event, self.clone_event, target_task)
+                else:
+                    self.clone_event(event, target_task)
+
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.DONE_CHECK,
+                data=OutgoingEdgesFinishMode(outgoing_edges)
+            )
+        except Exception as e:
+            self.handle_task_error(
+                TaskError(
+                    error=traceback.format_exc(),
+                    exception=e,
+                    failed_event=event
+                ))
+
+    def done_check(self,
+                   event: ActiveEvent,
+                   finish_mode: TaskFinishMode) -> None:
+        """
+        Runs the handling for an event that is considered an end
+        event in its parent.
+        :param _event:
+        :return:
+        """
+        if isinstance(finish_mode, OutgoingEdgesFinishMode) and finish_mode.outgoing_edges or \
+           isinstance(finish_mode, CancelTaskFinishModeException) and not finish_mode.root_node:
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.DONE,
+            )
+            return None
+
+        # we should check all the WAITING processes if they finished.
+        event_count: Dict[ExecutableNode, int] = dict()
+        waiting_events: List[ActiveEvent] = list()
+
+        process = self.get_process(event)
+
+        for id, self_event in self.events.events.items():
+            if self_event.state.state in DONE_STATES:
+                continue
+
+            if self_event.task.process_id != process.id:
+                continue
+
+            event_count[self_event.task] = event_count.get(self_event.task, 0) + 1
+
+            if self_event.state.state == ActiveEventState.WAITING:
+                waiting_events.append(self_event)
+
+        for waiting_event in waiting_events:
+            if event_count[waiting_event.task] > 1:
+                continue
+
+            if waiting_event.task.process_id != process.id:
+                continue
+
+            potential_predecessors = list(map(
+                lambda e: e.task,
+                filter(lambda e: is_potential_predecessor(self, waiting_event, e), self.events.events.values())))
+
+            if not process.are_predecessors(waiting_event.task, potential_predecessors):
+                waiting_event.state.run()
+
+        # check sub-process termination
+        found = False
+        for ev in self.events.excluding(ActiveEventState.DONE):
+            if ev.parent_id == event.parent_id and ev != event:
+                found = True
+                break
+
+        if not found and \
+                event.parent_id == self.root_event.token_id and \
+                self.are_active_futures:
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.DONE
+            )
+            return None # ==> if we still have running futures, we don't kill the main process
+
+        # we merge into the parent event if it's an end state.
+        if event.parent_id is not None and \
+                not isinstance(finish_mode, CancelTaskFinishModeException):
+            self.events[event.parent_id].context.data = ExecutionData.merge(
+                self.events[event.parent_id].context.data,
+                event.context.data
+            )
+
+            if not found:
+                parent_event = self.events[event.parent_id]
+                self.events.transition(
+                    event=parent_event,
+                    state=ActiveEventState.ROUTING,
+                    data=parent_event.context
+                )
+
+        self.events.transition(
+            event=event,
+            state=ActiveEventState.DONE
+        )
+
+    def done_task(self, event: ActiveEvent, data: Any) -> None:
+        self.unregister_event(event)
+
     def clone_event(self,
                     old_event: ActiveEvent,
                     task: ExecutableNode,
@@ -528,321 +905,5 @@ class ProcessExecutor:
 
         event = old_event.clone(task, parent_id)
         self.register_event(event)
-
-        process: Process
-
-        if parent_id is None:
-            process = self.adhesive_process.process
-        else:
-            if parent_id not in self.events:
-                LOG.warning(f"Event {parent_id} not found.")
-                process = self.adhesive_process.process
-            elif not isinstance(self.events[parent_id].task, Process):
-                LOG.warning(f"Task {self.events[parent_id].task} for parent {parent_id} "
-                            f"is not a process.")
-                process = self.adhesive_process.process
-            else:
-                process = cast(Process, self.events[parent_id].task)
-
-        def process_event(_event) -> ActiveEventState:
-            # if there is no processing needed, we skip to routing
-            if isinstance(event.task, Event) or \
-                    isinstance(event.task, NonWaitingGateway):
-                return event.state.route(event.context)
-
-            # if we need to wait, we wait.
-            if isinstance(event.task, WaitingGateway):
-                return event.state.wait_check()
-
-            # normally we shouldn't wait for tasks, since it's counter BPMN, so
-            # we allow configuring waiting for it.
-            if self.config.wait_tasks and (
-                    isinstance(event.task, ProcessTask) or
-                    isinstance(event.task, Process)
-            ):
-                return event.state.wait_check()
-
-            return event.state.run()
-
-        def get_other_task_waiting(source: ActiveEvent) -> \
-                Tuple[Optional[ActiveEvent], int]:
-            """
-            Get any other task that is waiting to be executed on the
-            same task that's waiting.
-            :param source:
-            :return:
-            """
-            result = None
-            count = 0
-
-            if source.context.loop and \
-                    source.context.loop.task.id == source.task.id and \
-                    source.context.loop.index >= 0:
-                return result, count
-
-            for ev in self.events.values():
-                if ev == source:
-                    continue
-
-                if ev.task == source.task and \
-                        ev.state.state in PRE_RUN_STATES and \
-                        loop_id(ev) == loop_id(source):
-                    if not result:
-                        result = ev
-
-                    count += 1
-
-            return result, count
-
-        def wait_task(_event) -> Optional[ActiveEventState]:
-            # is another waiting task already present?
-            other_waiting, tasks_waiting_count = get_other_task_waiting(event)
-
-            potential_predecessors = list(map(
-                lambda e: e.task,
-                filter(lambda e: is_potential_predecessor(self, event, e), self.events.values())))
-
-            if other_waiting:
-                new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
-                other_waiting.context.data = new_data
-
-                event.state.done()
-
-            # this should return for initial loops
-
-            # if we have predecessors, we stay in waiting
-            predecessor_id = process.are_predecessors(event.task, potential_predecessors)
-            if predecessor_id:
-                LOG.debug(f"Predecessor found for {event}. Waiting for {predecessor_id}.")
-                return None
-
-            if not other_waiting:
-                return event.state.run()
-
-            if other_waiting.state.state == ActiveEventState.WAITING and \
-                    tasks_waiting_count == 1:
-                other_waiting.state.run()
-
-            LOG.debug("Waiting for none, yet staying in WAITING?")
-            return None
-
-        def run_task(_event) -> Optional[ActiveEventState]:
-            if event.loop_type == ActiveLoopType.INITIAL:
-                loop_controller.evaluate_initial_loop(event, self.clone_event)
-
-                if event.loop_type == ActiveLoopType.INITIAL_EMPTY:
-                    event.state.route(event.context)
-                else:
-                    event.state.done()
-
-                return None
-
-            # FIXME: probably this try/except should be longer than just the LOG
-            try:
-                LOG.info(yellow("Run  ") + yellow(event.context.task_name, bold=True))
-            except Exception as e:
-                raise Exception(f"Failure on {event.context.task_name}", e)
-
-            # When we start running, we must register now timer events against the
-            # schedule
-            if isinstance(event.task, ProcessTask) and event.task.timer_events:
-                timers: Set[ActiveTimer] = set()
-                self.active_timers[event.token_id] = timers
-
-                for timer_event in event.task.timer_events:
-                    timers.add(create_active_timer(
-                        fire_timer=self.fire_timer,
-                        parent_token=event,
-                        boundary_event_definition=timer_event))
-
-            if isinstance(event.task, Process):
-                for start_task in event.task.start_events.values():
-                    if isinstance(start_task, ProcessTask) and start_task.loop:
-                        # we start a loop by firing the loop events, and consume this event.
-                        loop_controller.create_loop(event,
-                                                    self.clone_event,
-                                                    start_task,
-                                                    parent_id=event.token_id)
-                    else:
-                        self.clone_event(event, start_task, parent_id=event.token_id)
-
-                return None
-
-            if isinstance(event.task, Task):
-                if event.task.id not in self.tasks_impl:
-                    error_message = f"BUG: Task id {event.task.id} ({event.task.name}) " \
-                                    f"not found in implementations {self.tasks_impl}"
-
-                    LOG.fatal(red(error_message, bold=True))
-                    raise Exception(error_message)
-
-                future: Future[ExecutionToken] = ProcessExecutor.pool.schedule(
-                    self.tasks_impl[event.task.id].invoke,
-                    args=(copy_event(event),))
-                self.futures[future] = event.token_id
-                event.future = future
-                return None
-
-            if isinstance(event.task, ScriptTask):
-                future = ProcessExecutor.pool.schedule(
-                    call_script_task,
-                    args=(copy_event(event),))
-                self.futures[future] = event.token_id
-                event.future = future
-                return None
-
-            if isinstance(event.task, UserTask):
-                future = Future()
-                self.futures[future] = event.token_id
-                event.future = future
-
-                assert self.ut_provider
-
-                self.ut_provider.register_event(self, event)
-
-                return None
-
-            return event.state.route(event.context)
-
-        def log_running_done(_event):
-            if event.loop_type in (ActiveLoopType.INITIAL, ActiveLoopType.INITIAL_EMPTY):
-                return
-
-            if _event.target_state != ActiveEventState.ERROR:
-                LOG.info(green("Done ") + green(event.context.task_name, bold=True))
-                return
-
-            task_error: TaskError = _event.data.task_error
-
-            if task_error.failed_event != event:
-                LOG.info(red("Terminated ") +
-                         red(event.context.task_name, bold=True) +
-                         red(" reason: ") +
-                         red(str(task_error.failed_event), bold=True))
-                return
-
-            LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
-
-        def error_task(_event) -> None:
-            event.state.done_check(_event.data)
-
-        def route_task(_event) -> None:
-            try:
-                # Since we're in routing, we passed the actual running, so we need to update the
-                # context with the new execution token.
-                event.context = _event.data
-
-                # we don't route, since we have live events created from the
-                # INITIAL loop type
-                if event.loop_type == ActiveLoopType.INITIAL:
-                    event.state.done()
-                    return
-
-                if loop_controller.next_conditional_loop_iteration(event, self.clone_event):
-                    # obviously the done checks are not needed, since we're
-                    # still in the loop
-                    event.state.done()
-
-                    return
-
-                outgoing_edges = GatewayController.compute_outgoing_edges(process, event)
-
-                for outgoing_edge in outgoing_edges:
-                    target_task = process.tasks[outgoing_edge.target_id]
-                    if isinstance(target_task, ProcessTask) and target_task.loop:
-                        # we start a loop by firing the loop events, and consume this event.
-                        loop_controller.create_loop(event, self.clone_event, target_task)
-                    else:
-                        self.clone_event(event, target_task)
-
-                event.state.done_check(OutgoingEdgesFinishMode(outgoing_edges))
-            except Exception as e:
-                self.handle_task_error(
-                    TaskError(
-                        error=traceback.format_exc(),
-                        exception=e,
-                        failed_event=event
-                    ))
-
-        def done_check(_event) -> Optional[ActiveEventState]:
-            """
-            Runs the handling for an event that is considered an end
-            event in its parent.
-            :param _event:
-            :return:
-            """
-            finish_mode: TaskFinishMode = _event.data
-
-            if isinstance(finish_mode, OutgoingEdgesFinishMode) and finish_mode.outgoing_edges or \
-               isinstance(finish_mode, CancelTaskFinishModeException) and not finish_mode.root_node:
-                event.state.done()
-                return None
-
-            # we should check all the WAITING processes if they finished.
-            event_count: Dict[ExecutableNode, int] = dict()
-            waiting_events: List[ActiveEvent] = list()
-
-            for id, self_event in self.events.items():
-                if self_event.state.state in DONE_STATES:
-                    continue
-
-                if self_event.task.process_id != process.id:
-                    continue
-
-                event_count[self_event.task] = event_count.get(self_event.task, 0) + 1
-
-                if self_event.state.state == ActiveEventState.WAITING:
-                    waiting_events.append(self_event)
-
-            for waiting_event in waiting_events:
-                if event_count[waiting_event.task] > 1:
-                    continue
-
-                if waiting_event.task.process_id != process.id:
-                    continue
-
-                potential_predecessors = list(map(
-                    lambda e: e.task,
-                    filter(lambda e: is_potential_predecessor(self, waiting_event, e), self.events.values())))
-
-                if not process.are_predecessors(waiting_event.task, potential_predecessors):
-                    waiting_event.state.run()
-
-            # check sub-process termination
-            found = False
-            for ev in self.events.values():
-                if ev.parent_id == event.parent_id and ev != event:
-                    found = True
-                    break
-
-            if not found and parent_id == self.root_event.token_id and self.are_active_futures:
-                event.state.done()
-                return None # ==> if we still have running futures, we don't kill the main process
-
-            # we merge into the parent event if it's an end state.
-            if parent_id is not None and not isinstance(finish_mode, CancelTaskFinishModeException):
-                self.events[parent_id].context.data = ExecutionData.merge(
-                    self.events[parent_id].context.data,
-                    event.context.data
-                )
-
-                if not found:
-                    parent_event = self.events[parent_id]
-                    parent_event.state.route(parent_event.context)
-
-            event.state.done()
-            return None
-
-        def done_task(_event) -> None:
-            self.unregister_event(event)
-
-        event.state.after_enter(ActiveEventState.PROCESSING, process_event)
-        event.state.after_enter(ActiveEventState.WAITING, wait_task)
-        event.state.after_enter(ActiveEventState.RUNNING, run_task)
-        event.state.after_leave(ActiveEventState.RUNNING, log_running_done)
-        event.state.after_enter(ActiveEventState.ERROR, error_task)
-        event.state.after_enter(ActiveEventState.ROUTING, route_task)
-        event.state.after_enter(ActiveEventState.DONE_CHECK, done_check)
-        event.state.after_enter(ActiveEventState.DONE, done_task)
 
         return event
