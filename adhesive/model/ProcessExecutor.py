@@ -295,6 +295,7 @@ class ProcessExecutor:
                 self.consume_events(ActiveEventState.NEW, self.new_event)
                 self.consume_events(ActiveEventState.PROCESSING, self.process_event)
                 self.consume_events(ActiveEventState.WAITING, self.wait_task)
+                self.consume_events(ActiveEventState.ERROR, self.done_check)
                 self.consume_events(ActiveEventState.RUNNING, self.run_task)
                 self.consume_events(ActiveEventState.ROUTING, self.route_task)
                 self.consume_events(ActiveEventState.DONE_CHECK, self.done_check)
@@ -463,7 +464,7 @@ class ProcessExecutor:
                        parent_event: ActiveEvent,
                        e: CancelTaskFinishModeException) -> None:
         # we move the nested events into error
-        for potential_child in list(self.events.values()):
+        for potential_child in list(self.events.events.values()):
             if potential_child.parent_id != parent_event.token_id:
                 continue
 

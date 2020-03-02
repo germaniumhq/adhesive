@@ -23,7 +23,7 @@ class TestProcessExecutorSubProcess(unittest.TestCase):
             'Test Firefox': 1,
             'Test Chrome': 1,
         }, data.executions)
-        self.assertFalse(process_executor.events.keys())
+        self.assertFalse(process_executor.events)
 
     def test_sub_process_execution_non_wait(self):
         """
@@ -41,7 +41,7 @@ class TestProcessExecutorSubProcess(unittest.TestCase):
             'Test Firefox': 1,
             'Test Chrome': 1,
         }, data.executions)
-        self.assertFalse(process_executor.events.keys())
+        self.assertFalse(process_executor.events)
 
 
 if __name__ == '__main__':
