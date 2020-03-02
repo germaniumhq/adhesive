@@ -17,11 +17,15 @@ class ProcessEvents:
         for state in ActiveEventState:
             self.handlers[state] = OrderedDict()
 
+        self.changed = False
+
     def transition(self,
                    *,
                    event: Union[ActiveEvent, str],
                    state: ActiveEventState,
                    data: Optional = None) -> None:
+        self.changed = True
+
         if not isinstance(event, ActiveEvent):
             event = self.events[event]
 

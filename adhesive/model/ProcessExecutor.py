@@ -288,13 +288,17 @@ class ProcessExecutor:
         """
         while self.events or self.futures:
             # we ensure we have only events to be processed
-            self.consume_events(ActiveEventState.NEW, self.new_event)
-            self.consume_events(ActiveEventState.PROCESSING, self.process_event)
-            self.consume_events(ActiveEventState.WAITING, self.wait_task)
-            self.consume_events(ActiveEventState.RUNNING, self.run_task)
-            self.consume_events(ActiveEventState.ROUTING, self.route_task)
-            self.consume_events(ActiveEventState.DONE_CHECK, self.done_check)
-            self.consume_events(ActiveEventState.DONE, self.done_task)
+            self.events.changed = True
+
+            while self.events.changed:
+                self.events.changed = False
+                self.consume_events(ActiveEventState.NEW, self.new_event)
+                self.consume_events(ActiveEventState.PROCESSING, self.process_event)
+                self.consume_events(ActiveEventState.WAITING, self.wait_task)
+                self.consume_events(ActiveEventState.RUNNING, self.run_task)
+                self.consume_events(ActiveEventState.ROUTING, self.route_task)
+                self.consume_events(ActiveEventState.DONE_CHECK, self.done_check)
+                self.consume_events(ActiveEventState.DONE, self.done_task)
 
             if not self.futures:
                 time.sleep(0.1)
