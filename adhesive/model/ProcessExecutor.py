@@ -323,7 +323,7 @@ class ProcessExecutor:
                     # FIXME: this is duplicated code from done_task
                     # check sub-process termination
                     found = False
-                    for ev in self.events.values():
+                    for ev in self.events.excluding(ActiveEventState.DONE):
                         if ev.parent_id == self.root_event.token_id and ev != self.root_event:
                             found = True
                             break
@@ -674,7 +674,7 @@ class ProcessExecutor:
 
         if other_waiting.state.state == ActiveEventState.WAITING and \
                 tasks_waiting_count == 1:
-            self.events.transition(event=event,
+            self.events.transition(event=other_waiting,
                                    state=ActiveEventState.RUNNING)
             return
 
@@ -759,7 +759,11 @@ class ProcessExecutor:
 
             return None
 
-        return event.state.route(event.context)
+        self.events.transition(
+            event=event,
+            state=ActiveEventState.ROUTING,
+            data=event.context,
+        )
 
     def route_task(self,
                    event: ActiveEvent,
@@ -857,7 +861,10 @@ class ProcessExecutor:
                 filter(lambda e: is_potential_predecessor(self, waiting_event, e), self.events.events.values())))
 
             if not process.are_predecessors(waiting_event.task, potential_predecessors):
-                waiting_event.state.run()
+                self.events.transition(
+                    event=waiting_event,
+                    state=ActiveEventState.RUNNING,
+                )
 
         # check sub-process termination
         found = False
