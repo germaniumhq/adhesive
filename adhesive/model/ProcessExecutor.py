@@ -13,7 +13,7 @@ import schedule
 
 import adhesive
 from adhesive import logredirect
-from adhesive.consoleui.color_print import green, red, yellow, white
+from adhesive.consoleui.color_print import red, yellow, white
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionData import ExecutionData
 from adhesive.execution.ExecutionLoop import loop_id
@@ -36,7 +36,6 @@ from adhesive.model.MessageEventExecutor import MessageEventExecutor
 from adhesive.model.ProcessEvents import ProcessEvents
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.UserTaskProvider import UserTaskProvider
-from adhesive.model.process_validator import _validate_tasks
 from adhesive.model.time.ActiveTimer import ActiveTimer
 from adhesive.model.time.active_timer_factory import create_active_timer
 from adhesive.storage.ensure_folder import get_folder
@@ -128,25 +127,6 @@ def raise_unhandled_exception(task_error: TaskError):
     sys.exit(1)
 
 
-def log_running_done(event: ActiveEvent,
-                     task_error: Optional[TaskError] = None):
-    if event.loop_type in (ActiveLoopType.INITIAL, ActiveLoopType.INITIAL_EMPTY):
-        return
-
-    if not task_error:
-        LOG.info(green("Done ") + green(event.context.task_name, bold=True))
-        return
-
-    if task_error.failed_event != event:
-        LOG.info(red("Terminated ") +
-                 red(event.context.task_name, bold=True) +
-                 red(" reason: ") +
-                 red(str(task_error.failed_event), bold=True))
-        return
-
-    LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
-
-
 class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
@@ -228,7 +208,7 @@ class ProcessExecutor:
 
     def print_state(self, x, y) -> None:
         LOG.info("Events list:")
-        for event in self.events.values():
+        for event in self.events.events.values():
             LOG.info(event)
 
         LOG.info("Futures:")
@@ -488,14 +468,6 @@ class ProcessExecutor:
             except Exception:
                 pass
 
-        if e.task_error:
-            self.events.transition(
-                event=parent_event,
-                state=ActiveEventState.ERROR,
-                data=e
-            )
-            return
-
         self.events.transition(
             event=parent_event,
             state=ActiveEventState.DONE_CHECK,
@@ -515,16 +487,14 @@ class ProcessExecutor:
 
     def handle_task_error(self,
                           task_error: TaskError) -> None:
-        handling_event = task_error.failed_event
+        handling_event: ActiveEvent = task_error.failed_event
 
         if not isinstance(handling_event.task, ProcessTask):
             handling_event = self.get_parent(handling_event.token_id)
 
-        process_task: ProcessTask = cast(ProcessTask, handling_event.task)
-
-        while not process_task.error_task and handling_event != self.root_event:
+        while not cast(ProcessTask, handling_event.task).error_task and \
+                handling_event != self.root_event:
             handling_event = self.get_parent(handling_event.token_id)
-            process_task = cast(ProcessTask, handling_event.task)
 
         if handling_event == self.root_event:
             self.root_error_handling(task_error)
@@ -688,7 +658,8 @@ class ProcessExecutor:
 
             if event.loop_type == ActiveLoopType.INITIAL_EMPTY:
                 self.events.transition(event=event,
-                                       state=ActiveEventState.ROUTING)
+                                       state=ActiveEventState.ROUTING,
+                                       data=event.context)
             else:
                 self.events.transition(event=event,
                                        state=ActiveEventState.DONE)
@@ -919,3 +890,6 @@ class ProcessExecutor:
         self.register_event(event)
 
         return event
+
+
+from adhesive.model.process_validator import _validate_tasks
