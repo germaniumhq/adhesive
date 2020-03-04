@@ -10,7 +10,7 @@ from adhesive.execution import token_utils
 from adhesive.execution.ExecutionLoop import loop_id
 from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.graph.ProcessTask import ProcessTask
-from adhesive.model.ActiveEventStateMachine import ActiveEventStateMachine, ActiveEventState
+from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
 
 LOG = logging.getLogger(__name__)
@@ -58,9 +58,7 @@ class ActiveEvent:
         self._task = context.task
         self.context = context
 
-        self.state = ActiveEventStateMachine()
-        self.state.active_event = self
-
+        self.state = ActiveEventState.NEW
         self.future: Optional[Future] = None
 
         self.loop_type: Optional[ActiveLoopType] = None
@@ -124,7 +122,7 @@ class ActiveEvent:
 
     def __repr__(self) -> str:
         # the task.token_id should be the same as the self.texecutionoken_id
-        return f"ActiveEvent({self.token_id}, {self.state.state}): " \
+        return f"ActiveEvent({self.token_id}, {self.state}): " \
                f"({self.task.id}):{self.context.task_name}"
 
 
@@ -148,7 +146,7 @@ def is_potential_predecessor(self, event: ActiveEvent, e: ActiveEvent) -> bool:
     if event.parent_id != e.parent_id:
         return False
 
-    if e.state.state not in ACTIVE_STATES:
+    if e.state not in ACTIVE_STATES:
         return False
 
     if e.task == event.task:

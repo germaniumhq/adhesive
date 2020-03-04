@@ -643,7 +643,7 @@ class ProcessExecutor:
                                    state=ActiveEventState.RUNNING)
             return
 
-        if other_waiting.state.state == ActiveEventState.WAITING and \
+        if other_waiting.state == ActiveEventState.WAITING and \
                 tasks_waiting_count == 1:
             self.events.transition(event=other_waiting,
                                    state=ActiveEventState.RUNNING)
@@ -810,7 +810,7 @@ class ProcessExecutor:
         process = self.get_process(event)
 
         for id, self_event in self.events.events.items():
-            if self_event.state.state in DONE_STATES:
+            if self_event.state in DONE_STATES:
                 continue
 
             if self_event.task.process_id != process.id:
@@ -818,7 +818,7 @@ class ProcessExecutor:
 
             event_count[self_event.task] = event_count.get(self_event.task, 0) + 1
 
-            if self_event.state.state == ActiveEventState.WAITING:
+            if self_event.state == ActiveEventState.WAITING:
                 waiting_events.append(self_event)
 
         for waiting_event in waiting_events:

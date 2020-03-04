@@ -53,16 +53,16 @@ class ProcessEvents:
         if not isinstance(event, ActiveEvent):
             event = self.events[event]
 
-        if event.state.state == ActiveEventState.RUNNING:
+        if event.state == ActiveEventState.RUNNING:
             log_running_done(event, data.task_error if data and hasattr(data, 'task_error') else None)
 
-        del self.bystate[event.state.state][event.token_id]
-        if event.token_id in self.handlers[event.state.state]:
-            del self.handlers[event.state.state][event.token_id]
+        del self.bystate[event.state][event.token_id]
+        if event.token_id in self.handlers[event.state]:
+            del self.handlers[event.state][event.token_id]
 
-        event.state.changeState(state, data)
-        self.bystate[event.state.state][event.token_id] = event
-        self.handlers[event.state.state][event.token_id] = (event, data)
+        event.state = state
+        self.bystate[event.state][event.token_id] = event
+        self.handlers[event.state][event.token_id] = (event, data)
 
     def get(self,
             state: ActiveEventState) -> Optional[ActiveEvent]:
@@ -122,15 +122,15 @@ class ProcessEvents:
 
     def __setitem__(self, key: str, value: ActiveEvent) -> None:
         self.events[key] = value
-        self.bystate[value.state.state][key] = value
-        self.handlers[value.state.state][key] = (value, None)
+        self.bystate[value.state][key] = value
+        self.handlers[value.state][key] = (value, None)
 
     def __delitem__(self, key: str) -> None:
         event = self.events[key]
         del self.events[key]
-        del self.bystate[event.state.state][event.token_id]
-        if event.token_id in self.bystate[event.state.state]:
-            del self.bystate[event.state.state][event.token_id]
+        del self.bystate[event.state][event.token_id]
+        if event.token_id in self.bystate[event.state]:
+            del self.bystate[event.state][event.token_id]
 
     def __len__(self) -> int:
         return len(self.events)
