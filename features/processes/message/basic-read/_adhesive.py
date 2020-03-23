@@ -2,6 +2,7 @@ import adhesive
 import uuid
 import unittest
 import logging
+import time
 
 LOG = logging.getLogger(__name__)
 
@@ -10,8 +11,9 @@ test = unittest.TestCase()
 
 @adhesive.message('Generate Event')
 def message_generate_event(context):
-    for i in range(10):
+    for i in range(5):
         yield i
+        time.sleep(0.2)  # we give it time so the process can exit
 
 
 @adhesive.task('Process Event')
@@ -26,4 +28,4 @@ data = adhesive.bpmn_build("basic-read.bpmn",
                             wait_tasks=False)
 
 
-test.assertEqual(10, len(data.executions))
+test.assertEqual(5, len(data.executions))

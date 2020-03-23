@@ -480,8 +480,10 @@ class ProcessExecutor:
             return False
 
         for future in self.futures:
-            if future.running():
-                return True
+            # future.running()
+            with cast(Any, future)._condition:
+                if cast(Any, future)._state in ['RUNNING', 'PENDING']:
+                    return True
 
         return False
 
@@ -606,7 +608,10 @@ class ProcessExecutor:
         if not event.parent_id:
             return self.adhesive_process.process
 
-        process = cast(Process, self.events[event.parent_id].task)
+        try:
+            process = cast(Process, self.events[event.parent_id].task)
+        except Exception:
+            LOG.error("Unable to find parent process for {}", event)
 
         return process
 
@@ -845,15 +850,6 @@ class ProcessExecutor:
                 found = True
                 break
 
-        if not found and \
-                event.parent_id == self.root_event.token_id and \
-                self.are_active_futures:
-            self.events.transition(
-                event=event,
-                state=ActiveEventState.DONE
-            )
-            return None # ==> if we still have running futures, we don't kill the main process
-
         # we merge into the parent event if it's an end state.
         if event.parent_id is not None and \
                 not isinstance(finish_mode, CancelTaskFinishModeException):
@@ -861,6 +857,15 @@ class ProcessExecutor:
                 self.events[event.parent_id].context.data,
                 event.context.data
             )
+
+            if not found and \
+                    event.parent_id == self.root_event.token_id and \
+                    self.are_active_futures:
+                self.events.transition(
+                    event=event,
+                    state=ActiveEventState.DONE
+                )
+                return None  # ==> if we still have running futures, we don't kill the main process
 
             if not found:
                 parent_event = self.events[event.parent_id]

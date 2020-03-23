@@ -20,7 +20,6 @@ class MessageEventExecutor:
                  enqueue_event) -> None:
         self.id = str(uuid.uuid4())
 
-
         self.root_event = root_event         # Used only to print the task name
         self.message_event = message_event
         self.execution_message_event = execution_message_event
