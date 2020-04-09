@@ -77,11 +77,10 @@ class ExecutionLoop:
         index = 0
         for item in result:
             new_event = clone_event(event, target_task)
-            loop_id = str(uuid.uuid4())
 
             parent_loop = new_event.context.loop
             new_event.context.loop = ExecutionLoop(
-                loop_id=loop_id,
+                event_id=event.token_id,
                 parent_loop=parent_loop,
                 task=target_task,
                 item=item,
@@ -113,7 +112,7 @@ def parent_loop_id(e: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]
     if not e.context.loop.parent_loop:
         return None
 
-    return f"{e.context.loop.parent_loop.loop_id}:{e.context.loop.parent_loop.index}"
+    return f"{e.context.loop.parent_loop.event_id}:{e.context.loop.parent_loop.index}"
 
 
 def loop_id(event: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]:

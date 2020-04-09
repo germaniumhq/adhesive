@@ -103,7 +103,7 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
             task=cast(ProcessTask, event.task),
             item=item,
             index=index,
-            expression=cast(ProcessTask, event.task).loop.loop_expression)
+            expression=event.task.loop.loop_expression)
 
         # if we're iterating over a map, we're going to store the
         # values as well.
