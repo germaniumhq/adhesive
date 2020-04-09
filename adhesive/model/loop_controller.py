@@ -28,8 +28,6 @@ def create_loop(event: ActiveEvent,
     assert new_event.context
     assert target_task.loop
 
-    loop_id = str(uuid.uuid4())
-
     owning_loop = event.context.loop
 
     # FIXME: task check should have just worked
@@ -39,7 +37,7 @@ def create_loop(event: ActiveEvent,
 
     new_event.loop_type = ActiveLoopType.INITIAL
     new_event.context.loop = ExecutionLoop(
-        loop_id=loop_id,
+        event_id=event.token_id,
         parent_loop=owning_loop,
         task=new_event.task,
         item=None,
@@ -68,16 +66,16 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         return
 
     if not is_collection(loop_data):
-        LOG.debug(f"Loop: CONDITION loop for {event.context.loop.loop_id}")
+        LOG.debug(f"Loop: CONDITION loop for {event.context.loop.event_id}")
         new_event = clone_event(event, event.task)
         new_event.loop_type = ActiveLoopType.CONDITION
 
         assert new_event.context
 
         new_event.context.loop = ExecutionLoop(
-            loop_id=event.context.loop.loop_id,
+            event_id=event.token_id,
             parent_loop=event.context.loop.parent_loop,
-            task=event.task,
+            task=cast(ProcessTask, event.task),
             item=loop_data,
             index=0,
             expression=event.task.loop.loop_expression)
@@ -88,7 +86,7 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
 
         return
 
-    LOG.debug(f"Loop: COLLECTION loop for {event.context.loop.loop_id}")
+    LOG.debug(f"Loop: COLLECTION loop for {event.context.loop.event_id}")
 
     index = 0
     for item in loop_data:
@@ -100,12 +98,12 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         LOG.debug(f"Loop: parent loop {event.context.loop.parent_loop}")
 
         new_event.context.loop = ExecutionLoop(
-            loop_id=event.context.loop.loop_id,
+            event_id=event.token_id,
             parent_loop=event.context.loop.parent_loop,
-            task=event.task,
+            task=cast(ProcessTask, event.task),
             item=item,
             index=index,
-            expression=event.task.loop.loop_expression)
+            expression=cast(ProcessTask, event.task).loop.loop_expression)
 
         # if we're iterating over a map, we're going to store the
         # values as well.
@@ -153,7 +151,7 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
     assert event.context.loop
 
     new_event.context.loop = ExecutionLoop(
-        loop_id=event.context.loop.loop_id,
+        event_id=event.token_id,
         parent_loop=event.context.loop.parent_loop,
         task=cast(ProcessTask, event.task),
         item=result,

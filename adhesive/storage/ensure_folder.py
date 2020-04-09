@@ -45,7 +45,7 @@ def _get_loop(event: 'ActiveEvent') -> str:
     result = ""
 
     while loop:
-        result += f"_loop_{loop.index}/"
+        result += f"_loop_{loop.event_id}_{loop.index}/"
         loop = loop.parent_loop
 
     return result

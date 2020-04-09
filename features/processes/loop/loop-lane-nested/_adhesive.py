@@ -14,7 +14,7 @@ def lane_custom(context):
         yield w
 
 
-@adhesive.task('Running (.*) on (.*)')
+@adhesive.task(re='Running (.*) on (.*)')
 def run_simple_task(context, task_name, platform):
     print(f"Running {task_name} on {platform}")
 

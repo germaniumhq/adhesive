@@ -13,7 +13,7 @@ class ExecutionLoop:
     """
     def __init__(self,
                  *args,
-                 loop_id: str,
+                 event_id: str,
                  parent_loop: Optional['ExecutionLoop'],
                  task: ProcessTask,
                  item: Any,
@@ -22,7 +22,7 @@ class ExecutionLoop:
         if args:
             raise Exception("You need to pass the parameters by name")
 
-        self.loop_id = loop_id
+        self.event_id = event_id
         self._task = task
         self._key = item
         self._value = item
@@ -58,7 +58,7 @@ class ExecutionLoop:
         """
         String object representation
         """
-        return f"Loop[ loop_id: {self.loop_id}, index: {self.index}, key: {self._key}, value: {self._value}"
+        return f"Loop[ event_id: {self.event_id}, index: {self.index}, key: {self._key}, value: {self._value}"
 
     @staticmethod
     def create_loop(event: 'adhesive.model.ActiveEvent.ActiveEvent',
@@ -133,4 +133,4 @@ def loop_id(event: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]:
     if not loop:
         return None
 
-    return f"{loop.loop_id}:{loop.index}"
+    return f"{loop.event_id}:{loop.index}"
