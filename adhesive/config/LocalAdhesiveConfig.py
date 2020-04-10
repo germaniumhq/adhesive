@@ -23,7 +23,7 @@ class LocalAdhesiveConfig(AdhesiveConfig):
             "plugins": [],
         }
 
-        self._program_config = dict()
+        self._program_config: Dict[str, Any] = dict()
         self._local_config = local_config if local_config is not None else dict()
         self._user_config = user_config if user_config is not None else dict()
         self._environment = environment if environment is not None else os.environ
