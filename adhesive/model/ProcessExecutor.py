@@ -38,7 +38,7 @@ from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.UserTaskProvider import UserTaskProvider
 from adhesive.model.time.ActiveTimer import ActiveTimer
 from adhesive.model.time.active_timer_factory import create_active_timer
-from adhesive.storage.ensure_folder import get_folder
+from adhesive.storage.task_storage import get_folder
 
 T = TypeVar('T')
 

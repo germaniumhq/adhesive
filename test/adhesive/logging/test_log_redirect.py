@@ -4,7 +4,7 @@ import uuid
 
 from adhesive.logredirect.LogRedirect import redirect_stdout
 from adhesive import logredirect
-from adhesive.storage.ensure_folder import ensure_folder
+from adhesive.storage.task_storage import ensure_folder
 
 import threading
 

@@ -6,7 +6,7 @@ from typing import Optional, Union, Iterable, Generator
 from uuid import uuid4
 import logging
 
-from adhesive.storage.ensure_folder import get_folder
+from adhesive.storage.task_storage import get_folder
 from .Workspace import Workspace
 
 LOG = logging.getLogger(__name__)

@@ -139,5 +139,5 @@ def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
             new_stderr.close()
 
 
-from adhesive.storage.ensure_folder import ensure_folder
+from adhesive.storage.task_storage import ensure_folder
 

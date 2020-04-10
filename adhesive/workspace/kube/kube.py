@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import Optional, Union
 from uuid import uuid4
 
-from adhesive.storage.ensure_folder import get_folder
+from adhesive.storage.task_storage import get_folder
 from adhesive.workspace.Workspace import Workspace
 
 LOG = logging.getLogger(__name__)
