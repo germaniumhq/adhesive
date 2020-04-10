@@ -107,7 +107,7 @@ def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
     """
     Redirects the stdout/stderr to a file.
     """
-    if not is_enabled:
+    if not is_enabled():
         yield None
         return
 

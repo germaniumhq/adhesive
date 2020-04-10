@@ -104,7 +104,7 @@ def raise_unhandled_exception(task_error: TaskError):
     LOG.error(red("Process execution failed. Unhandled error from ") +
               red(str(task_error.failed_event), bold=True))
 
-    if logredirect.is_enabled:
+    if logredirect.is_enabled():
         stdout_file = os.path.join(log_path, "stdout")
         if os.path.isfile(stdout_file):
             with open(stdout_file) as f:
