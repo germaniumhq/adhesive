@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Callable, TypeVar, Optional, Union, List, Generator, Any, cast
+from typing import Callable, TypeVar, Optional, Union, List, Generator, Any, cast, IO, TextIO
 
 from adhesive import config
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
@@ -185,7 +185,7 @@ def process_start():
     return builder
 
 
-def bpmn_build(file_name: str,
+def bpmn_build(file_name: Union[str, IO[bytes], TextIO],
                ut_provider: Optional['UserTaskProvider'] = None,
                wait_tasks: bool = True,
                initial_data = None):

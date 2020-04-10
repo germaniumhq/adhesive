@@ -1,5 +1,5 @@
 import re
-from typing import Tuple, Optional, TypeVar, cast
+from typing import Tuple, Optional, TypeVar, cast, Union, IO, TextIO
 from xml.etree import ElementTree
 
 from adhesive.graph.time.CycleTimerBoundaryEvent import CycleTimerBoundaryEvent
@@ -43,7 +43,7 @@ boundary_ignored_elements = set(ignored_elements)
 boundary_ignored_elements.add("outputSet")
 
 
-def read_bpmn_file(file_name: str) -> Process:
+def read_bpmn_file(file_name: Union[str, IO[bytes], TextIO]) -> Process:
     """ Read a BPMN file as a build process. """
     root_node = ElementTree.parse(file_name).getroot()
     process = find_node(root_node, 'process')
