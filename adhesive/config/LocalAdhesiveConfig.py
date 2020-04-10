@@ -17,15 +17,21 @@ class LocalAdhesiveConfig(AdhesiveConfig):
         # FIXME: detect if possible where's the /tmp folder
         self._defaults = {
             "color": True,
+            "stdout": False,
             "temp_folder": "/tmp/adhesive",
             "log_level": "info",
             "plugins": [],
         }
+
+        self._program_config = dict()
         self._local_config = local_config if local_config is not None else dict()
         self._user_config = user_config if user_config is not None else dict()
         self._environment = environment if environment is not None else os.environ
 
     def __getattr__(self, item: str) -> Any:
+        if item in self._program_config:
+            return self._program_config[item]
+
         env_name = f"ADHESIVE_{item.upper()}"
 
         if env_name in self._environment:
@@ -44,3 +50,9 @@ class LocalAdhesiveConfig(AdhesiveConfig):
 
         return None
 
+    def __setattr__(self, key: str, value: Any) -> None:
+        if key.startswith("_"):
+            super(LocalAdhesiveConfig, self).__setattr__(key, value)
+            return
+
+        self._program_config[key] = value

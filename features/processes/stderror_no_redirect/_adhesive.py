@@ -1,4 +1,7 @@
 import adhesive
+from adhesive.config import current
+
+current.stdout = True
 
 
 @adhesive.task('Run a failing task')
