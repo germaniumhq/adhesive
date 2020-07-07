@@ -16,12 +16,12 @@ from adhesive import logredirect
 from adhesive.consoleui.color_print import red, yellow, white
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionData import ExecutionData
-from adhesive.execution.ExecutionLoop import loop_id
 from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
 from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.execution.call_script_task import call_script_task
+from adhesive.execution.deduplication import get_deduplication_id
 from adhesive.graph.Edge import Edge
 from adhesive.graph.Event import Event
 from adhesive.graph.ExecutableNode import ExecutableNode
@@ -54,7 +54,7 @@ from adhesive.model import loop_controller
 
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
-from adhesive.model.ActiveEvent import ActiveEvent, PRE_RUN_STATES, is_potential_predecessor, copy_event, DONE_STATES, \
+from adhesive.model.ActiveEvent import ActiveEvent, is_potential_predecessor, copy_event, DONE_STATES, \
     ACTIVE_STATES
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 
@@ -255,6 +255,10 @@ class ProcessExecutor:
     def new_event(self,
                   event: ActiveEvent,
                   data: Any):
+        # we keep track how many deduplication events are in flight
+        if event.deduplication_id:
+            self.events.register_deduplication_event(event)
+
         self.events.transition(event=event,
                                state=ActiveEventState.PROCESSING)
 
@@ -537,7 +541,7 @@ class ProcessExecutor:
 
         self.cancel_subtree(event, CancelTaskFinishModeException(root_node=True, task_error=task_error))
 
-    def process_event(self, event, data) -> None:
+    def process_event(self, event: ActiveEvent, data: Any) -> None:
         # if there is no processing needed, we skip to routing
         if isinstance(event.task, Event) or \
                 isinstance(event.task, NonWaitingGateway):
@@ -568,40 +572,19 @@ class ProcessExecutor:
             )
             return
 
+        if isinstance(event.task, ProcessTask) and \
+                cast(ProcessTask, event.task).deduplicate is not None:
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.WAITING
+            )
+
+            return
+
         self.events.transition(
             event=event,
             state=ActiveEventState.RUNNING
         )
-
-    def get_other_task_waiting(
-                self,
-                source: ActiveEvent) -> \
-            Tuple[Optional[ActiveEvent], int]:
-        """
-        Get any other task that is waiting to be executed on the
-        same task that's waiting.
-        :param source:
-        :return:
-        """
-        result = None
-        count = 0
-
-        if source.context.loop and \
-                source.context.loop.task.id == source.task.id and \
-                source.context.loop.index >= 0:
-            return result, count
-
-        for ev in self.events.iterate(PRE_RUN_STATES):
-            if ev == source:
-                continue
-
-            if ev.task == source.task and loop_id(ev) == loop_id(source):
-                if not result:
-                    result = ev
-
-                count += 1
-
-        return result, count
 
     def get_process(self,
                     event: ActiveEvent) -> Process:
@@ -617,12 +600,19 @@ class ProcessExecutor:
 
     def wait_task(self, event: ActiveEvent, data: Any) -> None:
         # is another waiting task already present?
-        other_waiting, tasks_waiting_count = self.get_other_task_waiting(event)
+        other_waiting, tasks_waiting_count = self.events.get_other_task_waiting(event)
 
         potential_predecessors = list(map(
             lambda e: e.task,
             filter(lambda e: is_potential_predecessor(self, event, e),
                    self.events.iterate(ACTIVE_STATES))))
+
+        # if we have a deduplication event, and there are other events in flight
+        # for the same deduplication id, this event will stay in WAIT.
+        if other_waiting and \
+                other_waiting is event and \
+                other_waiting.deduplication_id is not None:
+            return
 
         if other_waiting:
             new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
@@ -670,6 +660,8 @@ class ProcessExecutor:
                                        state=ActiveEventState.DONE)
 
             return
+
+        self.events.clear_waiting_deduplication(event=event)
 
         # FIXME: probably this try/except should be longer than just the LOG
         try:
@@ -881,6 +873,10 @@ class ProcessExecutor:
         )
 
     def done_task(self, event: ActiveEvent, data: Any) -> None:
+        # we keep track how many deduplication events are in flight
+        if event.deduplication_id:
+            self.events.unregister_deduplication_event(event)
+
         self.unregister_event(event)
 
     def clone_event(self,
@@ -892,6 +888,10 @@ class ProcessExecutor:
             parent_id = old_event.parent_id
 
         event = old_event.clone(task, parent_id)
+
+        if isinstance(task, ProcessTask):
+            event.deduplication_id = get_deduplication_id(event)
+
         self.register_event(event)
 
         return event

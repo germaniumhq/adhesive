@@ -66,6 +66,10 @@ def _validate_tasks(self: 'ProcessExecutor',
                 continue
 
             self.tasks_impl[task_id] = adhesive_task
+
+            # we copy the deduplication expression
+            task.deduplicate = adhesive_task.deduplicate
+
             adhesive_task.used = True
             continue
 
@@ -77,6 +81,10 @@ def _validate_tasks(self: 'ProcessExecutor',
                 continue
 
             self.user_tasks_impl[task_id] = adhesive_user_task
+
+            # we copy the deduplication expression
+            task.deduplicate = adhesive_user_task.deduplicate
+
             adhesive_user_task.used = True
             continue
 

@@ -18,14 +18,18 @@ class ExecutionUserTask(ExecutionBaseTask):
                  regex_expressions: RegexList,
                  loop: Optional[str] = None,
                  when: Optional[str] = None,
-                 lane: Optional[str] = None) -> None:
+                 lane: Optional[str] = None,
+                 deduplicate: Optional[str] = None,
+            ) -> None:
         if args:
             raise Exception("You need to pass in the arguments by name")
 
         super(ExecutionUserTask, self).__init__(
             code=code,
             expressions=expressions,
-            regex_expressions=regex_expressions)
+            regex_expressions=regex_expressions,
+            deduplicate=deduplicate,
+        )
 
         self.loop = loop
         self.when = when

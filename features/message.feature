@@ -22,3 +22,9 @@ Scenario: Run the deduplication process sync
 Scenario: Run the deduplication process async
     When I run adhesive on 'processes/message/deduplication-async'
     Then the adhesive process has passed
+
+@4
+Scenario: Run the deduplication process using annotations
+    When I run adhesive on 'processes/message/deduplication-annotation'
+    Then the adhesive process has passed
+

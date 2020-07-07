@@ -13,7 +13,9 @@ class ProcessTask(ExecutableNode):
                  *args,
                  id: str,
                  name: str,
-                 parent_process: 'Process') -> None:
+                 parent_process: 'Process',
+                 deduplicate: Optional[str] = None,
+            ) -> None:
         if args:
             raise Exception("You need to use named parameters")
 
@@ -24,6 +26,7 @@ class ProcessTask(ExecutableNode):
 
         self.error_task: Optional['ErrorBoundaryEvent'] = None
         self.timer_events: Optional[Set[TimerBoundaryEvent]] = None
+        self.deduplicate = deduplicate
 
         self.loop: Optional[Loop] = None
 

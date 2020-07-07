@@ -1,9 +1,11 @@
 import logging
 from collections import OrderedDict
-from typing import Dict, Optional, Union, Iterable, Tuple, Any
+from typing import Dict, Optional, Union, Iterable, Tuple, Any, cast
 
+from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.consoleui.color_print import green, red
-from adhesive.model.ActiveEvent import ActiveEvent
+from adhesive.execution.ExecutionLoop import loop_id
+from adhesive.model.ActiveEvent import ActiveEvent, PRE_RUN_STATES
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
 
@@ -30,10 +32,18 @@ def log_running_done(event: ActiveEvent,
 
 
 class ProcessEvents:
+    """
+    A class that transitions and keeps track of all the events
+    that run in a process.
+    """
     def __init__(self):
         self.events: Dict[str, ActiveEvent] = dict()
         self.bystate: Dict[ActiveEventState, Dict[str, ActiveEvent]] = dict()
         self.handlers: Dict[ActiveEventState, Dict[str, Tuple[ActiveEvent, Any]]] = dict()
+
+        # Keeps the count of active deduplicated events, for a given deduplication ID.
+        self._deduplicated_active_count: Dict[str, int] = dict()
+        self._deduplicated_waiting: Dict[str, ActiveEvent] = dict()
 
         for state in ActiveEventState:
             self.bystate[state] = OrderedDict()
@@ -114,16 +124,87 @@ class ProcessEvents:
 
         return
 
+    def get_other_task_waiting(
+                self,
+                event: ActiveEvent) -> \
+            Tuple[Optional[ActiveEvent], int]:
+        """
+        Get any other task that is waiting to be executed on the
+        same task that's waiting.
+        :param event:
+        :return:
+        """
+        result = None
+        count = 0
+
+        # if we have a task that requires deduplication, and there is another event
+        # in flight, we need to go ahead and mark it as waiting.
+        if isinstance(event.task, ProcessTask) and \
+                cast(ProcessTask, event.task).deduplicate is not None and \
+                event.deduplication_id is not None and \
+                self._deduplicated_active_count[event.deduplication_id] > 1:
+
+            if event.deduplication_id in self._deduplicated_waiting and \
+                    event.deduplication_id is not None:
+                return self._deduplicated_waiting[event.deduplication_id], 1
+
+            self._deduplicated_waiting[event.deduplication_id] = event
+
+            return event, 1
+
+        if event.context.loop and \
+                event.context.loop.task.id == event.task.id and \
+                event.context.loop.index >= 0:
+            return result, count
+
+        for ev in self.iterate(PRE_RUN_STATES):
+            if ev == event:
+                continue
+
+            if ev.task == event.task and loop_id(ev) == loop_id(event):
+                if not result:
+                    result = ev
+
+                count += 1
+
+        return result, count
+
     def __contains__(self, item):
         return item in self.events
 
     def __getitem__(self, item: str) -> ActiveEvent:
         return self.events[item]
 
-    def __setitem__(self, key: str, value: ActiveEvent) -> None:
-        self.events[key] = value
-        self.bystate[value.state][key] = value
-        self.handlers[value.state][key] = (value, None)
+    def __setitem__(self, key: str, event: ActiveEvent) -> None:
+        self.events[key] = event
+        self.bystate[event.state][key] = event
+        self.handlers[event.state][key] = (event, None)
+
+    def register_deduplication_event(self, event: ActiveEvent):
+        if event.deduplication_id is None:
+            raise Exception("deduplication_id is none. This is an Adhesive BUG, "
+                            "please report it.")
+
+        self._deduplicated_active_count[event.deduplication_id] = \
+            self._deduplicated_active_count.get(event.deduplication_id, 0) + 1
+
+    def unregister_deduplication_event(self, event: ActiveEvent):
+        if event.deduplication_id is None:
+            raise Exception("deduplication_id is none. This is an Adhesive BUG, "
+                            "please report it.")
+
+        self._deduplicated_active_count[event.deduplication_id] = \
+            self._deduplicated_active_count.get(event.deduplication_id, 0) - 1
+
+        if self._deduplicated_active_count[event.deduplication_id] == 0:
+            del self._deduplicated_active_count[event.deduplication_id]
+
+    def clear_waiting_deduplication(self, *, event: ActiveEvent):
+        if event.deduplication_id is not None and \
+                isinstance(event.task, ProcessTask) and \
+                cast(ProcessTask, event.task).deduplicate is not None and \
+                event.deduplication_id in self._deduplicated_waiting:
+            del self._deduplicated_waiting[event.deduplication_id]
 
     def __delitem__(self, key: str) -> None:
         event = self.events[key]

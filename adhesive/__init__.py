@@ -64,11 +64,14 @@ MessageFunction = _DecoratedFunction[T, MessageGenerator]
 
 #FIXME: move decorators into their own place
 
+
 def task(*task_names: str,
          re: Optional[Union[str, List[str]]] = None,
          loop: Optional[str] = None,
          when: Optional[str] = None,
-         lane: Optional[str] = None) -> Callable[[_DecoratedFunction[T, None]], _DecoratedFunction[T, None]]:
+         lane: Optional[str] = None,
+         deduplicate: Optional[str] = None,
+         ) -> Callable[[_DecoratedFunction[T, None]], _DecoratedFunction[T, None]]:
     def wrapper_builder(f: _DecoratedFunction[T, None]) -> _DecoratedFunction[T, None]:
         task = ExecutionTask(
             code=f,
@@ -76,7 +79,9 @@ def task(*task_names: str,
             regex_expressions=re,
             loop=loop,
             when=when,
-            lane=lane)
+            lane=lane,
+            deduplicate=deduplicate,
+        )
 
         process.task_definitions.append(task)
         process.chained_task_definitions.append(task)
@@ -93,7 +98,9 @@ def usertask(*task_names: str,
              re: Optional[Union[str, List[str]]] = None,
              loop: Optional[str] = None,
              when: Optional[str] = None,
-             lane: Optional[str] = None) -> Callable[[_DecoratedUiFunction[T, None]], _DecoratedUiFunction[T, None]]:
+             lane: Optional[str] = None,
+             deduplicate: Optional[str] = None,
+        ) -> Callable[[_DecoratedUiFunction[T, None]], _DecoratedUiFunction[T, None]]:
     def wrapper_builder(f: _DecoratedUiFunction[T, None]) -> _DecoratedUiFunction[T, None]:
         usertask = ExecutionUserTask(
             code=f,
@@ -101,7 +108,9 @@ def usertask(*task_names: str,
             regex_expressions=re,
             loop=loop,
             when=when,
-            lane=lane)
+            lane=lane,
+            deduplicate=deduplicate,
+        )
         process.user_task_definitions.append(usertask)
         process.chained_task_definitions.append(usertask)
         return f

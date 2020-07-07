@@ -18,7 +18,9 @@ class ExecutionTask(ExecutionBaseTask):
                  regex_expressions: RegexList,
                  loop: Optional[str] = None,
                  when: Optional[str] = None,
-                 lane: Optional[str] = None) -> None:
+                 lane: Optional[str] = None,
+                 deduplicate: Optional[str] = None,
+             ) -> None:
         """
         Create a new adhesive task. The `loop`, `when` and `lane` are only
         available when doing a programmatic API.
@@ -35,7 +37,9 @@ class ExecutionTask(ExecutionBaseTask):
         super(ExecutionTask, self).__init__(
             code=code,
             expressions=expressions,
-            regex_expressions=regex_expressions)
+            regex_expressions=regex_expressions,
+            deduplicate=deduplicate,
+        )
 
         self.loop = loop
         self.when = when

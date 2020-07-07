@@ -15,7 +15,9 @@ class ExecutionBaseTask:
                  *args,
                  code: Callable,
                  expressions: ExpressionList,
-                 regex_expressions: RegexList) -> None:
+                 regex_expressions: RegexList,
+                 deduplicate: Optional[str] = None
+            ) -> None:
         if args:
             raise Exception("You need to pass in the arguments by name")
 
@@ -31,6 +33,7 @@ class ExecutionBaseTask:
         self.re_expressions: List[Pattern] = []  # these one are actually checked
         self.code = code
         self.used = False  # this is set by the process executor task validation
+        self.deduplicate = deduplicate
 
         if expressions:
             for expression in expressions:

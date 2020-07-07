@@ -47,10 +47,13 @@ class ActiveEvent:
     def __init__(self,
                  execution_id: str,
                  parent_id: Optional['str'],
-                 context: 'ExecutionToken') -> None:
+                 context: 'ExecutionToken',
+                 deduplication_id: Optional[str] = None
+            ) -> None:
         self.execution_id = execution_id
         self.token_id: str = str(uuid.uuid4())
         self.parent_id = parent_id
+        self.deduplication_id = deduplication_id
 
         if not isinstance(context, ExecutionToken):
             raise Exception(f"Not an execution token: {context}")
@@ -68,6 +71,7 @@ class ActiveEvent:
             "execution_id": self.execution_id,
             "token_id": self.token_id,
             "parent_id": self.parent_id,
+            "deduplication_id": self.deduplication_id,
             "_task": self._task,
             "context": self.context
         }
@@ -81,7 +85,8 @@ class ActiveEvent:
         result = ActiveEvent(
             execution_id=self.execution_id,
             parent_id=parent_id,  # FIXME: why, if this is a clone
-            context=self.context.clone(task)
+            context=self.context.clone(task),
+            deduplication_id=self.deduplication_id,
         )
         result.context.token_id = result.token_id
 
@@ -121,7 +126,11 @@ class ActiveEvent:
         self._task = task
 
     def __repr__(self) -> str:
-        # the task.token_id should be the same as the self.texecutionoken_id
+        # the task.token_id should be the same as the self.execution.token_id
+        if self.deduplication_id:
+            return f"ActiveEvent({self.token_id}, {self.state}): " \
+                   f"({self.deduplication_id}:{self.task.id}):{self.context.task_name}"
+
         return f"ActiveEvent({self.token_id}, {self.state}): " \
                f"({self.task.id}):{self.context.task_name}"
 
