@@ -34,6 +34,7 @@ class Workspace(ABC):
     @abstractmethod
     def run(self,
             command: str,
+            shell: str = "/bin/sh",
             capture_stdout: bool = False) -> Union[str, None]:
         """
         Run a new command in the current workspace.
@@ -46,7 +47,8 @@ class Workspace(ABC):
 
     @abstractmethod
     def run_output(self,
-            command: str) -> str:
+            command: str,
+            shell: str = "/bin/sh") -> str:
         """
         Run a new command in the current workspace, and returns the stdout as a string.
         If the command returns a non-zero exit code, an exception is thrown.

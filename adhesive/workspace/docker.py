@@ -60,20 +60,23 @@ class DockerWorkspace(Workspace):
 
     def run(self,
             command: str,
+            shell: str = "/bin/sh",
             capture_stdout: bool = False) -> Union[str, None]:
 
         LOG.debug(f"Workspace: docker({self.id}).run: {command}")
 
         return self.parent_workspace.run(
-                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} /bin/sh -c {shlex.quote(command)}",
+                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}",
                 capture_stdout=capture_stdout)
 
-    def run_output(self, command: str) -> str:
+    def run_output(self,
+                   command: str,
+                   shell: str = "/bin/sh") -> str:
 
         LOG.debug(f"Workspace: docker({self.id}).run: {command}")
 
         return self.parent_workspace.run_output(
-                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} /bin/sh -c {shlex.quote(command)}")
+                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}")
 
     def write_file(
             self,

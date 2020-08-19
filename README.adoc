@@ -309,6 +309,25 @@ def gbs_test_linux(context) -> None:
     assert content == "yay"
 -----------------------------------------------------------------------------
 
+or we can use the simplified call with `run_output` that guarantees a `str` as
+result, unlike the `Optional[str]` for `run`:
+
+[source,python]
+-----------------------------------------------------------------------------
+@adhesive.task("Test")
+def gbs_test_linux(context) -> None:
+    content = context.workspace.run_output("echo yay")
+    assert content == "yay"
+-----------------------------------------------------------------------------
+
+The `run` commands implicitly use `/bin/sh`, but a custom shell can be
+specified by passing the `shell` argument:
+
+[source,python]
+-----------------------------------------------------------------------------
+content = context.workspace.run_output("echo yay", shell="/bin/bash")
+-----------------------------------------------------------------------------
+
 === Docker Workspace
 
 To create a docker workspace that runs inside a container with the tooling you

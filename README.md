@@ -279,6 +279,19 @@ If we’re interested in the program output we simply do a `run` with a
         content = context.workspace.run("echo yay", capture_stdout=True)
         assert content == "yay"
 
+or we can use the simplified call with `run_output` that guarantees a
+`str` as result, unlike the `Optional[str]` for `run`:
+
+    @adhesive.task("Test")
+    def gbs_test_linux(context) -> None:
+        content = context.workspace.run_output("echo yay")
+        assert content == "yay"
+
+The `run` commands implicitly use `/bin/sh`, but a custom shell can be
+specified by passing the `shell` argument:
+
+    content = context.workspace.run_output("echo yay", shell="/bin/bash")
+
 Docker Workspace
 ----------------
 

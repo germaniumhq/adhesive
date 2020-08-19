@@ -47,16 +47,18 @@ class SshWorkspace(Workspace):
 
     def run(self,
             command: str,
+            shell: str = "/bin/sh",
             capture_stdout: bool = False) -> Union[str, None]:
 
         channel = None
 
         try:
             parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
+            shell_command = f"{shell} -c {shlex.quote(parsed_command)}"
 
-            LOG.debug(f"Workspace: ssh({self.id}).run: {parsed_command}")
+            LOG.debug(f"Workspace: ssh({self.id}).run: {shell_command}")
 
-            stdin, stdout, stderr = self.ssh.exec_command(parsed_command)
+            stdin, stdout, stderr = self.ssh.exec_command(shell_command)
             channel = stdout.channel
 
             if capture_stdout:
@@ -93,16 +95,19 @@ class SshWorkspace(Workspace):
 
         return None
 
-    def run_output(self, command: str) -> str:
+    def run_output(self,
+                   command: str,
+                   shell: str = "/bin/sh") -> str:
 
         channel = None
 
         try:
             parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
+            shell_command = f"{shell} -c {shlex.quote(parsed_command)}"
 
-            LOG.debug(f"Workspace: ssh({self.id}).run: {parsed_command}")
+            LOG.debug(f"Workspace: ssh({self.id}).run: {shell_command}")
 
-            stdin, stdout, stderr = self.ssh.exec_command(parsed_command)
+            stdin, stdout, stderr = self.ssh.exec_command(shell_command)
             channel = stdout.channel
 
             result = bytes()

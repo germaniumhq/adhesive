@@ -20,11 +20,18 @@ class NoopWorkspace(Workspace):
 
     def run(self,
             command: str,
+            shell: str = "/bin/sh",
             capture_stdout: bool = False) -> Union[str, None]:
-        return self.parent_workspace.run(command, capture_stdout=capture_stdout)
+        return self.parent_workspace.run(
+            command,
+            shell=shell,
+            capture_stdout=capture_stdout,
+        )
 
-    def run_output(self, command: str) -> str:
-        return self.parent_workspace.run_output(command)
+    def run_output(self,
+                   command: str,
+                   shell: str = "/bin/sh") -> str:
+        return self.parent_workspace.run_output(command, shell=shell)
 
     def write_file(
             self,

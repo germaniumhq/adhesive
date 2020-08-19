@@ -34,6 +34,7 @@ class KubeWorkspace(Workspace):
 
     def run(self,
             command: str,
+            shell: str = "/bin/sh",
             capture_stdout: bool = False) -> Union[str, None]:
 
         LOG.debug(f"Workspace: kube({self.id}).run: {command}")
@@ -44,11 +45,13 @@ class KubeWorkspace(Workspace):
         if self.namespace:
             exec_command += f"--namespace {shlex.quote(self.namespace)} "
 
-        exec_command += f"-- /bin/sh -c {shlex.quote(parsed_command)}"
+        exec_command += f"-- {shell} -c {shlex.quote(parsed_command)}"
 
         return self.parent_workspace.run(exec_command, capture_stdout=capture_stdout)
 
-    def run_output(self, command: str) -> str:
+    def run_output(self,
+                   command: str,
+                   shell: str = "/bin/sh") -> str:
         LOG.debug(f"Workspace: kube({self.id}).run: {command}")
         parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
 
@@ -57,7 +60,7 @@ class KubeWorkspace(Workspace):
         if self.namespace:
             exec_command += f"--namespace {shlex.quote(self.namespace)} "
 
-        exec_command += f"-- /bin/sh -c {shlex.quote(parsed_command)}"
+        exec_command += f"-- {shell} -c {shlex.quote(parsed_command)}"
 
         return self.parent_workspace.run_output(exec_command)
 
