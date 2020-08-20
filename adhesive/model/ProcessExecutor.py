@@ -10,6 +10,7 @@ from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
 
 import pebble.pool
 import schedule
+import signal
 
 import adhesive
 from adhesive import logredirect
@@ -177,6 +178,7 @@ class ProcessExecutor:
             return ExecutionData(initial_data)
 
         signal.signal(signal.SIGUSR1, self.print_state)
+        signal.signal(signal.SIGINT, self.kill_itself)
 
         # since the workspaces are allocated by lanes, we need to ensure
         # our default lane is existing.
@@ -214,6 +216,11 @@ class ProcessExecutor:
         LOG.info("Futures:")
         for f in self.futures:
             LOG.info(f)
+
+    def kill_itself(self, x, y) -> None:
+        LOG.warning("SIGINT received. Shutting down.")
+        self.cancel_subtree(self.root_event,
+                            CancelTaskFinishModeException(root_node=True))
 
     def start_message_event_listeners(self, root_event: ActiveEvent):
         def create_callback_code(mevent_id, mevent):
