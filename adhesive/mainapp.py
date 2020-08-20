@@ -3,13 +3,23 @@ _locals = locals()
 
 
 import click
+import sys
 
 
 @click.group(invoke_without_command=True)
 @click.pass_context
-def __main(ctx):
-    if ctx.invoked_subcommand is None:
-        __adhesive_build()
+@click.option("--version",
+              help="Show the current version",
+              is_flag=True)
+def __main(ctx, version):
+    if ctx.invoked_subcommand is not None:
+        return
+
+    if version:
+        print("Adhesive 1.4.1")
+        sys.exit(0)
+
+    __adhesive_build()
 
 
 @__main.command('verify')
