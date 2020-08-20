@@ -483,8 +483,6 @@ class ProcessExecutor:
                             f"keeps running in the background.")
 
             LOG.warning(f"Cancelling active future for {parent_event}")
-            print(dir(parent_event.future))
-            print(parent_event.future)
             parent_event.future.cancel()
             # FIXME: hack. It seems that the `set_exception` is not needed, but
             # if cancel isn't called, the process isn't terminated. If it's called
