@@ -218,9 +218,21 @@ class ProcessExecutor:
             LOG.info(f)
 
     def kill_itself(self, x, y) -> None:
-        LOG.warning("SIGINT received. Shutting down.")
-        self.cancel_subtree(self.root_event,
-                            CancelTaskFinishModeException(root_node=True))
+        LOG.error("SIGINT received. Shutting down.")
+
+        task_error = TaskError(
+            error="SIGINT received.",
+            exception=Exception("SIGINT received"),
+            failed_event=self.root_event,
+        )
+
+        self.cancel_subtree(
+            self.root_event,
+            CancelTaskFinishModeException(
+                root_node=True,
+                task_error=task_error
+            )
+        )
 
     def start_message_event_listeners(self, root_event: ActiveEvent):
         def create_callback_code(mevent_id, mevent):
@@ -470,6 +482,9 @@ class ProcessExecutor:
                             f"The result of the task is ignored, but the thread "
                             f"keeps running in the background.")
 
+            LOG.warning(f"Cancelling active future for {parent_event}")
+            print(dir(parent_event.future))
+            print(parent_event.future)
             parent_event.future.cancel()
             # FIXME: hack. It seems that the `set_exception` is not needed, but
             # if cancel isn't called, the process isn't terminated. If it's called

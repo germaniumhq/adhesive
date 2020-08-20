@@ -12,7 +12,7 @@ extras_require = {
 
 setup(
     name='adhesive',
-    version="1.4.1",
+    version="0.1.master",
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -34,7 +34,7 @@ setup(
         "schedule==0.6.0",
         "python-dateutil==2.8.1",
         "yamldict >= 1.1.0, <2.0",
-        "Pebble==4.5.0"],
+        "Pebble==4.5.3"],
     extras_require=extras_require,
     packages=packages,
     package_data={
