@@ -107,11 +107,19 @@ class ActiveEvent:
         else:
             result.context.loop = self.context.loop
 
-        result.context.task_name = token_utils.parse_name(
-                result.context,
-                result.context.task.name)
+        result._update_title_from_context()
 
         return result
+
+    def _update_title_from_context(self) -> None:
+        # don't bother to do complicated things, if there's no
+        # interpolation to be done
+        if '{' not in self.context.task.name or '}' not in self.context.task.name:
+            return
+
+        self.context.task_name = token_utils.parse_name(
+                self.context,
+                self.context.task.name)
 
     @property
     def task(self) -> ExecutableNode:

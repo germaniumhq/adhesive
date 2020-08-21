@@ -644,6 +644,10 @@ class ProcessExecutor:
             new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
             other_waiting.context.data = new_data
 
+            # since the data updated, and the task hasn't started yet we need to ensure
+            # the title is up to date, before running it, and displaying it.
+            other_waiting._update_title_from_context()
+
             self.events.transition(
                 event=event,
                 state=ActiveEventState.DONE
@@ -871,6 +875,7 @@ class ProcessExecutor:
         # we merge into the parent event if it's an end state.
         if event.parent_id is not None and \
                 not isinstance(finish_mode, CancelTaskFinishModeException):
+            # since this happens in done, we don't need to update the task_name anymore
             self.events[event.parent_id].context.data = ExecutionData.merge(
                 self.events[event.parent_id].context.data,
                 event.context.data
