@@ -184,6 +184,12 @@ class ProcessExecutor:
         # our default lane is existing.
         lane_controller.ensure_default_lane(self.adhesive_process)
 
+        LOG.info(f"Adhesive version: 1.4.1")
+        LOG.info(f"Config: Pool size: {config.current.pool_size}")
+        LOG.info(f"Config: Parallel processing mode: {config.current.parallel_processing}")
+        LOG.info(f"Config: stdout: {config.current.stdout}")
+        LOG.info(f"Config: temp_folder: {config.current.temp_polder}")
+
         # FIXME: it's getting pretty crowded
         token_id = str(uuid.uuid4())
         process_context: ExecutionToken = ExecutionToken(

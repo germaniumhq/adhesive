@@ -31,13 +31,15 @@ def message_start_event(context):
 @adhesive.task('Deduplicate Task',
                deduplicate="event.id")
 def deduplicate_task(context):
-    pass
+    context.data.extra_id = context.data.event["id"]
 
 
 @adhesive.task('Execute Task')
 def execute_task(context):
     time.sleep(0.2)
     context.data.executed_tasks.add(str(uuid.uuid4()))
+
+    test.assertEqual(context.data.extra_id, context.data.event["id"])
 
 
 @adhesive.task('Noop')

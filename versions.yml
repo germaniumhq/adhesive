@@ -4,6 +4,7 @@ version:
     setup.py: version="**VERSION**",
     Dockerfile: pip3 install adhesive==**VERSION** mypy_extensions
     adhesive/mainapp.py: print("Adhesive **VERSION**")
+    adhesive/model/ProcessExecutor.py: 'LOG.info(f"Adhesive version: **VERSION**")'
 
 requirements:
   version: $(bin/requires_versions.py)
