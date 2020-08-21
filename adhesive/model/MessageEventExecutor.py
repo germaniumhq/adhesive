@@ -32,9 +32,13 @@ class MessageEventExecutor:
         Thread(target=self.run_thread_loop).start()
 
     def run_thread_loop(self):
+        # HACK: Here we need to use the token_utils.parse_name, since the actual
+        # event handler uses the context of the root_event, and that one is bounded
+        # to the [root process] task.
         event_name_parsed = token_utils.parse_name(
             self.root_event.context,
             self.message_event.name)
+
         LOG.info(yellow("Run  ") + yellow(event_name_parsed, bold=True))
 
         # FIXME: implement a decent test

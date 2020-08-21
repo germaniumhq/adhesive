@@ -1,6 +1,8 @@
 import logging
 from typing import List, Dict, Optional, Pattern
 
+from addict import addict
+
 from adhesive.execution.ExecutionToken import ExecutionToken
 
 LOG = logging.getLogger(__name__)
@@ -17,8 +19,14 @@ def parse_name(context: ExecutionToken,
     Parse the name of a task, or a lane depending on the
     current event token.
     """
+
+    # don't bother to do complicated things, if there's no
+    # interpolation to be done
+    if '{' not in name or '}' not in name:
+        return name
+
     try:
-        eval_data = get_eval_data(context)
+        eval_data = addict.Dict(get_eval_data(context))
         return name.format(**eval_data)
     except Exception:
         # LOG.warn(f"Failed to parse name {e}")

@@ -184,7 +184,7 @@ class ProcessExecutor:
         # our default lane is existing.
         lane_controller.ensure_default_lane(self.adhesive_process)
 
-        LOG.info(f"Adhesive version: 1.4.1")
+        LOG.info(f"Adhesive version: 1.4.6")
         LOG.info(f"Config: Pool size: {config.current.pool_size}")
         LOG.info(f"Config: Parallel processing mode: {config.current.parallel_processing}")
         LOG.info(f"Config: stdout: {config.current.stdout}")
@@ -243,12 +243,8 @@ class ProcessExecutor:
     def start_message_event_listeners(self, root_event: ActiveEvent):
         def create_callback_code(mevent_id, mevent):
             message_event = self.adhesive_process.process.message_events[mevent_id]
-            event_name_parsed = token_utils.parse_name(
-                self.root_event.context,
-                message_event.name)
-
             params = token_utils.matches(mevent.re_expressions,
-                                         event_name_parsed)
+                                         self.root_event.context.task_name)
 
             def callback_code(event_data):
                 self.enqueue_event(
@@ -646,7 +642,7 @@ class ProcessExecutor:
 
             # since the data updated, and the task hasn't started yet we need to ensure
             # the title is up to date, before running it, and displaying it.
-            other_waiting._update_title_from_context()
+            other_waiting.context._update_title_from_data()
 
             self.events.transition(
                 event=event,

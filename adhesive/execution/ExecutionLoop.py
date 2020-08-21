@@ -96,9 +96,7 @@ class ExecutionLoop:
             # supposed to function
             # FIXME: rename all event.contexts to event.token. Context is only
             # true in the scope of an execution task.
-            new_event.context.task_name = token_utils.parse_name(
-                    new_event.context,
-                    new_event.context.task.name)
+            new_event.context._update_title_from_data()
 
             index += 1
 

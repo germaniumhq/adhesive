@@ -80,9 +80,7 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
             index=0,
             expression=event.task.loop.loop_expression)
 
-        new_event.context.task_name = token_utils.parse_name(
-                new_event.context,
-                new_event.context.task.name)
+        new_event.context._update_title_from_data()
 
         return
 
@@ -115,9 +113,7 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         # FIXME: rename all event.contexts to event.token. Context is only
         # true in the scope of an execution task.
         LOG.debug(f"Loop value {new_event.context.loop.value}")
-        new_event.context.task_name = token_utils.parse_name(
-                new_event.context,
-                new_event.context.task.name)
+        new_event.context._update_title_from_data()
 
         LOG.debug(f"Loop new task name: {new_event.context.task_name}")
 
@@ -158,9 +154,7 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
         index=event.context.loop.index + 1,
         expression=event.context.loop.expression)
 
-    new_event.context.task_name = token_utils.parse_name(
-            new_event.context,
-            new_event.context.task.name)
+    new_event.context._update_title_from_data()
 
     return True
 

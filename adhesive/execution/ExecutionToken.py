@@ -45,6 +45,9 @@ class ExecutionToken(Generic[T]):
         self.lane: Optional[ExecutionLaneId] = lane
 
         self.loop: Optional[ExecutionLoop] = None
+        self._update_title_from_data()
+
+    def _update_title_from_data(self) -> None:
         self.task_name = token_utils.parse_name(self, self.task.name)
 
     def clone(self, task: ExecutableNode) -> 'ExecutionToken[T]':
