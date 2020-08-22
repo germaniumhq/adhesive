@@ -640,10 +640,6 @@ class ProcessExecutor:
             new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
             other_waiting.context.data = new_data
 
-            # since the data updated, and the task hasn't started yet we need to ensure
-            # the title is up to date, before running it, and displaying it.
-            other_waiting.context._update_title_from_data()
-
             self.events.transition(
                 event=event,
                 state=ActiveEventState.DONE
@@ -688,6 +684,10 @@ class ProcessExecutor:
             return
 
         self.events.clear_waiting_deduplication(event=event)
+
+        # Since the data is potentially updated in WAIT, we need to ensure
+        # the title matches the current data.
+        event.context._update_title_from_data()
 
         # FIXME: probably this try/except should be longer than just the LOG
         try:
