@@ -16,13 +16,16 @@ def message_generate_events(context: adhesive.Token):
 
 @adhesive.task('Event Check {event.id}')
 def event_check(context: adhesive.Token) -> None:
-    context.data.executed = { context.data.event["id"] }
+    pass
 
 
 @adhesive.task('Event Execute {event.id}', deduplicate="event.id")
 def event_execute(context: adhesive.Token) -> None:
-    pass
+    context.data.executed = { context.data.event["id"] }
 
 
-data = adhesive.bpmn_build("deduplicate-multiple-bug.bpmn")
+data = adhesive.bpmn_build(
+    "deduplicate-multiple-bug.bpmn",
+    wait_tasks=False,
+)
 test.assertEqual({"a", "b"}, data.executed)

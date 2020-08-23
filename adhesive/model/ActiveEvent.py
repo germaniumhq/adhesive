@@ -53,7 +53,9 @@ class ActiveEvent:
         self.execution_id = execution_id
         self.token_id: str = str(uuid.uuid4())
         self.parent_id = parent_id
+
         self.deduplication_id = deduplication_id
+        self.deduplication_registered = False
 
         if not isinstance(context, ExecutionToken):
             raise Exception(f"Not an execution token: {context}")

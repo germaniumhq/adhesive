@@ -31,6 +31,12 @@ def log_running_done(event: ActiveEvent,
     LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
 
 
+def is_deduplication_event(event: ActiveEvent) -> bool:
+    return isinstance(event.task, ProcessTask) and \
+            cast(ProcessTask, event.task).deduplicate is not None and \
+            event.deduplication_id is not None
+
+
 class ProcessEvents:
     """
     A class that transitions and keeps track of all the events
@@ -58,6 +64,7 @@ class ProcessEvents:
                    event: Union[ActiveEvent, str],
                    state: ActiveEventState,
                    data: Any = None) -> None:
+        LOG.debug(f"Event transition {event} -> {state}")
         self.changed = True
 
         if not isinstance(event, ActiveEvent):
@@ -129,28 +136,19 @@ class ProcessEvents:
                 event: ActiveEvent) -> \
             Tuple[Optional[ActiveEvent], int]:
         """
-        Get any other task that is waiting to be executed on the
-        same task that's waiting.
+        Get any other event that might be waiting to be executed on the
+        same task.
         :param event:
         :return:
         """
         result = None
         count = 0
 
-        # if we have a task that requires deduplication, and there is another event
-        # in flight, we need to go ahead and mark it as waiting.
-        if isinstance(event.task, ProcessTask) and \
-                cast(ProcessTask, event.task).deduplicate is not None and \
-                event.deduplication_id is not None and \
-                self._deduplicated_active_count[event.deduplication_id] > 1:
-
-            if event.deduplication_id in self._deduplicated_waiting and \
-                    event.deduplication_id is not None:
-                return self._deduplicated_waiting[event.deduplication_id], 1
-
-            self._deduplicated_waiting[event.deduplication_id] = event
-
-            return event, 1
+        # if we have a task that requires deduplication, we need to look
+        # if there's a waiting deduplication id.
+        if is_deduplication_event(event) and \
+                event.deduplication_id in self._deduplicated_waiting:
+            return self._deduplicated_waiting[event.deduplication_id], 1
 
         if event.context.loop and \
                 event.context.loop.task.id == event.task.id and \
@@ -180,15 +178,25 @@ class ProcessEvents:
         self.bystate[event.state][key] = event
         self.handlers[event.state][key] = (event, None)
 
-    def register_deduplication_event(self, event: ActiveEvent):
+    def register_deduplication_event(self, event: ActiveEvent) -> None:
         if event.deduplication_id is None:
             raise Exception("deduplication_id is none. This is an Adhesive BUG, "
                             "please report it.")
 
+        if event.deduplication_registered:
+            LOG.warning(f"The event is already registered: {event}. "
+                        f"Not counting it twice.")
+            return
+
+        event.deduplication_registered = True
         self._deduplicated_active_count[event.deduplication_id] = \
             self._deduplicated_active_count.get(event.deduplication_id, 0) + 1
 
     def unregister_deduplication_event(self, event: ActiveEvent):
+        # if the event wasn't registered, there's nothing to unregister
+        if not event.deduplication_registered:
+            return
+
         if event.deduplication_id is None:
             raise Exception("deduplication_id is none. This is an Adhesive BUG, "
                             "please report it.")
@@ -205,6 +213,28 @@ class ProcessEvents:
                 cast(ProcessTask, event.task).deduplicate is not None and \
                 event.deduplication_id in self._deduplicated_waiting:
             del self._deduplicated_waiting[event.deduplication_id]
+
+    def set_waiting_deduplication(self, *, event: ActiveEvent) -> None:
+        """
+        Tests the waiting deduplication event for a given
+        deduplication id. If there's another deduplication event
+        for the same ID it gets discarded.
+        :param event:
+        :return:
+        """
+        if event.deduplication_id is None:
+            raise Exception("Adhesive BUG. No deduplication_id for event: {event}")
+
+        existing_event = self._deduplicated_waiting.pop(event.deduplication_id, None)
+
+        if existing_event:
+            self.transition(event=existing_event, state=ActiveEventState.DONE)
+
+        self._deduplicated_waiting[event.deduplication_id] = event
+
+    def are_deduplication_events_running(self, *, event: ActiveEvent) -> bool:
+        assert event.deduplication_id
+        return self._deduplicated_active_count.get(event.deduplication_id, 0) > 0
 
     def __delitem__(self, key: str) -> None:
         event = self.events[key]
