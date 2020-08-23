@@ -590,6 +590,9 @@ class ProcessExecutor:
             )
             return
 
+        # FIXME: serial loops in wait_tasks=False is not being handled here
+
+        # deduplication requires checks in the process
         if isinstance(event.task, ProcessTask) and \
                 cast(ProcessTask, event.task).deduplicate is not None:
             self.events.transition(
@@ -645,7 +648,6 @@ class ProcessExecutor:
                 event=event,
                 state=ActiveEventState.DONE
             )
-            return
 
         # FIXME: implement a search map for the graph with the events
         potential_predecessors = list(map(
