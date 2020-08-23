@@ -67,6 +67,7 @@ class ActiveEvent:
         self.future: Optional[Future] = None
 
         self.loop_type: Optional[ActiveLoopType] = None
+        self._next_event: Optional['ActiveEvent'] = None
 
     def __getstate__(self):
         return {

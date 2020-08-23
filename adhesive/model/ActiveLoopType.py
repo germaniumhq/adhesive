@@ -29,3 +29,8 @@ class ActiveLoopType(Enum):
     # If the condition returned a collection, the tokens for the loop are
     # already created and will only execute once.
     COLLECTION = 'COLLECTION'
+
+    # If the collection is bound to a serial loop, the tokens are returned one
+    # by one, and the remaining items are WAITING until the previous ones
+    # execute.
+    COLLECTION_SERIAL = 'COLLECTION_SERIAL'

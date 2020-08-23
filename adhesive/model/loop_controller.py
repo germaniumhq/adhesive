@@ -3,7 +3,7 @@ import uuid
 from typing import Any, cast, Optional
 
 from adhesive.execution import token_utils
-from adhesive.execution.ExecutionLoop import ExecutionLoop
+from adhesive.execution.ExecutionLoop import ExecutionLoop, SerialExecutionLoopState
 from adhesive.graph.ProcessTask import ProcessTask
 from .ActiveEvent import ActiveEvent
 from .ActiveLoopType import ActiveLoopType
@@ -66,28 +66,40 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         return
 
     if not is_collection(loop_data):
-        LOG.debug(f"Loop: CONDITION loop for {event.context.loop.event_id}")
-        new_event = clone_event(event, event.task)
-        new_event.loop_type = ActiveLoopType.CONDITION
+        return create_condition_loop(clone_event, event, loop_data)
 
-        assert new_event.context
+    if event.task.loop.parallel:
+        return create_collection_loop(clone_event, event, loop_data)
 
-        new_event.context.loop = ExecutionLoop(
-            event_id=event.token_id,
-            parent_loop=event.context.loop.parent_loop,
-            task=cast(ProcessTask, event.task),
-            item=loop_data,
-            index=0,
-            expression=event.task.loop.loop_expression)
+    return create_collection_serial_loop(clone_event, event, loop_data)
 
-        return
 
+def create_condition_loop(clone_event, event, loop_data):
+    LOG.debug(f"Loop: CONDITION loop for {event.context.loop.event_id}")
+
+    new_event = clone_event(event, event.task)
+
+    new_event.loop_type = ActiveLoopType.CONDITION
+
+    assert new_event.context
+
+    new_event.context.loop = ExecutionLoop(
+        event_id=event.token_id,
+        parent_loop=event.context.loop.parent_loop,
+        task=cast(ProcessTask, event.task),
+        item=loop_data,
+        index=0,
+        expression=event.task.loop.loop_expression)
+
+    return
+
+
+def create_collection_loop(clone_event, event, loop_data):
     LOG.debug(f"Loop: COLLECTION loop for {event.context.loop.event_id}")
-
     index = 0
+
     for item in loop_data:
         new_event = clone_event(event, event.task)
-        new_event.loop_type = ActiveLoopType.COLLECTION
 
         assert new_event.context
 
@@ -99,7 +111,10 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
             task=cast(ProcessTask, event.task),
             item=item,
             index=index,
-            expression=event.task.loop.loop_expression)
+            expression=event.task.loop.loop_expression,
+        )
+
+        new_event.loop_type = ActiveLoopType.COLLECTION
 
         # if we're iterating over a map, we're going to store the
         # values as well.
@@ -113,6 +128,55 @@ def evaluate_initial_loop(event: ActiveEvent, clone_event) -> None:
         LOG.debug(f"Loop value {new_event.context.loop.value}")
 
         index += 1
+
+
+def create_collection_serial_loop(clone_event, event, loop_data):
+    _next_event: Optional[ActiveEvent] = None
+
+    LOG.debug(f"Loop: COLLECTION_SERIAL loop for {event.context.loop.event_id}")
+    index = 0
+
+    for item in loop_data:
+        # we use the clone function only for the first event, since the events get
+        # registered
+        if _next_event:
+            new_event = _next_event.clone(event.task, _next_event.parent_id)
+        else:
+            new_event = clone_event(event, event.task)
+
+        assert new_event.context
+
+        LOG.debug(f"Loop: parent loop {event.context.loop.parent_loop}")
+
+        new_event.context.loop = ExecutionLoop(
+            event_id=event.token_id,
+            parent_loop=event.context.loop.parent_loop,
+            task=cast(ProcessTask, event.task),
+            item=item,
+            index=index,
+            expression=event.task.loop.loop_expression,
+        )
+
+        new_event.loop_type = ActiveLoopType.COLLECTION_SERIAL
+
+        # if we're iterating over a map, we're going to store the
+        # values as well.
+        if isinstance(loop_data, dict):
+            new_event.context.loop._value = loop_data[item]
+
+        # FIXME: this knows way too much about how the ExecutionTokens are
+        # supposed to function
+        # FIXME: rename all event.contexts to event.token. Context is only
+        # true in the scope of an execution task.
+        LOG.debug(f"Loop value {new_event.context.loop.value}")
+
+        index += 1
+
+        if _next_event:
+            _next_event._next_event = new_event
+            _next_event = new_event
+        else:
+            _next_event = new_event
 
 
 def is_conditional_loop_event(event: ActiveEvent) -> bool:
@@ -167,4 +231,3 @@ def evaluate_loop_expression(event: ActiveEvent) -> Any:
     result = eval(event.task.loop.loop_expression, {}, eval_data)
 
     return result
-

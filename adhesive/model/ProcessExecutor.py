@@ -590,8 +590,6 @@ class ProcessExecutor:
             )
             return
 
-        # FIXME: serial loops in wait_tasks=False is not being handled here
-
         # deduplication requires checks in the process
         if isinstance(event.task, ProcessTask) and \
                 cast(ProcessTask, event.task).deduplicate is not None:
@@ -830,6 +828,19 @@ class ProcessExecutor:
         :param _event:
         :return:
         """
+
+        # even if there might be other edges getting out from the task,
+        # this event might need to register the next event in a serial
+        # loop execution.
+        if event.loop_type == ActiveLoopType.COLLECTION_SERIAL:
+            if event._next_event:
+                event._next_event.context.data = ExecutionData.merge(
+                    event._next_event.context.data,
+                    event.context.data
+                )
+
+                self.register_event(event._next_event)
+
         if isinstance(finish_mode, OutgoingEdgesFinishMode) and finish_mode.outgoing_edges or \
            isinstance(finish_mode, CancelTaskFinishModeException) and not finish_mode.root_node:
             self.events.transition(

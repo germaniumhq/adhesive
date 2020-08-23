@@ -1,10 +1,13 @@
-import uuid
-from typing import Callable, Any, Optional, Union
+from typing import Callable, Any, Optional
 
 import adhesive
-
 from adhesive.execution import token_utils
 from adhesive.graph.ProcessTask import ProcessTask
+
+
+class SerialExecutionLoopState:
+    def __init__(self) -> None:
+        self.current_index = 0
 
 
 class ExecutionLoop:
@@ -18,7 +21,8 @@ class ExecutionLoop:
                  task: ProcessTask,
                  item: Any,
                  index: int,
-                 expression: str) -> None:
+                 expression: str,
+             ) -> None:
         if args:
             raise Exception("You need to pass the parameters by name")
 
