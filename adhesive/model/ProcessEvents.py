@@ -32,9 +32,7 @@ def log_running_done(event: ActiveEvent,
 
 
 def is_deduplication_event(event: ActiveEvent) -> bool:
-    return isinstance(event.task, ProcessTask) and \
-            cast(ProcessTask, event.task).deduplicate is not None and \
-            event.deduplication_id is not None
+    return event.deduplication_id is not None
 
 
 class ProcessEvents:
@@ -208,10 +206,7 @@ class ProcessEvents:
             del self._deduplicated_active_count[event.deduplication_id]
 
     def clear_waiting_deduplication(self, *, event: ActiveEvent):
-        if event.deduplication_id is not None and \
-                isinstance(event.task, ProcessTask) and \
-                cast(ProcessTask, event.task).deduplicate is not None and \
-                event.deduplication_id in self._deduplicated_waiting:
+        if event.deduplication_id in self._deduplicated_waiting:
             del self._deduplicated_waiting[event.deduplication_id]
 
     def set_waiting_deduplication(self, *, event: ActiveEvent) -> None:
@@ -231,6 +226,12 @@ class ProcessEvents:
             self.transition(event=existing_event, state=ActiveEventState.DONE)
 
         self._deduplicated_waiting[event.deduplication_id] = event
+
+    def get_waiting_deduplication(self, *, event: ActiveEvent) -> Optional[ActiveEvent]:
+        if event.deduplication_id is None:
+            raise Exception("Adhesive BUG. No deduplication_id for event: {event}")
+
+        return self._deduplicated_waiting.get(event.deduplication_id, None)
 
     def are_deduplication_events_running(self, *, event: ActiveEvent) -> bool:
         assert event.deduplication_id

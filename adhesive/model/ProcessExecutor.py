@@ -22,7 +22,7 @@ from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.execution.call_script_task import call_script_task
-from adhesive.execution.deduplication import get_deduplication_id
+from adhesive.execution.deduplication import update_deduplication_id
 from adhesive.graph.Edge import Edge
 from adhesive.graph.Event import Event
 from adhesive.graph.ExecutableNode import ExecutableNode
@@ -133,10 +133,6 @@ class ProcessExecutor:
     An executor of AdhesiveProcesses.
     """
     pool_size = int(config.current.pool_size) if config.current.pool_size else 8
-    pool: Union[pebble.pool.ProcessPool, pebble.pool.ThreadPool] = \
-        pebble.pool.ProcessPool(max_workers=pool_size) \
-        if config.current.parallel_processing == "process" \
-        else pebble.pool.ThreadPool(max_workers=pool_size)
 
     def __init__(self,
                  process: AdhesiveProcess,
@@ -184,7 +180,7 @@ class ProcessExecutor:
         # our default lane is existing.
         lane_controller.ensure_default_lane(self.adhesive_process)
 
-        LOG.info(f"Adhesive version: 1.4.6")
+        LOG.info(f"Adhesive version: 1.4.9")
         LOG.info(f"Config: Pool size: {config.current.pool_size}")
         LOG.info(f"Config: Parallel processing mode: {config.current.parallel_processing}")
         LOG.info(f"Config: stdout: {config.current.stdout}")
@@ -209,8 +205,13 @@ class ProcessExecutor:
         root_event = self.clone_event(fake_event, process)
         self.root_event = root_event
 
-        self.start_message_event_listeners(root_event=root_event)
-        self.execute_process_event_loop()
+        try:
+            self.startup_processing_pool()
+
+            self.start_message_event_listeners(root_event=root_event)
+            self.execute_process_event_loop()
+        finally:
+            self.shutdown_processing_pool()
 
         return root_event.context.data
 
@@ -630,9 +631,10 @@ class ProcessExecutor:
             # if we don't have events downstream running, we're done, we need to
             # start executing.
             if not self.events.are_deduplication_events_running(event=event):
+                self.events.clear_waiting_deduplication(event=event)
+                self.events.register_deduplication_event(event)
                 self.events.transition(event=event,
                                        state=ActiveEventState.RUNNING)
-
             return
 
         # is another waiting task already present?
@@ -691,9 +693,9 @@ class ProcessExecutor:
 
             return
 
-        if is_deduplication_event(event):
+        if event.deduplication_id is not None and \
+                event is self.events.get_waiting_deduplication(event=event):
             self.events.clear_waiting_deduplication(event=event)
-            self.events.register_deduplication_event(event)
 
         # Since the data is potentially updated in WAIT, we need to ensure
         # the title matches the current data.
@@ -738,7 +740,7 @@ class ProcessExecutor:
                 LOG.critical(red(error_message, bold=True))
                 raise Exception(error_message)
 
-            future: Future[ExecutionToken] = ProcessExecutor.pool.schedule(
+            future: Future[ExecutionToken] = self.pool.schedule(
                 self.tasks_impl[event.task.id].invoke,
                 args=(copy_event(event),))
             self.futures[future] = event.token_id
@@ -746,7 +748,7 @@ class ProcessExecutor:
             return None
 
         if isinstance(event.task, ScriptTask):
-            future = ProcessExecutor.pool.schedule(
+            future = self.pool.schedule(
                 call_script_task,
                 args=(copy_event(event),))
             self.futures[future] = event.token_id
@@ -948,20 +950,43 @@ class ProcessExecutor:
             parent_id = old_event.parent_id
 
         event = old_event.clone(task, parent_id)
-
-        if isinstance(task, ProcessTask):
-            event.deduplication_id = get_deduplication_id(event)
+        update_deduplication_id(event)
 
         # if it's an event that comes from a deduplication, we need
         # to track how many of them are running.
-        if is_deduplication_event(old_event) and \
-                is_deduplication_event(event) and \
+        if old_event.deduplication_id is not None and \
+                event.deduplication_id is not None and \
                 event.deduplication_id == old_event.deduplication_id:
             self.events.register_deduplication_event(event)
 
         self.register_event(event)
 
         return event
+
+    def startup_processing_pool(self) -> None:
+        self.pool: Union[pebble.pool.ProcessPool, pebble.pool.ThreadPool] = \
+            pebble.pool.ProcessPool(max_workers=ProcessExecutor.pool_size) \
+                if config.current.parallel_processing == "process" \
+                else pebble.pool.ThreadPool(max_workers=ProcessExecutor.pool_size)
+
+    def shutdown_processing_pool(self) -> None:
+        LOG.info("Tearing down process executor pool.")
+
+        try:
+            self.pool.stop()  # type: ignore
+        except Exception as e:
+            LOG.warning("Failed stopping down the pool.", e)
+            pass
+            # FIXME: we currently ignore exceptions. I've seen in threading mode +
+            # cancel events that some futures are somehow in an invalid state.
+
+        try:
+            self.pool.join()  # type: ignore
+        except Exception as e:
+            LOG.warning("Failed joining the pool.", e)
+            pass
+            # FIXME: we currently ignore exceptions. I've seen in threading mode +
+            # cancel events that some futures are somehow in an invalid state.
 
 
 from adhesive.model.process_validator import _validate_tasks
