@@ -1,3 +1,4 @@
+import collections
 import logging
 import os
 import sys
@@ -148,7 +149,19 @@ class ProcessExecutor:
         # the parent of an event, since from it we can also derive the current parent
         # process.
         self.events: ProcessEvents = ProcessEvents()
+
+        # Some futures might be cancelled when processing done_futures. For example when
+        # a subprocess is being cancelled, all its tasks are being cancelled. Due to timing
+        # there is a chance we get a future that triggers a shutdown in done (error state),
+        # and a future that's another task in the same subprocess also in done. The first one
+        # would cancel the second one, and remove it from the `self.futures`, but it would
+        # still be in the list to be processed. When trying to process the second completed
+        # future, we aren't able to find the event, since it was already evicted from the
+        # self.futures. Thus we need to synchronize removals so if a future is being unregistered
+        # from self.futures, it's also removed from the self.done_futures.
         self.futures: Dict[Future, str] = dict()
+        self.done_futures: Optional[Set[Future]] = None
+
         self.ut_provider = ut_provider
 
         self.active_timers: Dict[str, Set[ActiveTimer]] = dict()
@@ -311,15 +324,27 @@ class ProcessExecutor:
                 return_when=concurrent.futures.FIRST_COMPLETED,
                 timeout=0.1)
 
+            # Handle task error might destroy other events that are also in
+            # the done_futures, and should be processed later. Because of that
+            # we have an OrderedDict, and when futures are being removed from
+            # self.futures, are also removed potentially from self.done_futures.
+            self.done_futures = set(done_futures)
+
             # We need to read the enqueued events before dealing with the done futures. If
             # a message has finished generating events, and the events are only enqueued
             # they are not yet visible in the `done_check_event()` so our root process might
             # inadvertently exit to soon, before trying to clone the enqueued events.
             self.read_enqueued_events()
 
-            for future in done_futures:
+            while self.done_futures:
+                future = self.done_futures.pop()
+
+                if future not in self.futures:
+                    raise Exception(f"Adhesive BUG: Future {future} not registered in futures. This "
+                                    f"shouldn't happen. Please report it")
+
                 token_id = self.futures[future]
-                del self.futures[future]
+                self.remove_future(future)
 
                 # a message executor has finished
                 if token_id == "__message_executor":
@@ -352,6 +377,8 @@ class ProcessExecutor:
                 except concurrent.futures.CancelledError:
                     pass
                 except Exception as e:
+                    # handle task error might destroy other events that are also in
+                    # the done_futures, and should be processed later.
                     self.handle_task_error(
                         TaskError(
                             error = traceback.format_exc(),
@@ -362,6 +389,12 @@ class ProcessExecutor:
 
             # we evaluate all timers that might still be pending
             schedule.run_pending()
+
+    def remove_future(self, future):
+        LOG.debug(f"Removed future {future}")
+        # del self.futures[future]
+        self.futures.pop(future)
+        self.done_futures.discard(future)
 
     def register_event(self,
                        event: ActiveEvent) -> ActiveEvent:
@@ -482,6 +515,15 @@ class ProcessExecutor:
                             f"keeps running in the background.")
 
             LOG.warning(f"Cancelling active future for {parent_event}")
+
+            # The futures are queried later since they are still in the `futures` map
+            # inside the project executor. So to ensure they won't throw an exception,
+            # that won't be able to find the owning events anymore - since they are
+            # being removed now with the `DONE` call, we'll remove the futures from
+            # polling.
+            if parent_event.future in self.futures:
+                self.remove_future(parent_event.future)
+
             parent_event.future.cancel()
             # FIXME: hack. It seems that the `set_exception` is not needed, but
             # if cancel isn't called, the process isn't terminated. If it's called
@@ -743,22 +785,19 @@ class ProcessExecutor:
             future: Future[ExecutionToken] = self.pool.schedule(
                 self.tasks_impl[event.task.id].invoke,
                 args=(copy_event(event),))
-            self.futures[future] = event.token_id
-            event.future = future
+            self.assign_event_future(event, future)
             return None
 
         if isinstance(event.task, ScriptTask):
             future = self.pool.schedule(
                 call_script_task,
                 args=(copy_event(event),))
-            self.futures[future] = event.token_id
-            event.future = future
+            self.assign_event_future(event, future)
             return None
 
         if isinstance(event.task, UserTask):
             future = Future()
-            self.futures[future] = event.token_id
-            event.future = future
+            self.assign_event_future(event, future)
 
             assert self.ut_provider
 
@@ -987,6 +1026,14 @@ class ProcessExecutor:
             pass
             # FIXME: we currently ignore exceptions. I've seen in threading mode +
             # cancel events that some futures are somehow in an invalid state.
+
+    def assign_event_future(self,
+                            event: ActiveEvent,
+                            future: Future) -> None:
+        LOG.debug(f"Assigned {future} to {event}")
+
+        self.futures[future] = event.token_id
+        event.future = future
 
 
 from adhesive.model.process_validator import _validate_tasks

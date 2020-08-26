@@ -29,5 +29,5 @@ data = adhesive.bpmn_build(
 )
 
 test.assertTrue(data.errors_caught)
-test.assertEqual(20, len(data.errors_caught))
+test.assertEqual(1, len(data.errors_caught))
 
