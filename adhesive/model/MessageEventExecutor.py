@@ -29,7 +29,10 @@ class MessageEventExecutor:
         # process can finish.
         self.future: Future = Future()
 
-        Thread(target=self.run_thread_loop).start()
+        thread = Thread(target=self.run_thread_loop)
+        thread.setDaemon(True)
+
+        thread.start()
 
     def run_thread_loop(self):
         # HACK: Here we need to use the token_utils.parse_name, since the actual

@@ -1,4 +1,3 @@
-import collections
 import logging
 import os
 import sys
@@ -9,11 +8,9 @@ from concurrent.futures import Future
 from threading import Lock
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
 
+import adhesive
 import pebble.pool
 import schedule
-import signal
-
-import adhesive
 from adhesive import logredirect
 from adhesive.consoleui.color_print import red, yellow, white
 from adhesive.execution import token_utils
@@ -38,6 +35,7 @@ from adhesive.model.MessageEventExecutor import MessageEventExecutor
 from adhesive.model.ProcessEvents import ProcessEvents, is_deduplication_event
 from adhesive.model.ProcessExecutorConfig import ProcessExecutorConfig
 from adhesive.model.UserTaskProvider import UserTaskProvider
+from adhesive.model.future_mapping import FutureMapping
 from adhesive.model.time.ActiveTimer import ActiveTimer
 from adhesive.model.time.active_timer_factory import create_active_timer
 from adhesive.storage.task_storage import get_folder
@@ -159,7 +157,7 @@ class ProcessExecutor:
         # future, we aren't able to find the event, since it was already evicted from the
         # self.futures. Thus we need to synchronize removals so if a future is being unregistered
         # from self.futures, it's also removed from the self.done_futures.
-        self.futures: Dict[Future, str] = dict()
+        self.futures: Dict[Future, FutureMapping] = dict()
         self.done_futures: Optional[Set[Future]] = None
 
         self.ut_provider = ut_provider
@@ -234,8 +232,8 @@ class ProcessExecutor:
             LOG.info(event)
 
         LOG.info("Futures:")
-        for f in self.futures:
-            LOG.info(f)
+        for future, future_mapping in self.futures.items():
+            LOG.info(f"{future_mapping.event_id}:{future_mapping.description} -> {future}")
 
     def kill_itself(self, x, y) -> None:
         LOG.error("SIGINT received. Shutting down.")
@@ -246,13 +244,14 @@ class ProcessExecutor:
             failed_event=self.root_event,
         )
 
+        exception = CancelTaskFinishModeException(root_node=True, task_error=task_error)
         self.cancel_subtree(
             self.root_event,
-            CancelTaskFinishModeException(
-                root_node=True,
-                task_error=task_error
-            )
+            exception
         )
+
+        for future in set(self.futures):
+            self.cancel_future(future=future, exception=exception)
 
     def start_message_event_listeners(self, root_event: ActiveEvent):
         def create_callback_code(mevent_id, mevent):
@@ -271,13 +270,17 @@ class ProcessExecutor:
             create_callback_code(mevent_id, mevent)
 
         for callback_event_id, callback_event in self.mevent_impl.items():
+            message_event = self.adhesive_process.process.message_events[callback_event_id]
             executor = MessageEventExecutor(
                 root_event=root_event,
-                message_event=self.adhesive_process.process.message_events[callback_event_id],
+                message_event=message_event,
                 execution_message_event=callback_event,
                 enqueue_event=self.enqueue_event)
 
-            self.futures[executor.future] = "__message_executor"
+            self.futures[executor.future] = FutureMapping(
+                event_id="__message_executor",
+                description=message_event.name,
+            )
 
     def consume_events(self,
                        state: ActiveEventState,
@@ -343,11 +346,11 @@ class ProcessExecutor:
                     raise Exception(f"Adhesive BUG: Future {future} not registered in futures. This "
                                     f"shouldn't happen. Please report it")
 
-                token_id = self.futures[future]
+                future_mapping = self.futures[future]
                 self.remove_future(future)
 
                 # a message executor has finished
-                if token_id == "__message_executor":
+                if future_mapping.event_id == "__message_executor":
                     # FIXME: this is duplicated code from done_event
                     # check sub-process termination
                     found = False
@@ -369,7 +372,7 @@ class ProcessExecutor:
                     context = future.result()
 
                     self.events.transition(
-                        event=token_id,
+                        event=future_mapping.event_id,
                         state=ActiveEventState.ROUTING,
                         data=context)
                 except CancelTaskFinishModeException:
@@ -383,7 +386,7 @@ class ProcessExecutor:
                         TaskError(
                             error = traceback.format_exc(),
                             exception = e,
-                            failed_event = self.events[token_id],
+                            failed_event = self.events[future_mapping.event_id],
                         )
                     )
 
@@ -506,32 +509,8 @@ class ProcessExecutor:
             self.cancel_subtree(potential_child, CancelTaskFinishModeException(task_error=e.task_error))
 
         if parent_event.future:
-            # cancel the task for this event
-            if config.current.parallel_processing != "process":
-                LOG.warning(f"Cancel task on boundary event was requested, "
-                            f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
-                            f"to 'process', but '{config.current.parallel_processing}'. "
-                            f"The result of the task is ignored, but the thread "
-                            f"keeps running in the background.")
-
-            LOG.warning(f"Cancelling active future for {parent_event}")
-
-            # The futures are queried later since they are still in the `futures` map
-            # inside the project executor. So to ensure they won't throw an exception,
-            # that won't be able to find the owning events anymore - since they are
-            # being removed now with the `DONE` call, we'll remove the futures from
-            # polling.
-            if parent_event.future in self.futures:
-                self.remove_future(parent_event.future)
-
-            parent_event.future.cancel()
-            # FIXME: hack. It seems that the `set_exception` is not needed, but
-            # if cancel isn't called, the process isn't terminated. If it's called
-            # after set_exception, again it isn't terminated.
-            try:
-                parent_event.future.set_exception(e)
-            except Exception:
-                pass
+            self.cancel_future(future=parent_event.future,
+                               exception=e)
 
         self.events.transition(
             event=parent_event,
@@ -575,10 +554,12 @@ class ProcessExecutor:
         Error handling that happens when no other task had error handling
         configured, and the error event bubbled to the top.
         """
-        self.cancel_subtree(self.root_event,
-                            CancelTaskFinishModeException(
-                                root_node=True,
-                                task_error=task_error))
+        exception = CancelTaskFinishModeException(root_node=True, task_error=task_error)
+        self.cancel_subtree(self.root_event, exception)
+
+        for future in set(self.futures):
+            self.cancel_future(future=future, exception=exception)
+
         raise_unhandled_exception(task_error)
 
     def task_error_handling(self,
@@ -1032,8 +1013,45 @@ class ProcessExecutor:
                             future: Future) -> None:
         LOG.debug(f"Assigned {future} to {event}")
 
-        self.futures[future] = event.token_id
+        self.futures[future] = FutureMapping(
+            event_id=event.token_id,
+            description=event.context.task_name,
+        )
         event.future = future
+
+    def cancel_future(self,
+                      *,
+                      future: Future,
+                      exception: Exception) -> None:
+        # cancel the task for this event
+        if config.current.parallel_processing != "process":
+            LOG.warning(f"Cancel task on boundary event was requested, "
+                        f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
+                        f"to 'process', but '{config.current.parallel_processing}'. "
+                        f"The result of the task is ignored, but the thread "
+                        f"keeps running in the background.")
+
+        if future in self.futures:
+            future_mapping = self.futures[future]
+            LOG.warning(f"Cancelling active future '{future_mapping.description}'")
+
+            # The futures are queried later since they are still in the `futures` map
+            # inside the project executor. So to ensure they won't throw an exception,
+            # that won't be able to find the owning events anymore - since they are
+            # being removed now with the `DONE` call, we'll remove the futures from
+            # polling.
+            self.remove_future(future)
+        else:
+            LOG.warning(f"Cancelling active future '{future}'")
+
+        future.cancel()
+        # FIXME: hack. It seems that the `set_exception` is not needed, but
+        # if cancel isn't called, the process isn't terminated. If it's called
+        # after set_exception, again it isn't terminated.
+        try:
+            future.set_exception(exception)
+        except Exception:
+            pass
 
 
 from adhesive.model.process_validator import _validate_tasks
