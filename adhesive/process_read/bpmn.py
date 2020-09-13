@@ -1,4 +1,5 @@
 import re
+import textwrap
 from typing import Tuple, Optional, TypeVar, cast, Union, IO, TextIO
 from xml.etree import ElementTree
 
@@ -229,7 +230,7 @@ def process_lane_task(
     """
     Binds the task for the lane.
     """
-    task_id = xml_node.text
+    task_id = textwrap.dedent(xml_node.text)
     process.add_task_to_lane(lane, task_id)
 
 
@@ -271,7 +272,7 @@ def process_script_task(p: Process, xml_node) -> None:
         id=xml_node.get("id"),
         name=node_name,
         language=language,
-        script=script_node.text)
+        script=textwrap.dedent(script_node.text))
 
     task = process_potential_loop(task, xml_node)
 
@@ -334,19 +335,19 @@ def read_timer_event_definition(*,
                 parent_process=process,
                 id=boundary_event_node.get("id"),
                 name=task_name,
-                expression=node.text)
+                expression=textwrap.dedent(node.text))
         elif "timeDuration" == node_name:
             boundary_task = DurationTimerBoundaryEvent(
                 parent_process=process,
                 id=boundary_event_node.get("id"),
                 name=task_name,
-                expression=node.text)
+                expression=textwrap.dedent(node.text))
         elif "timeDate" == node_name:
             boundary_task = DateTimerBoundaryEvent(
                 parent_process=process,
                 id=boundary_event_node.get("id"),
                 name=task_name,
-                expression=node.text)
+                expression=textwrap.dedent(node.text))
         elif node_name not in ignored_elements:
             raise Exception(f"Invalid node <{node_name}>, only <timeCycle>, <timeDuration> "
                             f"and <timeDate> are supported in a <timerEventDefinition>.")
@@ -412,7 +413,7 @@ def process_node_sequence_flow(p: Process, xml_node) -> None:
     condition_node = find_node(xml_node, "conditionExpression")
 
     if condition_node is not None:
-        edge.condition = condition_node.text
+        edge.condition = textwrap.dedent(condition_node.text)
 
     p.add_edge(edge)
 
@@ -463,12 +464,12 @@ def process_potential_loop(task: PT, xml_node) -> PT:
 
     if loop_node:
         loop_expression = find_node(loop_node, "loopCondition")
-        task.loop = Loop(loop_expression=loop_expression.text,
+        task.loop = Loop(loop_expression=textwrap.dedent(loop_expression.text),
                          parallel=True)
     elif multi_instance_loop:
         is_sequential = get_boolean(multi_instance_loop, "isSequential", False)
         loop_expression = find_node(multi_instance_loop, "completionCondition")
-        task.loop = Loop(loop_expression=loop_expression.text,
+        task.loop = Loop(loop_expression=textwrap.dedent(loop_expression.text),
                          parallel=not is_sequential)
     else:
         raise Exception(f"No loop node was present, after the validation.")
