@@ -653,7 +653,7 @@ class ProcessExecutor:
 
             # if we don't have events downstream running, we're done, we need to
             # start executing.
-            if not self.events.are_deduplication_events_running(event=event):
+            if not self.events.get_running_deduplication_event_count(event=event):
                 self.events.clear_waiting_deduplication(event=event)
                 self.events.register_deduplication_event(event)
                 self.events.transition(event=event,
@@ -719,6 +719,12 @@ class ProcessExecutor:
         if event.deduplication_id is not None and \
                 event is self.events.get_waiting_deduplication(event=event):
             self.events.clear_waiting_deduplication(event=event)
+
+        if is_deduplication_event(event) \
+                and isinstance(event.task, ProcessTask) \
+                and cast(ProcessTask, event.task).deduplicate \
+                and self.events.get_running_deduplication_event_count(event=event) > 1:
+            raise Exception("A deduplicated event is already running for {event}")
 
         # Since the data is potentially updated in WAIT, we need to ensure
         # the title matches the current data.
@@ -893,7 +899,12 @@ class ProcessExecutor:
             # we need to wake up predecessor events.
             if is_deduplication_event(event) \
                     and is_deduplication_event(waiting_event) \
-                    and event.deduplication_id == waiting_event.deduplication_id:
+                    and event.deduplication_id == waiting_event.deduplication_id \
+                    and not self.events.get_running_deduplication_event_count(event=event):
+                # WHENEVER transitioning to RUNNING, the event should be marked
+                # if it's a deduplication
+                self.events.clear_waiting_deduplication(event=event)
+                self.events.register_deduplication_event(event)
                 self.events.transition(
                     event=waiting_event,
                     state=ActiveEventState.RUNNING,

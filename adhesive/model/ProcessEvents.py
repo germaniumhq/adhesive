@@ -233,9 +233,9 @@ class ProcessEvents:
 
         return self._deduplicated_waiting.get(event.deduplication_id, None)
 
-    def are_deduplication_events_running(self, *, event: ActiveEvent) -> bool:
+    def get_running_deduplication_event_count(self, *, event: ActiveEvent) -> int:
         assert event.deduplication_id
-        return self._deduplicated_active_count.get(event.deduplication_id, 0) > 0
+        return self._deduplicated_active_count.get(event.deduplication_id, 0)
 
     def __delitem__(self, key: str) -> None:
         event = self.events[key]
