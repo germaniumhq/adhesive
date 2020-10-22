@@ -8,9 +8,10 @@ from concurrent.futures import Future
 from threading import Lock
 from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
 
-import adhesive
 import pebble.pool
 import schedule
+
+import adhesive
 from adhesive import logredirect
 from adhesive.consoleui.color_print import red, yellow, white
 from adhesive.execution import token_utils
@@ -264,7 +265,8 @@ class ProcessExecutor:
                     event=message_event,
                     event_data=event_data)
 
-            mevent.code(root_event.context, callback_code, *params)
+            message_event_context = root_event.context.clone(message_event)
+            mevent.code(message_event_context, callback_code, *params)
 
         for mevent_id, mevent in self.mevent_callback_impl.items():
             create_callback_code(mevent_id, mevent)
@@ -999,6 +1001,9 @@ class ProcessExecutor:
             pebble.pool.ProcessPool(max_workers=ProcessExecutor.pool_size) \
                 if config.current.parallel_processing == "process" \
                 else pebble.pool.ThreadPool(max_workers=ProcessExecutor.pool_size)
+
+        # activate the pool manually, to instantiate the processes
+        self.pool.active  # type: ignore
 
     def shutdown_processing_pool(self) -> None:
         LOG.info("Tearing down process executor pool.")
