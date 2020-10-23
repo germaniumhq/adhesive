@@ -58,4 +58,4 @@ data = adhesive.bpmn_build("deduplicate.bpmn",
         "executed_tasks": set(),
     })
 
-test.assertEqual(32, len(data.executed_tasks))
+test.assertEqual(16, len(data.executed_tasks))

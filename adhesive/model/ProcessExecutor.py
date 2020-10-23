@@ -619,6 +619,25 @@ class ProcessExecutor:
         # deduplication requires checks in the process
         if isinstance(event.task, ProcessTask) and \
                 cast(ProcessTask, event.task).deduplicate is not None:
+            # we drop this event if another event with the same deduplication_id comes
+            # later in the processing queue
+            for other_processing_event in self.events.bystate[ActiveEventState.PROCESSING].values():
+                if other_processing_event.token_id == event.token_id:
+                    continue
+
+                if isinstance(other_processing_event.task, ProcessTask) and \
+                    cast(ProcessTask, other_processing_event.task).deduplicate is not None \
+                    and other_processing_event.deduplication_id == event.deduplication_id:
+                    self.events.transition(
+                        event=event,
+                        state=ActiveEventState.DONE
+                    )
+
+                    LOG.debug("Dropping event %s since %s has the same deduplication_id.",
+                              event,
+                              other_processing_event)
+                    return
+
             self.events.transition(
                 event=event,
                 state=ActiveEventState.WAITING
