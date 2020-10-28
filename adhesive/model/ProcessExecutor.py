@@ -962,8 +962,8 @@ class ProcessExecutor:
 
         # check sub-process termination
         is_active_event_same_parent = False
-        for ev in self.events.excluding(ActiveEventState.DONE):
-            if ev.parent_id == event.parent_id and ev != event:
+        for not_done_event in self.events.excluding(ActiveEventState.DONE):
+            if not_done_event.parent_id == event.parent_id and not_done_event != event:
                 is_active_event_same_parent = True
                 break
 
