@@ -27,4 +27,3 @@ Scenario: Run the deduplication process async
 Scenario: Run the deduplication process using annotations
     When I run adhesive on 'processes/message/deduplication-annotation'
     Then the adhesive process has passed
-

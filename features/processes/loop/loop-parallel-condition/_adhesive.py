@@ -10,16 +10,18 @@ def task(context):
     context.data.parallel_check += context.loop.index
 
     if context.loop.index >= 2:
-        context.data.execution_count = False
+        context.data.loop_condition = False
 
 
 data = adhesive.bpmn_build("loop-parallel-condition.bpmn",
     initial_data={
-        "loop_condition": "True",
+        "loop_condition": True,
         "execution_count": 0,
         "parallel_check": 1,
     })
 
 test.assertEqual(3, data.execution_count)
-test.assertEqual(5, data.parallel_check, "The loop probably didn't executed serially")
+# 5 == 1 (initial value) + 0 + 1 + 2
+test.assertEqual(4, data.parallel_check,
+                 "The loop probably didn't executed serially")
 

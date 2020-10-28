@@ -622,8 +622,7 @@ class ProcessExecutor:
             return
 
         # deduplication requires checks in the process
-        if isinstance(event.task, ProcessTask) and \
-                cast(ProcessTask, event.task).deduplicate is not None:
+        if is_deduplication_event(event):
             # if this is a deduplication event that survived, we keep it.
             self.events.transition(
                 event=event,
@@ -684,7 +683,7 @@ class ProcessExecutor:
                 state=ActiveEventState.DONE,
                 reason="merged to other event waiting to same task"
             )
-            return  # this event is done
+            # return  # this event is done
 
         # FIXME: implement a search map for the graph with the events
         potential_predecessors = list(map(

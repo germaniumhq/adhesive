@@ -1,20 +1,19 @@
+import random
+import unittest
+import uuid
 from typing import Dict, Set, Any
 
 import adhesive
-import addict
-import time
-import uuid
-import unittest
-import random
-
 
 test = unittest.TestCase()
 
 already_running: Set[str] = set()
 pending_events: Dict[str, Any] = dict()
 
+
 def get_event_id(event) -> str:
     return event["event_id"]
+
 
 @adhesive.message('Start Event')
 def message_start_event(context):
@@ -83,5 +82,4 @@ data = adhesive.bpmn_build("deduplicate.bpmn",
 
 
 # most events should be deduplicated
-test.assertTrue(len(data.executed_tasks) < 10)
-
+test.assertTrue(len(data.executed_tasks) < 20)
