@@ -902,6 +902,7 @@ class ProcessExecutor:
                 # if we have another
                 if ev:
                     # FIXME, there is a whole procedure to unmark things
+                    self.events.clear_waiting_deduplication(event=ev)
                     self.events.transition(
                         event=ev,
                         state=ActiveEventState.RUNNING,
@@ -913,6 +914,18 @@ class ProcessExecutor:
                         state=ActiveEventState.DONE,
                         reason="deduplication_id previous last event cleanup",
                     )
+
+                    # if our deduplication node is an end state, we need to merge its
+                    # content into the parent
+                    if isinstance(finish_mode, OutgoingEdgesFinishMode) and \
+                            not finish_mode.outgoing_edges:
+                        assert event.parent_id
+
+                        # since this happens in done, we don't need to update the task_name anymore
+                        self.events[event.parent_id].context.data = ExecutionData.merge(
+                            self.events[event.parent_id].context.data,
+                            event.context.data
+                        )
 
                     return None  # ==> we're done
 
