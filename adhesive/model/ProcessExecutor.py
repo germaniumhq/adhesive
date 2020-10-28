@@ -616,38 +616,25 @@ class ProcessExecutor:
             )
             return
 
+        if self.cleanup_clustered_deduplication_events(
+                event,
+                search_state=ActiveEventState.PROCESSING):
+            return
+
         # deduplication requires checks in the process
         if isinstance(event.task, ProcessTask) and \
                 cast(ProcessTask, event.task).deduplicate is not None:
-            # we drop this event if another event with the same deduplication_id comes
-            # later in the processing queue
-            for other_processing_event in self.events.bystate[ActiveEventState.PROCESSING].values():
-                if other_processing_event.token_id == event.token_id:
-                    continue
-
-                if isinstance(other_processing_event.task, ProcessTask) and \
-                    cast(ProcessTask, other_processing_event.task).deduplicate is not None \
-                    and other_processing_event.deduplication_id == event.deduplication_id:
-                    self.events.transition(
-                        event=event,
-                        state=ActiveEventState.DONE
-                    )
-
-                    LOG.debug("Dropping event %s since %s has the same deduplication_id.",
-                              event,
-                              other_processing_event)
-                    return
-
+            # if this is a deduplication event that survived, we keep it.
             self.events.transition(
                 event=event,
-                state=ActiveEventState.WAITING
+                state=ActiveEventState.WAITING,
+                reason="this is a deduplication event, it needs to wait"
             )
-
             return
 
         self.events.transition(
             event=event,
-            state=ActiveEventState.RUNNING
+            state=ActiveEventState.RUNNING,
         )
 
     def get_process(self,
@@ -666,32 +653,38 @@ class ProcessExecutor:
         # if we have deduplication, we might be waiting, even without predecessors,
         # since we need to check for events after in the graph with the same
         # deduplication id
-        if is_deduplication_event(event):
-            # In case of deduplication the previous event contains legacy data
-            # and should just be removed. We don't apply the regular merging
-            # in that case
+        if self.cleanup_clustered_deduplication_events(event, search_state=ActiveEventState.WAITING):
+            return
+
+        if isinstance(event.task, ProcessTask) and \
+                cast(ProcessTask, event.task).deduplicate is not None:
             self.events.set_waiting_deduplication(event=event)
 
             # if we don't have events downstream running, we're done, we need to
             # start executing.
             if not self.events.get_running_deduplication_event_count(event=event):
                 self.events.clear_waiting_deduplication(event=event)
-                self.events.register_deduplication_event(event)
-                self.events.transition(event=event,
-                                       state=ActiveEventState.RUNNING)
+                self.events.transition(
+                    event=event,
+                    state=ActiveEventState.RUNNING,
+                    reason="no deduplication downstream event running")
+
             return
 
         # is another waiting task already present?
         other_waiting, tasks_waiting_count = self.events.get_other_task_waiting(event)
 
+        # FIXME: deduplication events even if they land
         if other_waiting:
             new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
             other_waiting.context.data = new_data
 
             self.events.transition(
                 event=event,
-                state=ActiveEventState.DONE
+                state=ActiveEventState.DONE,
+                reason="merged to other event waiting to same task"
             )
+            return  # this event is done
 
         # FIXME: implement a search map for the graph with the events
         potential_predecessors = list(map(
@@ -711,13 +704,16 @@ class ProcessExecutor:
 
         if not other_waiting:
             self.events.transition(event=event,
-                                   state=ActiveEventState.RUNNING)
+                                   state=ActiveEventState.RUNNING,
+                                   reason="no other event is running")
             return
 
         if other_waiting.state == ActiveEventState.WAITING and \
                 tasks_waiting_count == 1:
+            # FIXME: why no data mereg is happening here?
             self.events.transition(event=other_waiting,
-                                   state=ActiveEventState.RUNNING)
+                                   state=ActiveEventState.RUNNING,
+                                   reason="transitioned by another waiting task")
             return
 
         LOG.debug(f"Waiting for none, yet staying in WAITING? {event}")
@@ -741,11 +737,11 @@ class ProcessExecutor:
                 event is self.events.get_waiting_deduplication(event=event):
             self.events.clear_waiting_deduplication(event=event)
 
-        if is_deduplication_event(event) \
+        if event.deduplication_id \
                 and isinstance(event.task, ProcessTask) \
                 and cast(ProcessTask, event.task).deduplicate \
                 and self.events.get_running_deduplication_event_count(event=event) > 1:
-            raise Exception("A deduplicated event is already running for {event}")
+            raise Exception(f"A deduplicated event is already running for {event}")
 
         # Since the data is potentially updated in WAIT, we need to ensure
         # the title matches the current data.
@@ -898,6 +894,29 @@ class ProcessExecutor:
             )
             return None
 
+        # if the event is a deduplication ID, we should get the next waiting event
+        # (if it exists) and continue it.
+        if event.deduplication_id:
+            if not self.events.get_running_deduplication_event_count(event=event):
+                ev = self.events.get_waiting_deduplication(event=event)
+
+                # if we have another
+                if ev:
+                    # FIXME, there is a whole procedure to unmark things
+                    self.events.transition(
+                        event=ev,
+                        state=ActiveEventState.RUNNING,
+                        reason="last event for same deduplication_id was done"
+                    )
+
+                    self.events.transition(
+                        event=event,
+                        state=ActiveEventState.DONE,
+                        reason="deduplication_id previous last event cleanup",
+                    )
+
+                    return None  # ==> we're done
+
         # we should check all the WAITING processes if they finished.
         event_count: Dict[ExecutableNode, int] = dict()
         waiting_events: List[ActiveEvent] = list()
@@ -913,25 +932,13 @@ class ProcessExecutor:
 
             event_count[self_event.task] = event_count.get(self_event.task, 0) + 1
 
-            if self_event.state == ActiveEventState.WAITING:
+            # deduplication waiting events need to be woken up only when there's no other
+            # event downstream running.
+            if self_event.state == ActiveEventState.WAITING and \
+                    not is_deduplication_event(self_event):
                 waiting_events.append(self_event)
 
         for waiting_event in waiting_events:
-            # we need to wake up predecessor events.
-            if is_deduplication_event(event) \
-                    and is_deduplication_event(waiting_event) \
-                    and event.deduplication_id == waiting_event.deduplication_id \
-                    and not self.events.get_running_deduplication_event_count(event=event):
-                # WHENEVER transitioning to RUNNING, the event should be marked
-                # if it's a deduplication
-                self.events.clear_waiting_deduplication(event=event)
-                self.events.register_deduplication_event(event)
-                self.events.transition(
-                    event=waiting_event,
-                    state=ActiveEventState.RUNNING,
-                )
-                continue
-
             if event_count[waiting_event.task] > 1:
                 continue
 
@@ -942,17 +949,22 @@ class ProcessExecutor:
                 lambda e: e.task,
                 filter(lambda e: is_potential_predecessor(self, waiting_event, e), self.events.events.values())))
 
+            # FIXME: it seems that WAITING events get invoked even if they shouldn't be
+            # since they are deduplication events that should still be waiting
+            # until the count of deduplication_id events is 0. Probably the check
+            # for the deduplication events should be separate.
             if not process.are_predecessors(waiting_event.task, potential_predecessors):
                 self.events.transition(
                     event=waiting_event,
                     state=ActiveEventState.RUNNING,
+                    reason="no more predecessors for waiting event",
                 )
 
         # check sub-process termination
-        found = False
+        is_active_event_same_parent = False
         for ev in self.events.excluding(ActiveEventState.DONE):
             if ev.parent_id == event.parent_id and ev != event:
-                found = True
+                is_active_event_same_parent = True
                 break
 
         # we merge into the parent event if it's an end state.
@@ -964,7 +976,7 @@ class ProcessExecutor:
                 event.context.data
             )
 
-            if not found and \
+            if not is_active_event_same_parent and \
                     event.parent_id == self.root_event.token_id and \
                     self.are_active_futures:
                 self.events.transition(
@@ -973,7 +985,7 @@ class ProcessExecutor:
                 )
                 return None  # ==> if we still have running futures, we don't kill the main process
 
-            if not found:
+            if not is_active_event_same_parent:
                 parent_event = self.events[event.parent_id]
                 self.events.transition(
                     event=parent_event,
@@ -987,11 +999,63 @@ class ProcessExecutor:
         )
 
     def done_event(self, event: ActiveEvent, data: Any) -> None:
-        # we keep track how many deduplication events are in flight
-        if event.deduplication_id:
-            self.events.unregister_deduplication_event(event)
-
         self.unregister_event(event)
+
+    def cleanup_clustered_deduplication_events(self,
+                                               event: ActiveEvent,
+                                               *,
+                                               search_state: ActiveEventState) -> bool:
+        # if this is not a deduplication event we're done
+        if is_deduplication_event(event):
+            return False
+
+        LOG.debug("Cleaning up %s against each %s",
+                  event,
+                  self.events.bystate[search_state].values())
+
+        self_event_found = False
+
+        # we drop this event if another event with the same deduplication_id comes
+        # later in the processing queue for the same state
+        for other_processing_event in self.events.iterate(search_state):
+            # If an event is already in WAITING for this deduplication, but came
+            # from a previous WAITING cycle, its `waiting_event` handler won't be
+            # get called again, but they will be before our current event in the
+            # same state. This gives us the opportunity of cancelling them here.
+            if other_processing_event.token_id == event.token_id:
+                self_event_found = True
+                continue
+
+            if not self_event_found:
+                if self.is_same_deduplication_id(event=event, other_processing_event=other_processing_event):
+                    self.events.transition(
+                        event=other_processing_event,
+                        state=ActiveEventState.DONE,
+                        reason="later event for the same deduplication_id arrived"
+                    )
+
+                continue
+
+            if self.is_same_deduplication_id(event, other_processing_event):
+                # In case of deduplication, the previous event is with legacy data
+                # and needs to be cleared. We don't merge the data.
+                self.events.transition(
+                    event=event,
+                    state=ActiveEventState.DONE,
+                    reason="another deduplicated event for same deduplication_id on same even state"
+                )
+
+                LOG.debug("Dropped event %s since %s had the same deduplication_id.",
+                          event,
+                          other_processing_event)
+                return True
+
+        return False
+
+    def is_same_deduplication_id(self, event: ActiveEvent, other_processing_event: ActiveEvent) -> bool:
+        return isinstance(other_processing_event.task, ProcessTask) and \
+            cast(ProcessTask, other_processing_event.task).deduplicate is not None \
+            and other_processing_event.deduplication_id == event.deduplication_id
 
     def clone_event(self,
                     old_event: ActiveEvent,
@@ -1005,7 +1069,10 @@ class ProcessExecutor:
         update_deduplication_id(event)
 
         # if it's an event that comes from a deduplication, we need
-        # to track how many of them are running.
+        # to track how many of them are running. These are either new
+        # deduplication events running tracked in events.transition(RUNNING),
+        # or cloned events from the original deduplication event, and
+        # tracked here
         if old_event.deduplication_id is not None and \
                 event.deduplication_id is not None and \
                 event.deduplication_id == old_event.deduplication_id:
