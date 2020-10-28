@@ -56,6 +56,7 @@ class ActiveEvent:
 
         self.deduplication_id = deduplication_id
         self.deduplication_registered = False
+        self.deduplication_unregistered = False
 
         if not isinstance(context, ExecutionToken):
             raise Exception(f"Not an execution token: {context}")

@@ -61,5 +61,5 @@ data = adhesive.bpmn_build("deduplicate.bpmn",
 
 
 # most events should be deduplicated
-test.assertTrue(len(data.executed_tasks) < 10)
+test.assertTrue(len(data.executed_tasks) < 20)
 

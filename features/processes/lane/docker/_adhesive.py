@@ -8,14 +8,14 @@ def lane_docker_container(context):
         yield w
 
 
-@adhesive.task("^Touch File: (.*)$")
+@adhesive.task(re="^Touch File: (.*)$")
 def touch_file(context, file_name):
     context.workspace.run(f"""
         touch {file_name}
     """)
 
 
-@adhesive.task("^Check if File Exists: (.*)$")
+@adhesive.task(re="^Check if File Exists: (.*)$")
 def check_file_exists(context, file_name):
     print(context.workspace)
     context.workspace.run(f"""

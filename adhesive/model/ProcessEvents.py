@@ -32,7 +32,8 @@ def log_running_done(event: ActiveEvent,
 
 
 def is_deduplication_event(event: ActiveEvent) -> bool:
-    return event.deduplication_id is not None
+    return isinstance(event.task, ProcessTask) and \
+           cast(ProcessTask, event.task).deduplicate is not None
 
 
 class ProcessEvents:
@@ -61,8 +62,9 @@ class ProcessEvents:
                    *,
                    event: Union[ActiveEvent, str],
                    state: ActiveEventState,
-                   data: Any = None) -> None:
-        LOG.debug(f"Event transition {event} -> {state}")
+                   data: Any = None,
+                   reason: str = "<not given>") -> None:
+        LOG.debug(f"Event transition %s -> %s reason: %s", event, state, reason)
         self.changed = True
 
         if not isinstance(event, ActiveEvent):
@@ -78,6 +80,17 @@ class ProcessEvents:
         event.state = state
         self.bystate[event.state][event.token_id] = event
         self.handlers[event.state][event.token_id] = (event, data)
+
+        # we do this after the change state, so in the logs it's clearer why it happens
+        if event.deduplication_id:
+            # We keep track how many deduplication events are in flight. These are either new
+            # deduplication events running, or cloned events from the original deduplication
+            # event, but tracked in the "ProcessExecutor.clone_event"
+            if state == ActiveEventState.RUNNING and is_deduplication_event(event):
+                self.register_deduplication_event(event)
+            elif state == ActiveEventState.DONE_CHECK or state == ActiveEventState.DONE:
+                self.unregister_deduplication_event(event)
+
 
     def get(self,
             state: ActiveEventState) -> Optional[ActiveEvent]:
@@ -103,14 +116,29 @@ class ProcessEvents:
 
     def iterate(self,
                 states: Union[ActiveEventState, Iterable[ActiveEventState]]):
+        """
+        Iterates over the current elements that are in that particular state
+        :param states:
+        :return:
+        """
         if isinstance(states, ActiveEventState):
-            for _id, event in self.bystate[states].items():
+            for _id, event in list(self.bystate[states].items()):
+                # the current items might be modified while we iterate over them
+                # if this is the case, we skip that element.
+                if event.state != states:
+                    continue
+
                 yield event
 
             return
 
         for state in states:
-            for _id, event in self.bystate[state].items():
+            for _id, event in list(self.bystate[state].items()):
+                # the current items might be modified while we iterate over them
+                # if this is the case, we skip that element.
+                if event.state != state:
+                    continue
+
                 yield event
 
         return
@@ -144,7 +172,7 @@ class ProcessEvents:
 
         # if we have a task that requires deduplication, we need to look
         # if there's a waiting deduplication id.
-        if is_deduplication_event(event) and \
+        if event.deduplication_id is not None and \
                 event.deduplication_id in self._deduplicated_waiting:
             return self._deduplicated_waiting[event.deduplication_id], 1
 
@@ -190,10 +218,20 @@ class ProcessEvents:
         self._deduplicated_active_count[event.deduplication_id] = \
             self._deduplicated_active_count.get(event.deduplication_id, 0) + 1
 
+        LOG.debug("Registered deduplicated event %s. Active event count for %s: %d",
+                  event,
+                  event.deduplication_id,
+                  self._deduplicated_active_count.get(event.deduplication_id, 0))
+
     def unregister_deduplication_event(self, event: ActiveEvent):
         # if the event wasn't registered, there's nothing to unregister
         if not event.deduplication_registered:
             return
+
+        if event.deduplication_unregistered:
+            return
+
+        event.deduplication_unregistered = True
 
         if event.deduplication_id is None:
             raise Exception("deduplication_id is none. This is an Adhesive BUG, "
@@ -201,6 +239,11 @@ class ProcessEvents:
 
         self._deduplicated_active_count[event.deduplication_id] = \
             self._deduplicated_active_count.get(event.deduplication_id, 0) - 1
+
+        LOG.debug("Unregistered deduplicated event %s. Active event count for %s: %d",
+                  event,
+                  event.deduplication_id,
+                  self._deduplicated_active_count.get(event.deduplication_id, 0))
 
         if self._deduplicated_active_count[event.deduplication_id] == 0:
             del self._deduplicated_active_count[event.deduplication_id]
@@ -223,7 +266,11 @@ class ProcessEvents:
         existing_event = self._deduplicated_waiting.pop(event.deduplication_id, None)
 
         if existing_event:
-            self.transition(event=existing_event, state=ActiveEventState.DONE)
+            self.transition(
+                event=existing_event,
+                state=ActiveEventState.DONE,
+                reason="another deduplication event set for waiting"
+            )
 
         self._deduplicated_waiting[event.deduplication_id] = event
 
@@ -233,9 +280,9 @@ class ProcessEvents:
 
         return self._deduplicated_waiting.get(event.deduplication_id, None)
 
-    def are_deduplication_events_running(self, *, event: ActiveEvent) -> bool:
+    def get_running_deduplication_event_count(self, *, event: ActiveEvent) -> int:
         assert event.deduplication_id
-        return self._deduplicated_active_count.get(event.deduplication_id, 0) > 0
+        return self._deduplicated_active_count.get(event.deduplication_id, 0)
 
     def __delitem__(self, key: str) -> None:
         event = self.events[key]
