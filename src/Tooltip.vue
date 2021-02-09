@@ -7,7 +7,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
-import { box } from "./domutil";
+import { box } from "germanium-dom-util";
 
 @Component({})
 export default class Tooltip extends Vue {
@@ -49,6 +49,7 @@ export default class Tooltip extends Vue {
   }
 
   showTooltip(ev: Event) {
+    this.currentTarget = null; // we invalidate the current target
     this.currentTarget = ev.currentTarget
     this.visible = true;
   }

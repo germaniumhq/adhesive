@@ -1,7 +1,7 @@
 <template>
   <div class="pf-c-card">
     <div class="pf-c-card__header" v-if="$slots.actions || $slots.title">
-      <div class="pf-c-card__actions" v-if="$slots.actions">
+      <div class="pf-c-card__actions">
         <slot name="actions"></slot>
       </div>
       <div class="pf-c-card__title" v-if="$slots.title">

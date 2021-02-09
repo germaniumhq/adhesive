@@ -11,8 +11,7 @@
 }
 
 .drag-container {
-    opacity: 1;
-    padding: 4px;
+  padding: 4px;
 }
 </style>
 
@@ -31,4 +30,3 @@ export default class DragContainer extends Vue {
     @Prop() model! : any
 }
 </script>
-

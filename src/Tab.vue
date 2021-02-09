@@ -16,6 +16,13 @@ import { Component, Prop, Vue } from 'vue-property-decorator'
 import Icon from './Icon.vue'
 import DragContainer from './DragContainer.vue'
 
+/**
+ * A tab inside the Tabs. The actual label component comes from the
+ * default slot.
+ *
+ * The drag-container can also be overwritten via the slot with the
+ * same name. Implicitly as a model it contains the tab data itself.
+ */
 @Component({
     components: {
         Drag,

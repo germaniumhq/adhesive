@@ -1,11 +1,13 @@
 <template>
 <div :class="cssClasses">
   <button type="button"
-          class="pf-c-expandable__toggle"
+          class="pf-c-expandable-section__toggle"
           :aria-expanded="expandedState"
           @click.stop="onClick">
-    <i class="fas fa-angle-right pf-c-expandable__toggle-icon" aria-hidden="true"></i>
-    <span>{{label}}</span>
+    <span class="pf-c-expandable-section__toggle-icon">
+      <i class="fas fa-angle-right" aria-hidden="true"></i>
+    </span>
+    <span class="pf-c-expandable-section__toggle-text">{{ label }}</span>
   </button>
   <div class="pf-c-expandable__content" v-if="expandedState"><slot>slot-default</slot></div>
 </div>    
@@ -38,7 +40,7 @@ export default class Expandable extends Vue {
 
     get cssClasses() {
         return {
-            "pf-c-expandable": true,
+            "pf-c-expandable-section": true,
             "pf-m-expanded": this.expandedState,
         }
     }
