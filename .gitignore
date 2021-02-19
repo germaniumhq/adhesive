@@ -1,5 +1,6 @@
 .idea
 *.pyc
+*.iml
 node_modules
 .asciidoctor
 .mypy_cache
