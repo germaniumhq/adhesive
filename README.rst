@@ -1,6 +1,11 @@
-A CI/CD system build around BPMN and Python. Basically a micro BPMN
-runner with python step implementations targeted for builds. Able to run
-in the terminal.
+Adhesive is a micro BPMN runner written in Python.
+
+You can easily model complex logic in BPMN, and Adhesive will execute it
+for you taking care of parallelism, joining, etc. using the standard
+BPMN notation.
+
+Since it’s small, it can easily be embedded in containers, or replace
+complex scripts.
 
 Installation
 ============

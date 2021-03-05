@@ -1,3 +1,7 @@
+from adhesive.time_patch import patch_time
+
+patch_time()
+
 from contextlib import contextmanager
 from typing import Callable, TypeVar, Optional, Union, List, Generator, Any, cast, IO, TextIO
 
