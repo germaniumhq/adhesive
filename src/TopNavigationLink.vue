@@ -15,10 +15,10 @@ export default class TopNavigationLink extends Vue {
   @Prop() active!: Boolean
   @Prop() route!: String
 
-  get cssClasses() {
+  get cssClasses () {
     return {
-      "pf-c-nav__link": true,
-      "pf-m-current": this.active,
+      'pf-c-nav__link': true,
+      'pf-m-current': this.active
     }
   }
 }

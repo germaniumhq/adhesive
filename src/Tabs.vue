@@ -1,36 +1,33 @@
 <template>
-<Drop>
-  <div :class="cssClasses">
-    <button :class="cssScrollLeftButton"
-            @click="onScrollLeft"
-            aria-label="Scroll left">
-      <i class="fas fa-angle-left" aria-hidden="true"></i>
-    </button>
-    <ul class="pf-c-tabs__list"
-        ref="tabList"
-        @scroll="onScrollTabs">
-      <slot name="tabs"></slot>
-    </ul>
-    <button :class="cssScrollRightButton"
-            @click="onScrollRight"
-            aria-label="Scroll right">
-      <i class="fas fa-angle-right" aria-hidden="true"></i>
-    </button>
+  <div>
+    <div :class="cssClasses">
+      <button :class="cssScrollLeftButton"
+              @click="onScrollLeft"
+              aria-label="Scroll left">
+        <i class="fas fa-angle-left" aria-hidden="true"></i>
+      </button>
+      <ul class="pf-c-tabs__list"
+          ref="tabList"
+          @scroll="onScrollTabs">
+        <slot name="tabs"></slot>
+      </ul>
+      <button :class="cssScrollRightButton"
+              @click="onScrollRight"
+              aria-label="Scroll right">
+        <i class="fas fa-angle-right" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="pf-m-fill">
+      <slot></slot>
+    </div>
   </div>
-  <div class="pf-m-fill">
-    <slot></slot>
-  </div>
-</Drop>
 </template>
 
-
 <script lang="ts">
-import {Component, Prop, Vue, Watch} from 'vue-property-decorator'
-import { Drop } from 'vue-drag-drop'
+import { Component, Prop, Vue } from 'vue-property-decorator'
 
 @Component({
   components: {
-    Drop,
   }
 })
 export default class Tabs extends Vue {
@@ -38,20 +35,20 @@ export default class Tabs extends Vue {
   tabsClientWidth: number = 0
   tabsScrollWidth: number = 0
 
-  @Prop({default: false})
+  @Prop({ default: false })
   secondary!: boolean
 
-  onScrollTabs() {
+  onScrollTabs () {
     this.recomputeScrollProperties()
   }
 
   // we copy the properties on mount, and we update them on events
   // we only use computed properties in the CSS classes.
-  mounted() {
+  mounted () {
     this.recomputeScrollProperties()
   }
 
-  recomputeScrollProperties() {
+  recomputeScrollProperties () {
     const tabList: Element = this.$refs.tabList as Element
 
     this.tabsScrollLeft = tabList.scrollLeft
@@ -59,47 +56,47 @@ export default class Tabs extends Vue {
     this.tabsScrollWidth = tabList.scrollWidth
   }
 
-  get cssClasses() {
+  get cssClasses () {
     // pf-c-tabs pf-m-start pf-m-start-current pf-m-end pf-m-tabs-secondary
     const result: Array<string> = [
-        "pf-c-tabs",
-        "pf-m-scrollable",
+      'pf-c-tabs',
+      'pf-m-scrollable'
     ]
 
     if (this.secondary) {
-      result.push("pf-m-secondary")
+      result.push('pf-m-secondary')
     } else {
-      result.push("pf-m-box")
+      result.push('pf-m-box')
     }
 
     return result
   }
 
-  get cssScrollLeftButton() {
+  get cssScrollLeftButton () {
     const result: {[name: string] : boolean} = {
-        "pf-c-tabs__scroll-button": true,
-        "hidden": true,
+      'pf-c-tabs__scroll-button': true,
+      hidden: true
     }
 
-    result["hidden"] = this.tabsScrollLeft == 0
+    result.hidden = this.tabsScrollLeft === 0
 
     return result
   }
 
-  get cssScrollRightButton() {
+  get cssScrollRightButton () {
     const result: {[name: string] : boolean} = {
-        "pf-c-tabs__scroll-button": true,
-        "hidden": true,
+      'pf-c-tabs__scroll-button': true,
+      hidden: true
     }
 
     if (this.tabsScrollLeft + this.tabsClientWidth < this.tabsScrollWidth) {
-      result["hidden"] = false    
+      result.hidden = false
     }
 
     return result
   }
 
-  onScrollLeft() {
+  onScrollLeft () {
     const tabList: Element = this.$refs.tabList as Element
 
     let scrollLeft
@@ -114,17 +111,16 @@ export default class Tabs extends Vue {
     this.tabsScrollLeft = tabList.scrollLeft
   }
 
-  onScrollRight() {
+  onScrollRight () {
     const tabList: Element = this.$refs.tabList as Element
 
-    let scrollLeft = tabList.scrollLeft + 40
+    const scrollLeft = tabList.scrollLeft + 40
 
     tabList.scrollLeft = scrollLeft
     this.tabsScrollLeft = tabList.scrollLeft
   }
 }
 </script>
-
 
 <style type="scss">
 .pf-m-secondary {

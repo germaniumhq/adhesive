@@ -20,10 +20,10 @@ export default class TopLogoLink extends Vue {
   @Prop() active!: Boolean
   @Prop() route!: String
 
-  get cssClasses() {
+  get cssClasses () {
     return {
-      "pf-m-current": this.active,
-      "logo-overview-link": true,
+      'pf-m-current': this.active,
+      'logo-overview-link': true
     }
   }
 }

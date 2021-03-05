@@ -1,5 +1,5 @@
 <template>
-  <div class="pf-l-flex">
+  <div class="pf-c-toggle-group">
     <slot></slot>
   </div>
 </template>
@@ -8,6 +8,6 @@
 import { Component, Vue } from 'vue-property-decorator'
 
 @Component({})
-export default class Flex extends Vue {
+export default class ToggleGroup extends Vue {
 }
 </script>

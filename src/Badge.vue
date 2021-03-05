@@ -9,18 +9,18 @@ import { Component, Vue, Prop } from 'vue-property-decorator'
 export default class Badge extends Vue {
     @Prop() read! : boolean
 
-    get computedCssClasses() {
-        const result: { [name: string] : boolean } = {
-            "pf-c-badge": true
-        }
+    get computedCssClasses () {
+      const result: { [name: string] : boolean } = {
+        'pf-c-badge': true
+      }
 
-        if (this.read) {
-            result["pf-m-read"] = true
-        } else {
-            result["pf-m-unread"] = true
-        }
+      if (this.read) {
+        result['pf-m-read'] = true
+      } else {
+        result['pf-m-unread'] = true
+      }
 
-        return result
+      return result
     }
 }
 </script>

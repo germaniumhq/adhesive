@@ -32,7 +32,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator'
+import { Component, Prop, Vue } from 'vue-property-decorator'
 
 @Component({})
 export default class Page extends Vue {
@@ -41,11 +41,6 @@ export default class Page extends Vue {
 </script>
 
 <style scoped>
-main {
-  position: relative;
-  overflow: hidden;
-}
-
 .pf-c-page {
   bottom: 0;
   right: 0;

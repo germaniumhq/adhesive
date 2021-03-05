@@ -1,8 +1,8 @@
 <template>
 <div :class='cssClasses'>
   <button class="pf-c-dropdown__toggle pf-m-plain"
-          id="dropdown-kebab-expanded-button" 
-          :aria-expanded="expanded" 
+          id="dropdown-kebab-expanded-button"
+          :aria-expanded="expanded"
           :aria-label="label"
           @click="onClick">
     <span class="pf-c-dropdown__toggle-text" v-if="!ellipsis && label">{{label}}</span>
@@ -21,8 +21,8 @@
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Emit} from 'vue-property-decorator'
-import { isDomChild } from "germanium-dom-util";
+import { Component, Emit, Prop, Vue } from 'vue-property-decorator'
+import { isDomChild } from 'germanium-dom-util'
 
 @Component({})
 export default class Dropdown extends Vue {
@@ -30,29 +30,29 @@ export default class Dropdown extends Vue {
     menu: Element,
   }
 
-  @Prop({default : false}) 
+  @Prop({ default: false })
   expanded!: boolean
 
-  @Prop({default : false})
+  @Prop({ default: false })
   ellipsis!: boolean
 
-  @Prop({default: ""})
+  @Prop({ default: '' })
   label!: string
 
-  @Prop({default: "left"})
+  @Prop({ default: 'left' })
   align!: string
 
-  @Prop({default: "bottom"})
+  @Prop({ default: 'bottom' })
   valign!: string
 
   expandedState: boolean = false;
 
-  beforeMount() {
+  beforeMount () {
     this.expandedState = this.expanded
   }
 
-  @Emit("click")
-  onClick() {
+  @Emit('click')
+  onClick () {
     if (this.expandedState) {
       this.collapse()
       return
@@ -61,20 +61,20 @@ export default class Dropdown extends Vue {
     this.expand()
   }
 
-  onBodyFocusEvent(e: FocusEvent) {
+  onBodyFocusEvent (e: FocusEvent) {
     if (!this.expandedState) {
-      console.warn("Context menu not expanded")
+      console.warn('Context menu not expanded')
       return
     }
 
     if (isDomChild(this.$refs.menu, e.target as Element)) {
-      return;
+      return
     }
 
     this.collapse()
   }
 
-  expand() {
+  expand () {
     if (this.expandedState) {
       return
     }
@@ -82,44 +82,44 @@ export default class Dropdown extends Vue {
     this.expandedState = true
 
     setTimeout(() => {
-      document.body.addEventListener("focus", this.onBodyFocusEvent)
-      document.body.addEventListener("click", this.collapse)
+      document.body.addEventListener('focus', this.onBodyFocusEvent)
+      document.body.addEventListener('click', this.collapse)
     }, 0)
   }
 
-  collapse() {
+  collapse () {
     if (!this.expandedState) {
-      return;
+      return
     }
 
-    this.expandedState = false;
-    document.body.removeEventListener("focus", this.onBodyFocusEvent)
-    document.body.removeEventListener("click", this.collapse)
+    this.expandedState = false
+    document.body.removeEventListener('focus', this.onBodyFocusEvent)
+    document.body.removeEventListener('click', this.collapse)
   }
 
-  get cssClasses() {
+  get cssClasses () {
     const result: {[name: string]: boolean} = {
-      "pf-c-dropdown": true,
-      "pf-m-expanded": this.expandedState,
+      'pf-c-dropdown': true,
+      'pf-m-expanded': this.expandedState
     }
 
-    if (this.valign == "top") {
-      result["pf-m-top"] = true;
+    if (this.valign === 'top') {
+      result['pf-m-top'] = true
     }
 
-    return result;
+    return result
   }
 
-  get dropdownCssClasses() {
+  get dropdownCssClasses () {
     const result: {[name: string]: boolean} = {
-      "pf-c-dropdown__menu": true,
+      'pf-c-dropdown__menu': true
     }
 
-    if (this.align == "right") {
-      result["pf-m-align-right"] = true;
+    if (this.align === 'right') {
+      result['pf-m-align-right'] = true
     }
 
-    return result;
+    return result
   }
 }
 </script>

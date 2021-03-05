@@ -1,7 +1,7 @@
 <template>
     <div class="drag-container">
         <Badge class="drag-badge">{{model.label}}</Badge>
-    </div>    
+    </div>
 </template>
 
 <style scoped>
@@ -15,16 +15,15 @@
 }
 </style>
 
-
 <script lang="ts">
 import Badge from './Badge.vue'
 
-import { Component, Vue, Prop } from 'vue-property-decorator';
+import { Component, Vue, Prop } from 'vue-property-decorator'
 
 @Component({
-    components: {
-        Badge,
-    }
+  components: {
+    Badge
+  }
 })
 export default class DragContainer extends Vue {
     @Prop() model! : any

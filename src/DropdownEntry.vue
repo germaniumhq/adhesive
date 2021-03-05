@@ -1,41 +1,41 @@
 <template>
     <li>
-      <a :class="cssClasses" 
+      <a :class="cssClasses"
           href="#"
           @click="onClick"
           :aria-disabled="disabled"
           :tabindex="tabindex"><slot></slot></a>
-    </li>    
+    </li>
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop} from 'vue-property-decorator'
+import { Vue, Component, Prop } from 'vue-property-decorator'
 
 @Component({})
 export default class DropdownEntry extends Vue {
-    @Prop({default: false}) disabled! : boolean;
+    @Prop({ default: false }) disabled! : boolean;
 
-    get cssClasses() {
-        return {
-            "pf-c-dropdown__menu-item": true,
-            "pf-m-disabled": this.disabled
-        }
+    get cssClasses () {
+      return {
+        'pf-c-dropdown__menu-item': true,
+        'pf-m-disabled': this.disabled
+      }
     }
 
-    get tabindex() {
-        if (this.disabled) {
-            return "-1";
-        }
+    get tabindex () {
+      if (this.disabled) {
+        return '-1'
+      }
 
-        return false;
+      return false
     }
 
-    onClick() {
-        if (this.disabled) {
-            return;
-        }
+    onClick () {
+      if (this.disabled) {
+        return
+      }
 
-        this.$emit("click")
+      this.$emit('click')
     }
 }
 </script>

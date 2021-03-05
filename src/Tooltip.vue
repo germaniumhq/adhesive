@@ -7,7 +7,7 @@
 
 <script lang="ts">
 import { Component, Vue, Prop } from 'vue-property-decorator'
-import { box } from "germanium-dom-util";
+import { box } from 'germanium-dom-util'
 
 @Component({})
 export default class Tooltip extends Vue {
@@ -26,52 +26,52 @@ export default class Tooltip extends Vue {
   private tooltipWidth: number = 100
   private tooltipHeight: number = 48
 
-  constructor() {
+  constructor () {
     super()
 
     // FIXME: seems lame
     if (this.position) {
-      this.renderPosition = this.position;
+      this.renderPosition = this.position
     }
 
     this.visible = false
   }
 
-  get cssClasses(): any {
+  get cssClasses (): any {
     const result: {[name: string]: boolean} = {
-      'pf-c-tooltip': true,
+      'pf-c-tooltip': true
     }
 
-    const renderPosition = this.renderPosition != "auto" ? this.renderPosition : "right"
+    const renderPosition = this.renderPosition !== 'auto' ? this.renderPosition : 'right'
     result[`pf-m-${renderPosition}`] = true
 
     return result
   }
 
-  showTooltip(ev: Event) {
-    this.currentTarget = null; // we invalidate the current target
+  showTooltip (ev: Event) {
+    this.currentTarget = null // we invalidate the current target
     this.currentTarget = ev.currentTarget
-    this.visible = true;
+    this.visible = true
   }
 
-  hideTooltip() {
+  hideTooltip () {
     this.currentTarget = null
-    this.visible = false;
+    this.visible = false
   }
 
-  mounted(): void {
+  mounted (): void {
     this.mountedElements = this.findElements()
 
     this.mountedElements.forEach((target: Element) => {
-      target.addEventListener("mouseenter", this.showTooltip)
-      target.addEventListener("mouseleave", this.hideTooltip)
-      target.addEventListener("focus", this.showTooltip)
-      target.addEventListener("blur", this.hideTooltip)
+      target.addEventListener('mouseenter', this.showTooltip)
+      target.addEventListener('mouseleave', this.hideTooltip)
+      target.addEventListener('focus', this.showTooltip)
+      target.addEventListener('blur', this.hideTooltip)
     })
   }
 
-  beforeUpdate() {
-    if (this.$el.nodeType != 1) {
+  beforeUpdate () {
+    if (this.$el.nodeType !== 1) {
       return
     }
 
@@ -80,7 +80,7 @@ export default class Tooltip extends Vue {
     this.tooltipWidth = dimensions.width
   }
 
-  get cssStyles() {
+  get cssStyles () {
     if (!this.currentTarget) {
       return {}
     }
@@ -88,51 +88,51 @@ export default class Tooltip extends Vue {
     const targetDimensions = box(this.currentTarget as Element)
 
     switch (this.renderPosition) {
-      case "bottom":
+      case 'bottom':
         return {
           left: `${targetDimensions.center - this.tooltipWidth / 2}px`,
           top: `${targetDimensions.bottom + 12}px`,
-          position: "absolute",
+          position: 'absolute'
         }
-      case "top":
+      case 'top':
         return {
           left: `${targetDimensions.center - this.tooltipWidth / 2}px`,
           top: `${targetDimensions.top - this.tooltipHeight - 12}px`,
-          position: "absolute",
+          position: 'absolute'
         }
-      case "left":
+      case 'left':
         return {
           left: `${targetDimensions.left - this.tooltipWidth - 12}px`,
           top: `${targetDimensions.middle - this.tooltipHeight / 2}px`,
-          position: "absolute",
+          position: 'absolute'
         }
-      case "right":
-      case "auto":
+      case 'right':
+      case 'auto':
         return {
           left: `${targetDimensions.right + 12}px`,
           top: `${targetDimensions.middle - this.tooltipHeight / 2}px`,
-          position: "absolute",
+          position: 'absolute'
         }
     }
 
     throw new Error(`Unable to find positions for ${this.renderPosition}`)
   }
 
-  beforeDestroy() {
+  beforeDestroy () {
     this.mountedElements.forEach((target: Element) => {
-      target.removeEventListener("mouseenter", this.showTooltip)
-      target.removeEventListener("mouseleave", this.hideTooltip)
-      target.removeEventListener("focus", this.showTooltip)
-      target.removeEventListener("blur", this.hideTooltip)
+      target.removeEventListener('mouseenter', this.showTooltip)
+      target.removeEventListener('mouseleave', this.hideTooltip)
+      target.removeEventListener('focus', this.showTooltip)
+      target.removeEventListener('blur', this.hideTooltip)
     })
   }
 
-  findElements() {
-    if (!this['for']) {
+  findElements () {
+    if (!this.for) {
       return [this.$parent.$el]
     }
 
-    return document.querySelectorAll(this['for'])
+    return document.querySelectorAll(this.for)
   }
 }
 </script>

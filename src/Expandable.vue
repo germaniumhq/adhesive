@@ -10,12 +10,11 @@
     <span class="pf-c-expandable-section__toggle-text">{{ label }}</span>
   </button>
   <div class="pf-c-expandable__content" v-if="expandedState"><slot>slot-default</slot></div>
-</div>    
+</div>
 </template>
 
 <script lang="ts">
-import { Vue, Component, Prop, Provide } from 'vue-property-decorator'
-import { request } from 'http';
+import { Component, Prop, Vue } from 'vue-property-decorator'
 
 @Component({})
 export default class Expandable extends Vue {
@@ -24,25 +23,25 @@ export default class Expandable extends Vue {
 
     expandedState: boolean = false
 
-    beforeMount() {
-        this.expandedState = this.expanded
+    beforeMount () {
+      this.expandedState = this.expanded
     }
 
-    onClick() {
-        this.expandedState = ! this.expandedState
+    onClick () {
+      this.expandedState = !this.expandedState
 
-        if (this.expandedState) {
-            this.$emit("expand")
-        } else {
-            this.$emit("collapse")
-        }
+      if (this.expandedState) {
+        this.$emit('expand')
+      } else {
+        this.$emit('collapse')
+      }
     }
 
-    get cssClasses() {
-        return {
-            "pf-c-expandable-section": true,
-            "pf-m-expanded": this.expandedState,
-        }
+    get cssClasses () {
+      return {
+        'pf-c-expandable-section': true,
+        'pf-m-expanded': this.expandedState
+      }
     }
 }
 </script>

@@ -2,13 +2,6 @@
     <i v-if="icon" :class="cssClasses" @click="onClick"></i>
 </template>
 
-<style scoped>
-.fas {
-    margin: 0 0.2em
-}
-</style>
-
-
 <script lang="ts">
 import { Vue, Component, Prop } from 'vue-property-decorator'
 
@@ -17,12 +10,18 @@ export default class Icon extends Vue {
     @Prop() icon!: string
     @Prop() _class!: string
 
-    get cssClasses() {
-        return `fas ${this.icon} ${this._class}`
+    get cssClasses () {
+      let result = `fas ${this.icon}`
+
+      if (this._class) {
+        result += ` ${this._class}`
+      }
+
+      return result
     }
 
-    onClick() {
-        this.$emit("click")
+    onClick () {
+      this.$emit('click')
     }
 }
 </script>

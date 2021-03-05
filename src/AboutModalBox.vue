@@ -30,13 +30,12 @@
 }
 </style>
 
-
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from 'vue-property-decorator'
+import { Component, Emit, Vue } from 'vue-property-decorator'
 
 @Component({})
 export default class AboutModalBox extends Vue {
-  @Emit("close")
-  onClose() {}
+  @Emit('close')
+  onClose () {}
 }
 </script>

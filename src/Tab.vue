@@ -1,16 +1,13 @@
 <template>
   <li :class="cssClasses" @click="onclick">
-    <Drag :transfer-data="{}">
-      <button class="pf-c-tabs__link"><slot></slot></button>
-      <slot name="drag-container">
-        <DragContainer :model="this"/>
-      </slot>
-    </Drag>
+    <button class="pf-c-tabs__link"><slot></slot></button>
+    <slot name="drag-container">
+      <DragContainer :model="this"/>
+    </slot>
   </li>
 </template>
 
 <script lang="ts">
-import { Drag } from 'vue-drag-drop'
 import { Component, Prop, Vue } from 'vue-property-decorator'
 
 import Icon from './Icon.vue'
@@ -24,30 +21,29 @@ import DragContainer from './DragContainer.vue'
  * same name. Implicitly as a model it contains the tab data itself.
  */
 @Component({
-    components: {
-        Drag,
-        DragContainer,
-        Icon,
-    }
+  components: {
+    DragContainer,
+    Icon
+  }
 })
 export default class Tab extends Vue {
     @Prop() active!: boolean
-    @Prop({default: ""}) icon!: string
+    @Prop({ default: '' }) icon!: string
 
-    get cssClasses() {
-        const result: {[name: string] : boolean} = {
-            "pf-c-tabs__item": true,
-        }
+    get cssClasses () {
+      const result: {[name: string] : boolean} = {
+        'pf-c-tabs__item': true
+      }
 
-        if (this.active) {
-            result["pf-m-current"] = true
-        }
+      if (this.active) {
+        result['pf-m-current'] = true
+      }
 
-        return result
+      return result
     }
 
-    onclick(ev: MouseEvent) {
-        this.$emit("click", ev)
+    onclick (ev: MouseEvent) {
+      this.$emit('click', ev)
     }
 }
 </script>

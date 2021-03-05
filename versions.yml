@@ -1,0 +1,4 @@
+version:
+  version: $(vm -t)
+  files:
+    package.json: '"version": "**VERSION**"'
