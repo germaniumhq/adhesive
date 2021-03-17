@@ -14,11 +14,11 @@
     <task completionQuantity="1" id="_9" isForCompensation="false" name="Ensure Tooling: version-manager" startQuantity="1">
       <incoming>_64</incoming>
       <outgoing>_44</outgoing>
-      <outgoing>_5</outgoing>
     </task>
     <task completionQuantity="1" id="_16" isForCompensation="false" name="Read&#10;Parameters" startQuantity="1">
       <incoming>_22</incoming>
       <outgoing>_65</outgoing>
+      <outgoing>_5</outgoing>
     </task>
     <sequenceFlow id="_22" sourceRef="_2" targetRef="_16"/>
     <sequenceFlow id="_25" sourceRef="_7" targetRef="_23"/>
@@ -205,7 +205,12 @@
       <outgoing>_69</outgoing>
     </task>
     <sequenceFlow id="_69" sourceRef="_67" targetRef="_7"/>
-    <sequenceFlow id="_5" sourceRef="_9" targetRef="_67"/>
+    <sequenceFlow id="_5" sourceRef="_16" targetRef="_67">
+      <extensionElements>
+        <yaoqiang:label offset-x="-56.0" offset-y="0.0" x="1.0" y="-10.0"/>
+      </extensionElements>
+      <conditionExpression><![CDATA[run_mypy]]></conditionExpression>
+    </sequenceFlow>
   </process>
   <bpmndi:BPMNDiagram id="Yaoqiang_Diagram-PROCESS_1" name="Untitled Diagram" resolution="96.0">
     <bpmndi:BPMNPlane bpmnElement="PROCESS_1">
@@ -438,10 +443,11 @@
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="_5" id="Yaoqiang-_5">
-        <di:waypoint x="256.0" y="334.5"/>
+        <di:waypoint x="236.0" y="189.3521568965442"/>
+        <di:waypoint x="302.9634510344707" y="189.3521568965442"/>
         <di:waypoint x="389.0" y="389.5"/>
         <bpmndi:BPMNLabel>
-          <dc:Bounds height="18.8" width="6.0" x="319.5" y="352.6"/>
+          <dc:Bounds height="18.8" width="61.0" x="302.5" y="390.1"/>
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="_48" id="Yaoqiang-_48">

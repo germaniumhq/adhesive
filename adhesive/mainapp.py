@@ -15,7 +15,7 @@ def __main(ctx, version):
         return
 
     if version:
-        print("Adhesive 0.1.master")
+        print("Adhesive 2021.3.6")
         sys.exit(0)
 
     __adhesive_build()
