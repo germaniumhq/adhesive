@@ -34,7 +34,7 @@ class SshWorkspace(Workspace):
         else:
             self.ssh = paramiko.client.SSHClient()
             self.ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
-            self.ssh.connect(ssh, **kw)
+            self.ssh.connect(ssh, **kw)  # type: ignore
 
         self._sftp = None
 

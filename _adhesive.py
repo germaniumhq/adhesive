@@ -1,3 +1,5 @@
+import os
+
 import adhesive
 import gbs
 import ge_tooling
@@ -6,6 +8,9 @@ import time
 from adhesive import scm
 from adhesive.secrets import secret
 from adhesive.workspace import docker
+
+current_folder = os.path.abspath(os.curdir)
+sources_folder = ge_git.find_parent_git_folder(current_folder)
 
 
 @adhesive.task("Read Parameters")
@@ -21,16 +26,11 @@ def gbs_ensure_tooling(context, tool_name) -> None:
 
 @adhesive.task(re="Run tool: mypy")
 def gbs_run_tool(context) -> None:
-    image_name = gbs.test(
+    ge_tooling.run_tool(
         context,
-        platform="python:3.7",
-        gbs_prefix=f"/_gbs/lin64/")
-
-    command = f"MYPYPATH=./stubs:. " \
-              f"mypy --shadow-file _adhesive.py setup.py ."
-
-    with docker.inside(context.workspace, image_name) as w:
-        w.run(command)
+        tool="mypy",
+        command="mypy --exclude features/ ."
+    )
 
 
 @adhesive.task('Run tool: version-manager')
@@ -38,7 +38,9 @@ def run_tool_version_manager(context):
     ge_tooling.run_tool(
         context,
         tool="version-manager",
-        command="version-manager")
+        command="version-manager",
+        mount=sources_folder,
+        pwd=current_folder)
 
 
 @adhesive.task("Checkout Code")
@@ -103,6 +105,8 @@ def is_release_version(context):
         context,
         tool="version-manager",
         command="version-manager --tag",
+        mount=sources_folder,
+        pwd=current_folder,
         capture_stdout=True).strip()
 
     context.data.current_version = current_version
