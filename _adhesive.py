@@ -91,14 +91,6 @@ def gbs_integration_test_lin64(context) -> None:
         w.run(command)
 
 
-@adhesive.task("GBS: win32")
-def gbs_build_win32(context) -> None:
-    pass
-    # gbs.build(workspace=context.workspace,
-    #          platform="python:win32",
-    #          gbs_prefix=f"/_gbs/win32/")
-
-
 @adhesive.gateway('Is Release Version?')
 def is_release_version(context):
     current_version = ge_tooling.run_tool(
@@ -115,20 +107,6 @@ def is_release_version(context):
         context.data.release_version = True
     else:
         context.data.release_version = False
-
-
-@adhesive.usertask('Publish to PyPI?')
-def publish_to_pypi_confirm(context, ui):
-    ui.add_checkbox_group(
-        "publish",
-        title="Publish",
-        values=(
-            ("nexus", "Publish to Nexus"),
-            ("pypitest", "Publish to PyPI Test"),
-            ("pypi", "Publish to PyPI"),
-        ),
-        value=("pypitest", "pypi")
-    )
 
 
 @adhesive.task(re='^PyPI publish to (.+?)$')
