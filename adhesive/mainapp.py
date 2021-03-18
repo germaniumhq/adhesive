@@ -15,7 +15,7 @@ def __main(ctx, version):
         return
 
     if version:
-        print("Adhesive 2021.3.7")
+        print("Adhesive 0.1.master")
         sys.exit(0)
 
     __adhesive_build()
@@ -52,10 +52,7 @@ def __run_the_process_executor():
     for plugin_path in adhesive.config.current.plugins:
         sys.path.append(plugin_path)
 
-    with open('_adhesive.py', 'r', encoding='utf-8') as f:
-        content = f.read()
-
-    exec(content, _globals, _locals)
+    import _adhesive  # keep this
 
 
 if __name__ == "__main__":

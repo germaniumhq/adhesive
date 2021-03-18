@@ -8,6 +8,7 @@ import time
 from adhesive import scm
 from adhesive.secrets import secret
 from adhesive.workspace import docker
+import cached_task
 
 current_folder = os.path.abspath(os.curdir)
 sources_folder = ge_git.find_parent_git_folder(current_folder)
@@ -25,6 +26,9 @@ def gbs_ensure_tooling(context, tool_name) -> None:
 
 
 @adhesive.task(re="Run tool: mypy")
+@cached_task.cached(
+    inputs=["**/*.py", "**/*.pyi"]
+)
 def gbs_run_tool(context) -> None:
     ge_tooling.run_tool(
         context,
@@ -58,6 +62,10 @@ def gbs_build_lin64(context) -> None:
 
 
 @adhesive.task('GBS Test {parallel_processing}: lin64')
+@cached_task.cached(
+    inputs=["adhesive/**/*.py", "test/**/*.py"],
+    params="args[0].data.parallel_processing",
+)
 def gbs_test_lin64(context) -> None:
     image_name = gbs.test(
         context,
@@ -73,6 +81,14 @@ def gbs_test_lin64(context) -> None:
 
 
 @adhesive.task('GBS Integration Test {parallel_processing}: lin64')
+@cached_task.cached(
+    inputs=[
+        "adhesive/**/*.py",
+        "test/**/*.py",
+        "features/**/*.py",
+        "features/**/*.feature"],
+    params="args[0].data.parallel_processing",
+)
 def gbs_integration_test_lin64(context) -> None:
     image_name = gbs.test(
         context,
