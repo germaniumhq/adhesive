@@ -35,7 +35,7 @@ setup(
         "python-dateutil==2.8.1",
         "yamldict >= 1.2.0, <2.0",
         "Pebble==4.5.3",
-        "cached_task==0.1.master",
+        "cached_task==2021.3.7",
     ],
     extras_require=extras_require,
     packages=packages,
