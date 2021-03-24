@@ -4,6 +4,7 @@ import sys
 
 import click
 import adhesive
+import adhesive.version
 
 @click.group(invoke_without_command=True)
 @click.pass_context

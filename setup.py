@@ -12,7 +12,7 @@ extras_require = {
 
 setup(
     name='adhesive',
-    version="2021.3.8",
+    version="2021.3.9",
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
@@ -35,7 +35,7 @@ setup(
         "python-dateutil==2.8.1",
         "yamldict >= 1.2.0, <2.0",
         "Pebble==4.6.1",
-        "cached_task==2021.3.7",
+        "cached_task==2021.3.9",
     ],
     extras_require=extras_require,
     packages=packages,

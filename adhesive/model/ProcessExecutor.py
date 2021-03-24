@@ -12,6 +12,7 @@ import pebble.pool
 import schedule
 
 import adhesive
+import adhesive.version
 from adhesive import logredirect
 from adhesive.consoleui.color_print import red, yellow, white
 from adhesive.execution import token_utils

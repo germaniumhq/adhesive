@@ -135,13 +135,22 @@ def is_release_version(context):
 
 
 @adhesive.task(re='^PyPI publish to (.+?)$')
-def publish_to_pypi(context, registry):
+@cached_task.cached(
+    params=[
+        "args[0].data.current_version",
+        "args[1]",
+    ],
+)
+def publish_to_pypi(context, registry: str) -> None:
     with docker.inside(context.workspace, context.data.gbs_build_image_name) as w:
         with secret(w, "PYPIRC_RELEASE_FILE", "/germanium/.pypirc"):
             w.run(f"python setup.py bdist_wheel upload -r {registry}")
 
 
 @adhesive.task('Wait for pypi availability')
+@cached_task.cached(
+    params="args[0].data.current_version",
+)
 def wait_for_pypi_availability(context: adhesive.Token) -> None:
     # wait at most ~2 minutes for the package to appear
     for i in range(10):
@@ -161,6 +170,9 @@ def wait_for_pypi_availability(context: adhesive.Token) -> None:
 
 
 @adhesive.task('Build Docker Image')
+@cached_task.cached(
+    params="args[0].data.current_version",
+)
 def build_docker_image(context):
     context.workspace.run(f"""
         docker build -t germaniumhq/adhesive \\
@@ -171,6 +183,9 @@ def build_docker_image(context):
 
 # FIXME: use secrets
 @adhesive.task('Publish Docker Image')
+@cached_task.cached(
+    params="args[0].data.current_version",
+)
 def publish_docker_image(context):
     context.workspace.run(f"""
         docker push germaniumhq/adhesive:{context.data.current_version}
