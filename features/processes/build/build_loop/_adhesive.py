@@ -4,6 +4,7 @@ import uuid
 
 @adhesive.task("Basic loop", loop="data.loop_items")
 def basic_loop(context):
+    print(f"Running loop iteration {context.loop.index}")
     if not context.data.executions:
         context.data.executions = set()
 

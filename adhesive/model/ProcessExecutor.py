@@ -193,7 +193,11 @@ class ProcessExecutor:
         lane_controller.ensure_default_lane(self.adhesive_process)
 
         LOG.info(f"Adhesive version: 0.1.master")
-        LOG.info(f"Config: Pool size: {config.current.pool_size}")
+        if config.current.pool_size:
+            LOG.info(f"Config: Pool size: {config.current.pool_size}")
+        else:
+            LOG.info(f"Config: Pool size: {config.current.pool_size} "
+                     f"(defaulting to {ProcessExecutor.pool_size})")
         LOG.info(f"Config: Parallel processing mode: {config.current.parallel_processing}")
         LOG.info(f"Config: stdout: {config.current.stdout}")
         LOG.info(f"Config: temp_folder: {config.current.temp_polder}")

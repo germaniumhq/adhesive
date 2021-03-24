@@ -34,7 +34,7 @@ setup(
         "schedule==0.6.0",
         "python-dateutil==2.8.1",
         "yamldict >= 1.2.0, <2.0",
-        "Pebble==4.5.3",
+        "Pebble==4.6.1",
         "cached_task==2021.3.7",
     ],
     extras_require=extras_require,
