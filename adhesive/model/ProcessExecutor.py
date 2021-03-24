@@ -192,7 +192,7 @@ class ProcessExecutor:
         # our default lane is existing.
         lane_controller.ensure_default_lane(self.adhesive_process)
 
-        LOG.info(f"Adhesive version: 0.1.master")
+        LOG.info(f"Adhesive version: {adhesive.version.current}")
         if config.current.pool_size:
             LOG.info(f"Config: Pool size: {config.current.pool_size}")
         else:

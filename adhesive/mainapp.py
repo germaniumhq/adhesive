@@ -3,8 +3,7 @@ import subprocess
 import sys
 
 import click
-from adhesive import config as adhesive_config
-
+import adhesive
 
 @click.group(invoke_without_command=True)
 @click.pass_context
@@ -16,7 +15,7 @@ def __main(ctx, version):
         return
 
     if version:
-        print("Adhesive 0.1.master")
+        print(f"Adhesive {adhesive.version.current}")
         sys.exit(0)
 
     __adhesive_build()
@@ -45,7 +44,7 @@ def __run_the_process_executor():
     # FIXME: loading the full adhesive just to fetch the current plugins is
     #        excessive. Loading of libraries such as ncurses and co should
     #        only happen on execution.
-    for plugin_path in adhesive_config.current.plugins:
+    for plugin_path in adhesive.config.current.plugins:
         sys.path.append(plugin_path)
 
     # We just extend the environment, then call the same python against

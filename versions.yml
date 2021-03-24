@@ -3,8 +3,7 @@ version:
   files:
     setup.py: version="**VERSION**",
     Dockerfile: pip3 install adhesive==**VERSION** mypy_extensions
-    adhesive/mainapp.py: print("Adhesive **VERSION**")
-    adhesive/model/ProcessExecutor.py: 'LOG.info(f"Adhesive version: **VERSION**")'
+    adhesive/version.py: current = "**VERSION**"
     versions.yml: '(^  version: ")(.+?)("  # latest)$'
 
 cached-task:
@@ -21,4 +20,4 @@ requirements:
 # other dependent builds can then depend on the latest
 # version to have the latest release.
 latest:
-  version: "0.1.master"  # latest
+  version: "2021.3.8"  # latest

@@ -27,7 +27,11 @@ def gbs_ensure_tooling(context, tool_name) -> None:
 
 @adhesive.task(re="Run tool: mypy")
 @cached_task.cached(
-    inputs=["**/*.py", "**/*.pyi"]
+    inputs=[
+        "**/*.py",
+        "!adhesive/version.py",
+        "**/*.pyi",
+    ]
 )
 def gbs_run_tool(context) -> None:
     ge_tooling.run_tool(
@@ -63,7 +67,11 @@ def gbs_build_lin64(context) -> None:
 
 @adhesive.task('GBS Test {parallel_processing}: lin64')
 @cached_task.cached(
-    inputs=["adhesive/**/*.py", "test/**/*.py"],
+    inputs=[
+        "adhesive/**/*.py",
+        "!adhesive/version.py",
+        "test/**/*.py",
+    ],
     params="args[0].data.parallel_processing",
 )
 def gbs_test_lin64(context) -> None:
@@ -84,6 +92,7 @@ def gbs_test_lin64(context) -> None:
 @cached_task.cached(
     inputs=[
         "adhesive/**/*.py",
+        "!adhesive/version.py",
         "test/**/*.py",
         "features/**/*.py",
         "features/**/*.feature"],
