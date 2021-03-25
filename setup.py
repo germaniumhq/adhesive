@@ -29,7 +29,7 @@ setup(
         "npyscreen==4.10.5",
         "colorama >=0.4.3",
         "termcolor_util >= 1.2.0, <2.0",
-        "PyYAML == 5.1.2",
+        "PyYAML == 5.4",
         "click >= 7.0, <8.0",
         "schedule==0.6.0",
         "python-dateutil==2.8.1",
