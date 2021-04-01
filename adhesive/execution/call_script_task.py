@@ -10,8 +10,5 @@ from adhesive.execution import token_utils
 def call_script_task(event: ActiveEvent) -> ExecutionToken:
     with redirect_stdout(event):
         eval_data = token_utils.get_eval_data(event.context)
-        exec(
-            cast(ScriptTask, event.task).script,
-            {},                          # globals
-            eval_data)
+        exec(cast(ScriptTask, event.task).script, {}, eval_data)  # globals
         return event.context

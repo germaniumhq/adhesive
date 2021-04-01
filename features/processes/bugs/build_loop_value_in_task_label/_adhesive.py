@@ -1,7 +1,7 @@
 import adhesive
 
 
-@adhesive.task('create data')
+@adhesive.task("create data")
 def create_data(context):
     context.data.items = ["a", "b", "c"]
 

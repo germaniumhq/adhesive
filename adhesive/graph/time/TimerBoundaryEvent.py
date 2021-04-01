@@ -3,7 +3,7 @@ from typing import Generic, TypeVar
 
 from adhesive.graph.BoundaryEvent import BoundaryEvent
 
-TimeDefinition = TypeVar('TimeDefinition')
+TimeDefinition = TypeVar("TimeDefinition")
 
 
 class TimerBoundaryEvent(BoundaryEvent, Generic[TimeDefinition], metaclass=abc.ABCMeta):
@@ -12,5 +12,7 @@ class TimerBoundaryEvent(BoundaryEvent, Generic[TimeDefinition], metaclass=abc.A
     """
     A base class for all the timer boundary events
     """
+
     @abc.abstractmethod
-    def total_seconds(self) -> int: ...
+    def total_seconds(self) -> int:
+        ...

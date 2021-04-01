@@ -13,16 +13,19 @@ LOG = logging.getLogger(__name__)
 
 
 class DockerWorkspace(Workspace):
-    def __init__(self,
-                 workspace: Workspace,
-                 image_name: str,
-                 extra_docker_params: str = "",
-                 pwd: Optional[str] = None,
-                 container_id: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        workspace: Workspace,
+        image_name: str,
+        extra_docker_params: str = "",
+        pwd: Optional[str] = None,
+        container_id: Optional[str] = None,
+    ) -> None:
         super(DockerWorkspace, self).__init__(
             execution_id=workspace.execution_id,
             token_id=workspace.token_id,
-            pwd=pwd if pwd else workspace.pwd)
+            pwd=pwd if pwd else workspace.pwd,
+        )
 
         self.parent_workspace = workspace
         self.image = image_name
@@ -58,30 +61,26 @@ class DockerWorkspace(Workspace):
 
         self.container_id = workspace.run_output(command).strip()
 
-    def run(self,
-            command: str,
-            shell: str = "/bin/sh",
-            capture_stdout: bool = False) -> Union[str, None]:
+    def run(
+        self, command: str, shell: str = "/bin/sh", capture_stdout: bool = False
+    ) -> Union[str, None]:
 
         LOG.debug(f"Workspace: docker({self.id}).run: {command}")
 
         return self.parent_workspace.run(
-                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}",
-                capture_stdout=capture_stdout)
+            f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}",
+            capture_stdout=capture_stdout,
+        )
 
-    def run_output(self,
-                   command: str,
-                   shell: str = "/bin/sh") -> str:
+    def run_output(self, command: str, shell: str = "/bin/sh") -> str:
 
         LOG.debug(f"Workspace: docker({self.id}).run: {command}")
 
         return self.parent_workspace.run_output(
-                f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}")
+            f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}"
+        )
 
-    def write_file(
-            self,
-            file_name: str,
-            content: str) -> None:
+    def write_file(self, file_name: str, content: str) -> None:
         """
         Write a file on the remote docker instance. Since we can't
         really just write files, we create a temp file, then we
@@ -98,7 +97,7 @@ class DockerWorkspace(Workspace):
         finally:
             self.parent_workspace.rm(tmp_file)
 
-    def rm(self, path: Optional[str]=None) -> None:
+    def rm(self, path: Optional[str] = None) -> None:
         """
         Remove a path from the container. We're calling `rm` to do
         the actual operation.
@@ -118,19 +117,17 @@ class DockerWorkspace(Workspace):
 
         self.run(f"mkdir -p {shlex.quote(full_path)}")
 
-    def copy_to_agent(self,
-                      from_path: str,
-                      to_path: str):
+    def copy_to_agent(self, from_path: str, to_path: str):
         self.parent_workspace.run(
-                f"docker cp {from_path} {self.container_id}:{to_path}")
+            f"docker cp {from_path} {self.container_id}:{to_path}"
+        )
 
-    def copy_from_agent(self,
-                        from_path: str,
-                        to_path: str):
+    def copy_from_agent(self, from_path: str, to_path: str):
         self.parent_workspace.run(
-                f"docker cp {self.container_id}:{from_path} {to_path}")
+            f"docker cp {self.container_id}:{from_path} {to_path}"
+        )
 
-    def clone(self) -> 'DockerWorkspace':
+    def clone(self) -> "DockerWorkspace":
         # FIXME: should return the parent workspace somehow
         return DockerWorkspace(
             workspace=self.parent_workspace,
@@ -140,28 +137,26 @@ class DockerWorkspace(Workspace):
         )
 
     def _destroy(self):
-        self.parent_workspace.run(
-                f"docker rm -f {self.container_id}")
+        self.parent_workspace.run(f"docker rm -f {self.container_id}")
 
 
 @contextmanager
-def inside(workspace: Workspace,
-           image_name: str,
-           extra_docker_params: str = ""):
+def inside(workspace: Workspace, image_name: str, extra_docker_params: str = ""):
     w = None
 
     try:
-        w = DockerWorkspace(workspace=workspace,
-                            image_name=image_name,
-                            extra_docker_params=extra_docker_params)
+        w = DockerWorkspace(
+            workspace=workspace,
+            image_name=image_name,
+            extra_docker_params=extra_docker_params,
+        )
         yield w
     finally:
         if w is not None:
             w._destroy()
 
 
-def build(workspace: Workspace,
-          tags: Union[str, Iterable[str]]) -> str:
+def build(workspace: Workspace, tags: Union[str, Iterable[str]]) -> str:
 
     # we always consider a list of tags
     if isinstance(tags, str):

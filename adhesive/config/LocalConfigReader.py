@@ -5,11 +5,9 @@ from adhesive.config.LocalAdhesiveConfig import LocalAdhesiveConfig
 import yaml
 
 
-def read_configuration(cwd=".",
-                       environment=os.environ) -> LocalAdhesiveConfig:
+def read_configuration(cwd=".", environment=os.environ) -> LocalAdhesiveConfig:
     user_config_path = os.path.join(
-        environment.get("HOME", ""),
-        ".adhesive", "config.yml"
+        environment.get("HOME", ""), ".adhesive", "config.yml"
     )
     user_config = read_configuration_from_file(user_config_path)
 

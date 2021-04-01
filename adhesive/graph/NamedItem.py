@@ -6,10 +6,8 @@ class NamedItem(Item):
     An item in the process that has a name defined by the
     user.
     """
-    def __init__(self,
-                 *args,
-                 id: str,
-                 name: str) -> None:
+
+    def __init__(self, *args, id: str, name: str) -> None:
         if args:
             raise Exception("You need to pass named arguments")
 

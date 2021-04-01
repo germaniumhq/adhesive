@@ -22,13 +22,12 @@ def update_deduplication_id(
         return
 
     eval_data = addict.Dict(get_eval_data(event.context))
-    deduplication_id = eval(
-        expression,
-        {},
-        eval_data)
+    deduplication_id = eval(expression, {}, eval_data)
 
     if not deduplication_id:
-        LOG.warning(f"Deduplication returned a falsy object for {expression}. "
-                    f"The return was {deduplication_id}.")
+        LOG.warning(
+            f"Deduplication returned a falsy object for {expression}. "
+            f"The return was {deduplication_id}."
+        )
 
     event.deduplication_id = deduplication_id

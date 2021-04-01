@@ -12,8 +12,7 @@ from adhesive.model.ActiveLoopType import ActiveLoopType
 LOG = logging.getLogger(__name__)
 
 
-def log_running_done(event: ActiveEvent,
-                     task_error = None):
+def log_running_done(event: ActiveEvent, task_error=None):
     if event.loop_type in (ActiveLoopType.INITIAL, ActiveLoopType.INITIAL_EMPTY):
         return
 
@@ -22,18 +21,22 @@ def log_running_done(event: ActiveEvent,
         return
 
     if task_error.failed_event != event:
-        LOG.info(red("Terminated ") +
-                 red(event.context.task_name, bold=True) +
-                 red(" reason: ") +
-                 red(str(task_error.failed_event), bold=True))
+        LOG.info(
+            red("Terminated ")
+            + red(event.context.task_name, bold=True)
+            + red(" reason: ")
+            + red(str(task_error.failed_event), bold=True)
+        )
         return
 
     LOG.info(red("Failed ") + red(event.context.task_name, bold=True))
 
 
 def is_deduplication_event(event: ActiveEvent) -> bool:
-    return isinstance(event.task, ProcessTask) and \
-           cast(ProcessTask, event.task).deduplicate is not None
+    return (
+        isinstance(event.task, ProcessTask)
+        and cast(ProcessTask, event.task).deduplicate is not None
+    )
 
 
 class ProcessEvents:
@@ -41,10 +44,13 @@ class ProcessEvents:
     A class that transitions and keeps track of all the events
     that run in a process.
     """
+
     def __init__(self):
         self.events: Dict[str, ActiveEvent] = dict()
         self.bystate: Dict[ActiveEventState, Dict[str, ActiveEvent]] = dict()
-        self.handlers: Dict[ActiveEventState, Dict[str, Tuple[ActiveEvent, Any]]] = dict()
+        self.handlers: Dict[
+            ActiveEventState, Dict[str, Tuple[ActiveEvent, Any]]
+        ] = dict()
 
         # Keeps the count of active deduplicated events, for a given deduplication ID.
         self._deduplicated_active_count: Dict[str, int] = dict()
@@ -58,12 +64,14 @@ class ProcessEvents:
 
         self.changed = False
 
-    def transition(self,
-                   *,
-                   event: Union[ActiveEvent, str],
-                   state: ActiveEventState,
-                   data: Any = None,
-                   reason: str = "<not given>") -> None:
+    def transition(
+        self,
+        *,
+        event: Union[ActiveEvent, str],
+        state: ActiveEventState,
+        data: Any = None,
+        reason: str = "<not given>",
+    ) -> None:
         LOG.debug(f"Event transition %s -> %s reason: %s", event, state, reason)
         self.changed = True
 
@@ -71,7 +79,9 @@ class ProcessEvents:
             event = self.events[event]
 
         if event.state == ActiveEventState.RUNNING:
-            log_running_done(event, data.task_error if data and hasattr(data, 'task_error') else None)
+            log_running_done(
+                event, data.task_error if data and hasattr(data, "task_error") else None
+            )
 
         del self.bystate[event.state][event.token_id]
         if event.token_id in self.handlers[event.state]:
@@ -91,16 +101,13 @@ class ProcessEvents:
             elif state == ActiveEventState.DONE_CHECK or state == ActiveEventState.DONE:
                 self.unregister_deduplication_event(event)
 
-
-    def get(self,
-            state: ActiveEventState) -> Optional[ActiveEvent]:
+    def get(self, state: ActiveEventState) -> Optional[ActiveEvent]:
         for _id, event in self.bystate[state].items():
             return event
 
         return None
 
-    def pop(self,
-            state: ActiveEventState) -> Tuple[Optional[ActiveEvent], Any]:
+    def pop(self, state: ActiveEventState) -> Tuple[Optional[ActiveEvent], Any]:
         result = None
 
         for _id, event in self.handlers[state].items():
@@ -114,8 +121,7 @@ class ProcessEvents:
 
         return result[0], result[1]
 
-    def iterate(self,
-                states: Union[ActiveEventState, Iterable[ActiveEventState]]):
+    def iterate(self, states: Union[ActiveEventState, Iterable[ActiveEventState]]):
         """
         Iterates over the current elements that are in that particular state
         :param states:
@@ -143,10 +149,9 @@ class ProcessEvents:
 
         return
 
-    def excluding(self,
-                  states: Union[ActiveEventState, Iterable[ActiveEventState]]):
+    def excluding(self, states: Union[ActiveEventState, Iterable[ActiveEventState]]):
         if isinstance(states, ActiveEventState):
-            states = { states }
+            states = {states}
 
         for state in ActiveEventState:
             if state in states:
@@ -158,9 +163,8 @@ class ProcessEvents:
         return
 
     def get_other_task_waiting(
-                self,
-                event: ActiveEvent) -> \
-            Tuple[Optional[ActiveEvent], int]:
+        self, event: ActiveEvent
+    ) -> Tuple[Optional[ActiveEvent], int]:
         """
         Get any other event that might be waiting to be executed on the
         same task.
@@ -172,13 +176,17 @@ class ProcessEvents:
 
         # if we have a task that requires deduplication, we need to look
         # if there's a waiting deduplication id.
-        if event.deduplication_id is not None and \
-                event.deduplication_id in self._deduplicated_waiting:
+        if (
+            event.deduplication_id is not None
+            and event.deduplication_id in self._deduplicated_waiting
+        ):
             return self._deduplicated_waiting[event.deduplication_id], 1
 
-        if event.context.loop and \
-                event.context.loop.task.id == event.task.id and \
-                event.context.loop.index >= 0:
+        if (
+            event.context.loop
+            and event.context.loop.task.id == event.task.id
+            and event.context.loop.index >= 0
+        ):
             return result, count
 
         for ev in self.iterate(PRE_RUN_STATES):
@@ -206,22 +214,28 @@ class ProcessEvents:
 
     def register_deduplication_event(self, event: ActiveEvent) -> None:
         if event.deduplication_id is None:
-            raise Exception("deduplication_id is none. This is an Adhesive BUG, "
-                            "please report it.")
+            raise Exception(
+                "deduplication_id is none. This is an Adhesive BUG, "
+                "please report it."
+            )
 
         if event.deduplication_registered:
-            LOG.warning(f"The event is already registered: {event}. "
-                        f"Not counting it twice.")
+            LOG.warning(
+                f"The event is already registered: {event}. " f"Not counting it twice."
+            )
             return
 
         event.deduplication_registered = True
-        self._deduplicated_active_count[event.deduplication_id] = \
+        self._deduplicated_active_count[event.deduplication_id] = (
             self._deduplicated_active_count.get(event.deduplication_id, 0) + 1
+        )
 
-        LOG.debug("Registered deduplicated event %s. Active event count for %s: %d",
-                  event,
-                  event.deduplication_id,
-                  self._deduplicated_active_count.get(event.deduplication_id, 0))
+        LOG.debug(
+            "Registered deduplicated event %s. Active event count for %s: %d",
+            event,
+            event.deduplication_id,
+            self._deduplicated_active_count.get(event.deduplication_id, 0),
+        )
 
     def unregister_deduplication_event(self, event: ActiveEvent):
         # if the event wasn't registered, there's nothing to unregister
@@ -234,16 +248,21 @@ class ProcessEvents:
         event.deduplication_unregistered = True
 
         if event.deduplication_id is None:
-            raise Exception("deduplication_id is none. This is an Adhesive BUG, "
-                            "please report it.")
+            raise Exception(
+                "deduplication_id is none. This is an Adhesive BUG, "
+                "please report it."
+            )
 
-        self._deduplicated_active_count[event.deduplication_id] = \
+        self._deduplicated_active_count[event.deduplication_id] = (
             self._deduplicated_active_count.get(event.deduplication_id, 0) - 1
+        )
 
-        LOG.debug("Unregistered deduplicated event %s. Active event count for %s: %d",
-                  event,
-                  event.deduplication_id,
-                  self._deduplicated_active_count.get(event.deduplication_id, 0))
+        LOG.debug(
+            "Unregistered deduplicated event %s. Active event count for %s: %d",
+            event,
+            event.deduplication_id,
+            self._deduplicated_active_count.get(event.deduplication_id, 0),
+        )
 
         if self._deduplicated_active_count[event.deduplication_id] == 0:
             del self._deduplicated_active_count[event.deduplication_id]
@@ -269,7 +288,7 @@ class ProcessEvents:
             self.transition(
                 event=existing_event,
                 state=ActiveEventState.DONE,
-                reason="another deduplication event set for waiting"
+                reason="another deduplication event set for waiting",
             )
 
         self._deduplicated_waiting[event.deduplication_id] = event

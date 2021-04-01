@@ -44,12 +44,14 @@ class ActiveEvent:
     An event that passes through the system. It can fork
     in case there are multiple executions going down.
     """
-    def __init__(self,
-                 execution_id: str,
-                 parent_id: Optional['str'],
-                 context: 'ExecutionToken',
-                 deduplication_id: Optional[str] = None
-            ) -> None:
+
+    def __init__(
+        self,
+        execution_id: str,
+        parent_id: Optional["str"],
+        context: "ExecutionToken",
+        deduplication_id: Optional[str] = None,
+    ) -> None:
         self.execution_id = execution_id
         self.token_id: str = str(uuid.uuid4())
         self.parent_id = parent_id
@@ -68,7 +70,7 @@ class ActiveEvent:
         self.future: Optional[Future] = None
 
         self.loop_type: Optional[ActiveLoopType] = None
-        self._next_event: Optional['ActiveEvent'] = None
+        self._next_event: Optional["ActiveEvent"] = None
 
     def __getstate__(self):
         return {
@@ -77,12 +79,10 @@ class ActiveEvent:
             "parent_id": self.parent_id,
             "deduplication_id": self.deduplication_id,
             "_task": self._task,
-            "context": self.context
+            "context": self.context,
         }
 
-    def clone(self,
-              task: ExecutableNode,
-              parent_id: Optional[str]) -> 'ActiveEvent':
+    def clone(self, task: ExecutableNode, parent_id: Optional[str]) -> "ActiveEvent":
         """
         Clone the current event for another task id target.
         """
@@ -101,12 +101,14 @@ class ActiveEvent:
         # boolean looping expressions.
 
         # only ProcessTasks have loops.
-        if isinstance(self.context.task, ProcessTask) \
-                and self.context.task.loop \
-                and self.context.loop \
-                and self.context.loop.task == self.context.task \
-                and self.context.task != task \
-                and parent_id == self.parent_id:
+        if (
+            isinstance(self.context.task, ProcessTask)
+            and self.context.task.loop
+            and self.context.loop
+            and self.context.loop.task == self.context.task
+            and self.context.task != task
+            and parent_id == self.parent_id
+        ):
             result.context.loop = self.context.loop.parent_loop
         else:
             result.context.loop = self.context.loop
@@ -130,17 +132,18 @@ class ActiveEvent:
     def __repr__(self) -> str:
         # the task.token_id should be the same as the self.execution.token_id
         if self.deduplication_id:
-            return f"ActiveEvent({self.token_id}, {self.state}): " \
-                   f"({self.deduplication_id}:{self.task.id}):{self.context.task_name}"
+            return (
+                f"ActiveEvent({self.token_id}, {self.state}): "
+                f"({self.deduplication_id}:{self.task.id}):{self.context.task_name}"
+            )
 
-        return f"ActiveEvent({self.token_id}, {self.state}): " \
-               f"({self.task.id}):{self.context.task_name}"
+        return (
+            f"ActiveEvent({self.token_id}, {self.state}): "
+            f"({self.task.id}):{self.context.task_name}"
+        )
 
 
-def is_parent(self,
-              *,
-              parent_element: ActiveEvent,
-              child_element: ActiveEvent) -> bool:
+def is_parent(self, *, parent_element: ActiveEvent, child_element: ActiveEvent) -> bool:
     parent_id = child_element.parent_id
 
     while parent_id:
@@ -165,9 +168,11 @@ def is_potential_predecessor(self, event: ActiveEvent, e: ActiveEvent) -> bool:
 
     # When we have a loop on an element, if it's already running (i.e. not
     # initial), it means we already evaluated we don't have any predecessors
-    if event.context.loop and \
-            event.context.loop.task.id == event.task.id and \
-            event.context.loop.index >= 0:
+    if (
+        event.context.loop
+        and event.context.loop.task.id == event.task.id
+        and event.context.loop.index >= 0
+    ):
         return False
 
     return loop_id(e) == loop_id(event)
@@ -197,9 +202,11 @@ def noop_copy_event(e: ActiveEvent) -> ActiveEvent:
     return e
 
 
-copy_event = noop_copy_event \
-        if config.current.parallel_processing == "process" else \
-        deep_copy_event
+copy_event = (
+    noop_copy_event
+    if config.current.parallel_processing == "process"
+    else deep_copy_event
+)
 
 
 from adhesive.execution.ExecutionToken import ExecutionToken

@@ -11,28 +11,32 @@ assert_equal = unittest.TestCase().assertEqual
 def find_open_port() -> int:
     # FIXME: this should find an open port on the host, not inside the
     # docker container. a bit trickier to do.
-    port = random.randint(10000,60000)
+    port = random.randint(10000, 60000)
     return port
 
 
-@adhesive.task('Start\ SSH\ Server')
+@adhesive.task("Start\ SSH\ Server")
 def start_ssh_server(context):
     print("starting server...")
     context.data.ssh_port = find_open_port()
     container_id = context.workspace.run(
         f"docker run -d -p {context.data.ssh_port}:22 rastasheep/ubuntu-sshd:18.04",
-        capture_stdout=True)
+        capture_stdout=True,
+    )
 
     context.data.container_id = container_id
     print("[OK] started server")
 
-@adhesive.task('Test running commands on ssh connections')
+
+@adhesive.task("Test running commands on ssh connections")
 def run_ls_inside_server(context):
-    with ssh.inside(context.workspace,
-            "172.17.0.1",
-            username="root",
-            password="root",
-            port=context.data.ssh_port) as w:
+    with ssh.inside(
+        context.workspace,
+        "172.17.0.1",
+        username="root",
+        password="root",
+        port=context.data.ssh_port,
+    ) as w:
         # since the path doesn't exists on the ssh server, we first change it
         # here
         w.pwd = "/tmp"
@@ -64,13 +68,15 @@ def run_ls_inside_server(context):
         assert_equal(pwd, w.pwd)
 
 
-@adhesive.task('Test\ write_file\ API')
+@adhesive.task("Test\ write_file\ API")
 def test_write_file_api(context):
-    with ssh.inside(context.workspace,
-            "172.17.0.1",
-            username="root",
-            password="root",
-            port=context.data.ssh_port) as w:
+    with ssh.inside(
+        context.workspace,
+        "172.17.0.1",
+        username="root",
+        password="root",
+        port=context.data.ssh_port,
+    ) as w:
         w.pwd = "/tmp"
         w.write_file("test.txt", "yay")
         test_content = w.run("cat test.txt", capture_stdout=True)
@@ -78,22 +84,20 @@ def test_write_file_api(context):
         assert "yay" == test_content
 
 
-
-@adhesive.task('Shutdown\ Server')
+@adhesive.task("Shutdown\ Server")
 def shutdown_server(context):
     print("shutting down server...")
     context.workspace.run(f"docker rm -f {context.data.container_id}")
     print("[OK] server was shutdown")
 
 
-@adhesive.task('Test\ Failed')
+@adhesive.task("Test\ Failed")
 def test_failed(context):
     print(context.data.as_dict())
     context.data.test_failed = True
 
 
-
-@adhesive.task('Check\ if\ test\ failed')
+@adhesive.task("Check\ if\ test\ failed")
 def check_if_test_failed(context):
     if context.data._error:
         print("Uh oh, we got an error in the ssh execution")

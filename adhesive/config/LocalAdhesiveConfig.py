@@ -8,10 +8,13 @@ class LocalAdhesiveConfig(AdhesiveConfig):
     """
     A configuration that's assembled from the local files.
     """
-    def __init__(self,
-                 user_config: Dict[str, Any],
-                 local_config: Dict[str, Any],
-                 environment: Dict[str, str]):
+
+    def __init__(
+        self,
+        user_config: Dict[str, Any],
+        local_config: Dict[str, Any],
+        environment: Dict[str, str],
+    ):
         super(LocalAdhesiveConfig, self).__init__()
 
         # FIXME: detect if possible where's the /tmp folder

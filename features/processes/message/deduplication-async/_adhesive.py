@@ -15,18 +15,14 @@ def get_event_id(event) -> str:
     return event["event_id"]
 
 
-@adhesive.message('Start Event')
+@adhesive.message("Start Event")
 def message_start_event(context):
-	# generate 100 events really fast
+    # generate 100 events really fast
     for i in range(100):
-        yield {
-            "index": i,
-            "state": "new",
-            "event_id": str(random.randint(0,2))
-        }
+        yield {"index": i, "state": "new", "event_id": str(random.randint(0, 2))}
 
 
-@adhesive.gateway('Deduplicate Events')
+@adhesive.gateway("Deduplicate Events")
 def deduplicate_events(context):
     global already_running
     global pending_events
@@ -69,16 +65,18 @@ def execute_task(context):
     context.data.executed_tasks.add(str(uuid.uuid4()))
 
 
-@adhesive.task('Set the event as processed')
+@adhesive.task("Set the event as processed")
 def set_the_event_as_processed(context):
     context.data.event["state"] = "done"
 
 
-data = adhesive.bpmn_build("deduplicate.bpmn",
+data = adhesive.bpmn_build(
+    "deduplicate.bpmn",
     wait_tasks=False,
     initial_data={
         "executed_tasks": set(),
-    })
+    },
+)
 
 
 # most events should be deduplicated

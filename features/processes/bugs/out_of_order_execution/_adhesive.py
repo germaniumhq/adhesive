@@ -25,9 +25,9 @@ def bob_build(context, project_name) -> None:
     time.sleep(1)
 
 
-@adhesive.task('tc: awi')
+@adhesive.task("tc: awi")
 def tc_build(context) -> None:
     pass
 
 
-adhesive.bpmn_build('syncfun_debug.bpmn')
+adhesive.bpmn_build("syncfun_debug.bpmn")

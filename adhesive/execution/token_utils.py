@@ -13,8 +13,7 @@ LOG = logging.getLogger(__name__)
 # 3. a name matching
 
 
-def parse_name(context: ExecutionToken,
-               name: str) -> str:
+def parse_name(context: ExecutionToken, name: str) -> str:
     """
     Parse the name of a task, or a lane depending on the
     current event token.
@@ -22,7 +21,7 @@ def parse_name(context: ExecutionToken,
 
     # don't bother to do complicated things, if there's no
     # interpolation to be done
-    if '{' not in name or '}' not in name:
+    if "{" not in name or "}" not in name:
         return name
 
     try:
@@ -46,8 +45,7 @@ def get_eval_data(context: ExecutionToken) -> Dict:
     return evaldata
 
 
-def matches(re_expressions: List[Pattern],
-            resolved_name: str) -> Optional[List[str]]:
+def matches(re_expressions: List[Pattern], resolved_name: str) -> Optional[List[str]]:
     """
     Checks if this implementation matches any of the expressions bounded to
     this resolved name. If yes, it returns the potential variables extracted

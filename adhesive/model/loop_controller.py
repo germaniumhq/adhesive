@@ -12,14 +12,17 @@ LOG = logging.getLogger(__name__)
 
 
 def is_top_loop_event(event: ActiveEvent):
-    return isinstance(event.task, ProcessTask) and \
-           (not event.context.loop or event.context.loop.task != event.task)
+    return isinstance(event.task, ProcessTask) and (
+        not event.context.loop or event.context.loop.task != event.task
+    )
 
 
-def create_loop(event: ActiveEvent,
-                clone_event,
-                target_task: ProcessTask,
-                parent_id: Optional[str] = None) -> None:
+def create_loop(
+    event: ActiveEvent,
+    clone_event,
+    target_task: ProcessTask,
+    parent_id: Optional[str] = None,
+) -> None:
     """
     Create a loop event.
     """
@@ -31,8 +34,7 @@ def create_loop(event: ActiveEvent,
     owning_loop = event.context.loop
 
     # FIXME: task check should have just worked
-    if event.context.loop and \
-        event.context.loop.task.id == event.task.id:
+    if event.context.loop and event.context.loop.task.id == event.task.id:
         owning_loop = event.context.loop.parent_loop
 
     new_event.loop_type = ActiveLoopType.INITIAL
@@ -42,7 +44,7 @@ def create_loop(event: ActiveEvent,
         task=new_event.task,
         item=None,
         index=-1,
-        expression=target_task.loop.loop_expression
+        expression=target_task.loop.loop_expression,
     )
 
 
@@ -89,7 +91,8 @@ def create_condition_loop(clone_event, event, loop_data):
         task=cast(ProcessTask, event.task),
         item=loop_data,
         index=0,
-        expression=event.task.loop.loop_expression)
+        expression=event.task.loop.loop_expression,
+    )
 
     return
 
@@ -211,7 +214,8 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
         task=cast(ProcessTask, event.task),
         item=result,
         index=event.context.loop.index + 1,
-        expression=event.context.loop.expression)
+        expression=event.context.loop.expression,
+    )
 
     return True
 

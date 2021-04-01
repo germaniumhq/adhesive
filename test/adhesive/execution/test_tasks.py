@@ -21,23 +21,23 @@ def docker_lane(context, image_name) -> WorkspaceGenerator:
 
 
 @adhesive.task(
-    'Ensure Docker Tooling',
-    'Test Chrome',
-    'Test Firefox',
-    'Build Germanium Image',
-    'Build Germanium Image on {loop.value}',
-    'Prepare Firefox',
+    "Ensure Docker Tooling",
+    "Test Chrome",
+    "Test Firefox",
+    "Build Germanium Image",
+    "Build Germanium Image on {loop.value}",
+    "Prepare Firefox",
     # exclusive gateway
-    'Exclusive Task Branch',
-    'Populate task data',
-    'Exclusive default branch',
-    'Cleanup Broken Tasks',
-    'Error Was Caught',
-    'Error Was Not Caught',
+    "Exclusive Task Branch",
+    "Populate task data",
+    "Exclusive default branch",
+    "Cleanup Broken Tasks",
+    "Error Was Caught",
+    "Error Was Not Caught",
     re=[
-        '^Cleanup Platform .*?$',
-        '^Test Browser .*? on .*?$',
-    ]
+        "^Cleanup Platform .*?$",
+        "^Test Browser .*? on .*?$",
+    ],
 )
 def basic_task(context) -> None:
     # small sanity check for loops. If we have a loop on the task in the graph,
@@ -49,7 +49,7 @@ def basic_task(context) -> None:
     add_current_task(context)
 
 
-@adhesive.task(re=r'^Parallel \d+$')
+@adhesive.task(re=r"^Parallel \d+$")
 def parallel_task(context) -> None:
     time.sleep(1)
     if not context.data.executions:
@@ -59,8 +59,8 @@ def parallel_task(context) -> None:
 
 
 @adhesive.task(
-    'Throw Some Exception',
-    'Throw Some Error',
+    "Throw Some Exception",
+    "Throw Some Error",
 )
 def throw_some_exception(context) -> None:
     add_current_task(context)
@@ -68,7 +68,7 @@ def throw_some_exception(context) -> None:
     raise Exception("broken")
 
 
-@adhesive.task('Increment X by 1')
+@adhesive.task("Increment X by 1")
 def increment_x_by_1(context):
     add_current_task(context)
 
@@ -79,19 +79,19 @@ def increment_x_by_1(context):
     context.data.x += 1
 
 
-@adhesive.task('Store current execution id')
+@adhesive.task("Store current execution id")
 def store_current_execution_id(context: ExecutionToken):
     add_current_task(context)
     context.data.execution_id = context.execution_id
 
 
-@adhesive.task(re='^sh:(.*)$')
+@adhesive.task(re="^sh:(.*)$")
 def execute_sh_command(context: adhesive.Token, command: str):
     add_current_task(context)
     context.workspace.run(command)
 
 
-@adhesive.usertask('Read Data From User')
+@adhesive.usertask("Read Data From User")
 def read_data_from_user(context, ui) -> None:
     ui.add_input_text("branch", title="Branch")
     ui.add_input_password("password", title="Password")
@@ -100,19 +100,17 @@ def read_data_from_user(context, ui) -> None:
         "run_tests",
         title="Tests",
         value=("integration",),
-        values=("integration", "Integration Tests"))
-    ui.add_radio_group(
-        "depman",
-        title="Depman"
+        values=("integration", "Integration Tests"),
     )
+    ui.add_radio_group("depman", title="Depman")
 
     ui.add_default_button("OK")
     ui.add_default_button("Cancel")
 
 
-@adhesive.gateway('Complex Gateway')
+@adhesive.gateway("Complex Gateway")
 def complex_gateway(context) -> None:
-    context.data.selected_browsers = {'firefox'}
+    context.data.selected_browsers = {"firefox"}
 
 
 def add_current_task(context):

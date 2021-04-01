@@ -12,12 +12,14 @@ class AdhesiveLane:
     """
     An active lane used in a process.
     """
+
     def __init__(
-            self,
-            lane_id: ExecutionLaneId,
-            workspace: Workspace,
-            generator: Any,
-            parent_lane: Optional['AdhesiveLane'] = None) -> None:
+        self,
+        lane_id: ExecutionLaneId,
+        workspace: Workspace,
+        generator: Any,
+        parent_lane: Optional["AdhesiveLane"] = None,
+    ) -> None:
         self.lane_id = lane_id
         self.workspace = workspace
         self.generator = generator

@@ -71,24 +71,20 @@ def remove_docbook_documentation(context):
     )
 
 
-adhesive.process_start()\
-    .subprocess_start("Render Documents", lane="local")\
-    .branch_start()\
-    .task("Render AsciiDoc to DocBook", lane="local")\
-    .branch_end()\
-    .branch_start()\
-    .task("Render AsciiDoc to PDF", lane="local")\
-    .branch_end()\
-    .subprocess_end()\
-    .subprocess_start("Convert Documents", lane="local")\
-    .branch_start()\
-    .task("Convert DocBook to Markdown", lane="local")\
-    .branch_end()\
-    .branch_start()\
-    .task("Convert DocBook to ReStructuredText", lane="local")\
-    .task("Validate ReStructuredText", lane="local")\
-    .branch_end()\
-    .subprocess_end()\
-    .task("Remove DocBook documentation", lane="local")\
-    .process_end()\
-    .build()
+adhesive.process_start().subprocess_start(
+    "Render Documents", lane="local"
+).branch_start().task(
+    "Render AsciiDoc to DocBook", lane="local"
+).branch_end().branch_start().task(
+    "Render AsciiDoc to PDF", lane="local"
+).branch_end().subprocess_end().subprocess_start(
+    "Convert Documents", lane="local"
+).branch_start().task(
+    "Convert DocBook to Markdown", lane="local"
+).branch_end().branch_start().task(
+    "Convert DocBook to ReStructuredText", lane="local"
+).task(
+    "Validate ReStructuredText", lane="local"
+).branch_end().subprocess_end().task(
+    "Remove DocBook documentation", lane="local"
+).process_end().build()

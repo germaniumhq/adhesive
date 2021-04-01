@@ -6,7 +6,7 @@ from adhesive.execution.ExecutionLaneId import ExecutionLaneId
 from adhesive.graph.ExecutableNode import ExecutableNode
 from adhesive.workspace.Workspace import Workspace
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class ExecutionToken(Generic[T]):
@@ -20,14 +20,17 @@ class ExecutionToken(Generic[T]):
 
     A process context it's an execution token that's being passed around.
     """
-    def __init__(self,
-                 *,
-                 task: ExecutableNode,
-                 execution_id: str,
-                 token_id: str,
-                 data: Optional[Dict],
-                 workspace: Optional[Workspace] = None,
-                 lane: Optional[ExecutionLaneId] = None) -> None:
+
+    def __init__(
+        self,
+        *,
+        task: ExecutableNode,
+        execution_id: str,
+        token_id: str,
+        data: Optional[Dict],
+        workspace: Optional[Workspace] = None,
+        lane: Optional[ExecutionLaneId] = None
+    ) -> None:
         self.task = task
         self.data: T = cast(T, ExecutionData(data))
         self.execution_id = execution_id
@@ -49,11 +52,11 @@ class ExecutionToken(Generic[T]):
     def _update_title_from_data(self) -> None:
         self.task_name = token_utils.parse_name(self, self.task.name)
 
-    def clone(self, task: ExecutableNode) -> 'ExecutionToken[T]':
+    def clone(self, task: ExecutableNode) -> "ExecutionToken[T]":
         result: ExecutionToken[T] = ExecutionToken(
             task=task,
             execution_id=self.execution_id,
-            token_id=self.token_id,   # FIXME: probably a new token?
+            token_id=self.token_id,  # FIXME: probably a new token?
             data=cast(ExecutionData, self.data).as_dict(),
             workspace=self.workspace.clone() if self.workspace else None,
             lane=self.lane,

@@ -10,7 +10,7 @@ already_running = False
 pending_events = False
 
 
-@adhesive.message('Start Event')
+@adhesive.message("Start Event")
 def message_start_event(context):
     # generate 100 events really fast
     for i in range(50):
@@ -28,13 +28,12 @@ def message_start_event(context):
         }
 
 
-@adhesive.task('Deduplicate Task',
-               deduplicate="event.id")
+@adhesive.task("Deduplicate Task", deduplicate="event.id")
 def deduplicate_task(context):
     context.data.extra_id = context.data.event["id"]
 
 
-@adhesive.task('Execute Task')
+@adhesive.task("Execute Task")
 def execute_task(context):
     time.sleep(0.2)
     context.data.executed_tasks.add(str(uuid.uuid4()))
@@ -42,20 +41,22 @@ def execute_task(context):
     test.assertEqual(context.data.extra_id, context.data.event["id"])
 
 
-@adhesive.task('Noop')
+@adhesive.task("Noop")
 def noop(context: adhesive.Token) -> None:
     pass
 
 
-@adhesive.task('Noop2')
+@adhesive.task("Noop2")
 def noop2(context: adhesive.Token) -> None:
     pass
 
 
-data = adhesive.bpmn_build("deduplicate.bpmn",
+data = adhesive.bpmn_build(
+    "deduplicate.bpmn",
     wait_tasks=False,
     initial_data={
         "executed_tasks": set(),
-    })
+    },
+)
 
 test.assertEqual(32, len(data.executed_tasks))

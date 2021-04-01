@@ -5,4 +5,5 @@ class EndEvent(Event):
     """
     EndEvent
     """
+
     pass

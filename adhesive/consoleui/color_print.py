@@ -28,4 +28,3 @@ def white(text: str, bold=False, underline=False) -> str:
         return text
 
     return termcolor_util.white(text, bold=bold, underline=underline)
-

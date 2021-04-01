@@ -1,11 +1,9 @@
-
 class ExecutionLaneId:
     """
     An identifier for a lane.
     """
-    def __init__(self,
-                 lane_id: str,
-                 lane_name: str) -> None:
+
+    def __init__(self, lane_id: str, lane_name: str) -> None:
         self.id = lane_id
         self.name = lane_name
 

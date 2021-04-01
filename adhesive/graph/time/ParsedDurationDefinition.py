@@ -11,7 +11,7 @@ class ParsedDurationDefinition:
         self.second = 0
 
     @staticmethod
-    def from_str(segments: str) -> 'ParsedDurationDefinition':
+    def from_str(segments: str) -> "ParsedDurationDefinition":
         m = TIME_PERIOD_RE.match(segments)
 
         if not m:

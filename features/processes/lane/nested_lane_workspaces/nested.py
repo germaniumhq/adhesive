@@ -2,32 +2,37 @@ import adhesive
 from adhesive.workspace import docker, noop
 
 
-@adhesive.task('Touch a file')
+@adhesive.task("Touch a file")
 def touch_a_file(context):
-	context.workspace.run("""
+    context.workspace.run(
+        """
 		touch /tmp/test.txt
-	""")
+	"""
+    )
 
-@adhesive.task('Check the file')
+
+@adhesive.task("Check the file")
 def check_the_file(context):
-	context.workspace.run("""
+    context.workspace.run(
+        """
 		ls -l /tmp/test.txt
-	""")
+	"""
+    )
 
 
-@adhesive.lane('Noop')
+@adhesive.lane("Noop")
 def lane_noop(context):
     with noop.inside(context.workspace) as w:
         try:
-            print('==> noop')
+            print("==> noop")
             yield w
         finally:
-            print('<== noop')
+            print("<== noop")
 
 
-@adhesive.lane('Docker')
+@adhesive.lane("Docker")
 def lane_docker(context):
-    with docker.inside(context.workspace, 'ubuntu:19.04') as w:
+    with docker.inside(context.workspace, "ubuntu:19.04") as w:
         try:
             print("==> docker")
             yield w
@@ -36,4 +41,3 @@ def lane_docker(context):
 
 
 adhesive.bpmn_build("nested.bpmn")
-

@@ -18,9 +18,7 @@ class ProcessEventsTest(unittest.TestCase):
             token_id="root",
             data=None,
         )
-        event = ActiveEvent(execution_id="root",
-                            parent_id=None,
-                            context=context)
+        event = ActiveEvent(execution_id="root", parent_id=None, context=context)
 
         self.assertEqual({}, pe.events)
 

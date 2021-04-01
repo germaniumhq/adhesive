@@ -9,15 +9,17 @@ from adhesive.model.time.ActiveTimer import ActiveTimer
 
 
 class CycleBoundaryActiveTimer(ActiveTimer):
-    def __init__(self,
-                 *,
-                 parent_token: ActiveEvent,
-                 fire_timer=Callable[[ActiveEvent, TimerBoundaryEvent], None],
-                 timer_boundary_event: CycleTimerBoundaryEvent):
+    def __init__(
+        self,
+        *,
+        parent_token: ActiveEvent,
+        fire_timer=Callable[[ActiveEvent, TimerBoundaryEvent], None],
+        timer_boundary_event: CycleTimerBoundaryEvent
+    ):
         super(CycleBoundaryActiveTimer, self).__init__(
             parent_token=parent_token,
             fire_timer=fire_timer,
-            timer_boundary_event=timer_boundary_event
+            timer_boundary_event=timer_boundary_event,
         )
 
         self.execution_count = 0

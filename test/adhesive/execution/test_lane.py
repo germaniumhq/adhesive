@@ -11,6 +11,7 @@ class TestLane(unittest.TestCase):
     """
     Test if the process executor can process parallel gateways.
     """
+
     def test_lane(self):
         """
         Load a process with a gateway and test it..
@@ -20,13 +21,16 @@ class TestLane(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process)
         data = process_executor.execute()
 
-        assert_equal_execution({
-            "Prepare Firefox": 1,
-            "Test Chrome": 1,
-            "Test Firefox": 1,
-            "Ensure Docker Tooling": 1,
-            "Build Germanium Image": 1,
-        }, data.executions)
+        assert_equal_execution(
+            {
+                "Prepare Firefox": 1,
+                "Test Chrome": 1,
+                "Test Firefox": 1,
+                "Ensure Docker Tooling": 1,
+                "Build Germanium Image": 1,
+            },
+            data.executions,
+        )
         self.assertFalse(process_executor.events)
 
     def test_lane_non_wait(self):
@@ -38,15 +42,18 @@ class TestLane(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process, wait_tasks=False)
         data = process_executor.execute()
 
-        assert_equal_execution({
-            "Prepare Firefox": 1,
-            "Test Chrome": 1,
-            "Test Firefox": 2,
-            "Ensure Docker Tooling": 1,
-            "Build Germanium Image": 4,
-        }, data.executions)
+        assert_equal_execution(
+            {
+                "Prepare Firefox": 1,
+                "Test Chrome": 1,
+                "Test Firefox": 2,
+                "Ensure Docker Tooling": 1,
+                "Build Germanium Image": 4,
+            },
+            data.executions,
+        )
         self.assertFalse(process_executor.events)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

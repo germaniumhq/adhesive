@@ -10,9 +10,10 @@ test = unittest.TestCase()
 already_running = False
 pending_events = False
 
-@adhesive.message('Start Event')
+
+@adhesive.message("Start Event")
 def message_start_event(context):
-	# generate 100 events really fast
+    # generate 100 events really fast
     for i in range(100):
         yield {
             "index": i,
@@ -20,7 +21,7 @@ def message_start_event(context):
         }
 
 
-@adhesive.gateway('Deduplicate Events')
+@adhesive.gateway("Deduplicate Events")
 def deduplicate_events(context):
     global already_running
     global pending_events
@@ -43,23 +44,24 @@ def deduplicate_events(context):
     return context.data
 
 
-@adhesive.task('Execute Task')
+@adhesive.task("Execute Task")
 def execute_task(context):
     context.data.executed_tasks.add(str(uuid.uuid4()))
 
 
-@adhesive.task('Set the event as processed')
+@adhesive.task("Set the event as processed")
 def set_the_event_as_processed(context):
     context.data.event["state"] = "done"
 
 
-data = adhesive.bpmn_build("deduplicate.bpmn",
+data = adhesive.bpmn_build(
+    "deduplicate.bpmn",
     wait_tasks=False,
     initial_data={
         "executed_tasks": set(),
-    })
+    },
+)
 
 
 # most events should be deduplicated
 test.assertTrue(len(data.executed_tasks) < 20)
-

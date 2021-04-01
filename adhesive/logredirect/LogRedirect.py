@@ -21,6 +21,7 @@ class StdThreadLocal(local):
     created threads with data. In this case it's the orginal
     python stdout and stderr objects.
     """
+
     def __init__(self):
         super(StdThreadLocal, self).__init__()
 
@@ -39,6 +40,7 @@ class ObjectForward:
     This is use to replace the sys.stdout/stderr, and to have
     an object that delegates to the threadlocal instance.
     """
+
     def __init__(self, key: str) -> None:
         self.__key = key
 
@@ -65,21 +67,17 @@ class StreamLogger:
     subprocess redirections - because they use the native file handle
     to write the output, we redirect all the content to the file.
     """
-    def __init__(self,
-                 name: str,
-                 folder: str) -> None:
+
+    def __init__(self, name: str, folder: str) -> None:
         if not folder:
             raise Exception(f"No folder specified for output: {folder}")
 
-        self.log = open(
-            os.path.join(folder, name),
-            "at")
+        self.log = open(os.path.join(folder, name), "at")
 
         self._closed = False
 
     @staticmethod
-    def from_event(event: Union[ActiveEvent, str],
-                   name: str) -> 'StreamLogger':
+    def from_event(event: Union[ActiveEvent, str], name: str) -> "StreamLogger":
         folder = ensure_folder(event)
         return StreamLogger(name, folder)
 
@@ -140,4 +138,3 @@ def redirect_stdout(event: Union[ActiveEvent, str]) -> Any:
 
 
 from adhesive.storage.task_storage import ensure_folder
-

@@ -1,3 +1,4 @@
+import inspect
 import logging
 import os
 import sys
@@ -10,22 +11,28 @@ from typing import Optional, Dict, TypeVar, Any, List, Tuple, Union, Set, cast
 
 import pebble.pool
 import schedule
+from termcolor_util import cyan
 
 import adhesive
 import adhesive.version
 from adhesive import logredirect
-from adhesive.consoleui.color_print import red, yellow, white
+from adhesive.consoleui.color_print import red, yellow, white, green
 from adhesive.execution import token_utils
 from adhesive.execution.ExecutionData import ExecutionData
-from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
+from adhesive.execution.ExecutionMessageCallbackEvent import (
+    ExecutionMessageCallbackEvent,
+)
 from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.execution.ExecutionToken import ExecutionToken
 from adhesive.execution.ExecutionUserTask import ExecutionUserTask
 from adhesive.execution.call_script_task import call_script_task
 from adhesive.execution.deduplication import update_deduplication_id
+from adhesive.graph.ComplexGateway import ComplexGateway
 from adhesive.graph.Edge import Edge
 from adhesive.graph.Event import Event
 from adhesive.graph.ExecutableNode import ExecutableNode
+from adhesive.graph.Gateway import Gateway
+from adhesive.graph.MessageEvent import MessageEvent
 from adhesive.graph.NonWaitingGateway import NonWaitingGateway
 from adhesive.graph.ScriptTask import ScriptTask
 from adhesive.graph.Task import Task
@@ -42,7 +49,7 @@ from adhesive.model.time.ActiveTimer import ActiveTimer
 from adhesive.model.time.active_timer_factory import create_active_timer
 from adhesive.storage.task_storage import get_folder
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 import concurrent.futures
 
@@ -56,8 +63,13 @@ from adhesive.model import loop_controller
 
 from adhesive.model.ActiveEventStateMachine import ActiveEventState
 from adhesive.model.ActiveLoopType import ActiveLoopType
-from adhesive.model.ActiveEvent import ActiveEvent, is_potential_predecessor, copy_event, DONE_STATES, \
-    ACTIVE_STATES
+from adhesive.model.ActiveEvent import (
+    ActiveEvent,
+    is_potential_predecessor,
+    copy_event,
+    DONE_STATES,
+    ACTIVE_STATES,
+)
 from adhesive.model.AdhesiveProcess import AdhesiveProcess
 
 import signal
@@ -67,11 +79,9 @@ LOG = logging.getLogger(__name__)
 
 
 class TaskError:
-    def __init__(self,
-                 *,
-                 error: str,
-                 exception: Exception,
-                 failed_event: ActiveEvent) -> None:
+    def __init__(
+        self, *, error: str, exception: Exception, failed_event: ActiveEvent
+    ) -> None:
         self.error = error
         self.exception = exception
         self.failed_event = failed_event
@@ -82,29 +92,30 @@ class TaskFinishMode:
     Defines how a task is being finishing. Depending of this,
     we can decide what needs to be done when cleaning up the
     """
+
     pass
 
 
 class CancelTaskFinishModeException(Exception, TaskFinishMode):
-    def __init__(self,
-                 *,
-                 root_node: bool = False,
-                 task_error: Optional[TaskError] = None) -> None:
+    def __init__(
+        self, *, root_node: bool = False, task_error: Optional[TaskError] = None
+    ) -> None:
         self.root_node = root_node
         self.task_error = task_error
 
 
 class OutgoingEdgesFinishMode(TaskFinishMode):
-    def __init__(self,
-                 outgoing_edges: Optional[List[Edge]]) -> None:
+    def __init__(self, outgoing_edges: Optional[List[Edge]]) -> None:
         self.outgoing_edges = outgoing_edges
 
 
 def raise_unhandled_exception(task_error: TaskError):
     log_path = get_folder(task_error.failed_event)
 
-    LOG.error(red("Process execution failed. Unhandled error from ") +
-              red(str(task_error.failed_event), bold=True))
+    LOG.error(
+        red("Process execution failed. Unhandled error from ")
+        + red(str(task_error.failed_event), bold=True)
+    )
 
     if logredirect.is_enabled():
         stdout_file = os.path.join(log_path, "stdout")
@@ -133,12 +144,15 @@ class ProcessExecutor:
     """
     An executor of AdhesiveProcesses.
     """
+
     pool_size = int(config.current.pool_size) if config.current.pool_size else 8
 
-    def __init__(self,
-                 process: AdhesiveProcess,
-                 ut_provider: Optional[UserTaskProvider] = None,
-                 wait_tasks: bool = True) -> None:
+    def __init__(
+        self,
+        process: AdhesiveProcess,
+        ut_provider: Optional[UserTaskProvider] = None,
+        wait_tasks: bool = True,
+    ) -> None:
         self.adhesive_process = process
         self.tasks_impl: Dict[str, ExecutionTask] = dict()
         self.user_tasks_impl: Dict[str, ExecutionUserTask] = dict()
@@ -172,8 +186,7 @@ class ProcessExecutor:
         self.config = ProcessExecutorConfig(wait_tasks=wait_tasks)
         self.execution_id = str(uuid.uuid4())
 
-    def execute(self,
-                initial_data=None) -> ExecutionData:
+    def execute(self, initial_data=None) -> ExecutionData:
         """
         Execute the current events. This will ensure new events are
         generating for forked events.
@@ -184,6 +197,7 @@ class ProcessExecutor:
         _validate_tasks(self, process)
 
         if adhesive.config.current.verify_mode:
+            self._print_task_mappings()
             return ExecutionData(initial_data)
 
         signal.signal(signal.SIGUSR1, self.print_state)
@@ -197,9 +211,13 @@ class ProcessExecutor:
         if config.current.pool_size:
             LOG.info(f"Config: Pool size: {config.current.pool_size}")
         else:
-            LOG.info(f"Config: Pool size: {config.current.pool_size} "
-                     f"(defaulting to {ProcessExecutor.pool_size})")
-        LOG.info(f"Config: Parallel processing mode: {config.current.parallel_processing}")
+            LOG.info(
+                f"Config: Pool size: {config.current.pool_size} "
+                f"(defaulting to {ProcessExecutor.pool_size})"
+            )
+        LOG.info(
+            f"Config: Parallel processing mode: {config.current.parallel_processing}"
+        )
         LOG.info(f"Config: stdout: {config.current.stdout}")
         LOG.info(f"Config: temp_folder: {config.current.temp_polder}")
 
@@ -209,13 +227,11 @@ class ProcessExecutor:
             task=process,
             execution_id=self.execution_id,
             token_id=token_id,
-            data=initial_data
+            data=initial_data,
         )
 
         fake_event = ActiveEvent(
-            execution_id=self.execution_id,
-            parent_id=None,
-            context=process_context
+            execution_id=self.execution_id, parent_id=None, context=process_context
         )
         fake_event.token_id = ""  # FIXME: why
 
@@ -239,7 +255,9 @@ class ProcessExecutor:
 
         LOG.info("Futures:")
         for future, future_mapping in self.futures.items():
-            LOG.info(f"{future_mapping.event_id}:{future_mapping.description} -> {future}")
+            LOG.info(
+                f"{future_mapping.event_id}:{future_mapping.description} -> {future}"
+            )
 
     def kill_itself(self, x, y) -> None:
         LOG.error("SIGINT received. Shutting down.")
@@ -251,10 +269,7 @@ class ProcessExecutor:
         )
 
         exception = CancelTaskFinishModeException(root_node=True, task_error=task_error)
-        self.cancel_subtree(
-            self.root_event,
-            exception
-        )
+        self.cancel_subtree(self.root_event, exception)
 
         for future in set(self.futures):
             self.cancel_future(future=future, exception=exception)
@@ -262,13 +277,12 @@ class ProcessExecutor:
     def start_message_event_listeners(self, root_event: ActiveEvent):
         def create_callback_code(mevent_id, mevent):
             message_event = self.adhesive_process.process.message_events[mevent_id]
-            params = token_utils.matches(mevent.re_expressions,
-                                         self.root_event.context.task_name)
+            params = token_utils.matches(
+                mevent.re_expressions, self.root_event.context.task_name
+            )
 
             def callback_code(event_data):
-                self.enqueue_event(
-                    event=message_event,
-                    event_data=event_data)
+                self.enqueue_event(event=message_event, event_data=event_data)
 
             message_event_context = root_event.context.clone(message_event)
             mevent.code(message_event_context, callback_code, *params)
@@ -277,31 +291,29 @@ class ProcessExecutor:
             create_callback_code(mevent_id, mevent)
 
         for callback_event_id, callback_event in self.mevent_impl.items():
-            message_event = self.adhesive_process.process.message_events[callback_event_id]
+            message_event = self.adhesive_process.process.message_events[
+                callback_event_id
+            ]
             executor = MessageEventExecutor(
                 root_event=root_event,
                 message_event=message_event,
                 execution_message_event=callback_event,
-                enqueue_event=self.enqueue_event)
+                enqueue_event=self.enqueue_event,
+            )
 
             self.futures[executor.future] = FutureMapping(
                 event_id="__message_executor",
                 description=message_event.name,
             )
 
-    def consume_events(self,
-                       state: ActiveEventState,
-                       callback):
+    def consume_events(self, state: ActiveEventState, callback):
         event, data = self.events.pop(state)
         while event:
             callback(event, data)
             event, data = self.events.pop(state)
 
-    def new_event(self,
-                  event: ActiveEvent,
-                  data: Any):
-        self.events.transition(event=event,
-                               state=ActiveEventState.PROCESSING)
+    def new_event(self, event: ActiveEvent, data: Any):
+        self.events.transition(event=event, state=ActiveEventState.PROCESSING)
 
     def execute_process_event_loop(self) -> None:
         """
@@ -332,7 +344,8 @@ class ProcessExecutor:
             done_futures, not_done_futures = concurrent.futures.wait(
                 self.futures.keys(),
                 return_when=concurrent.futures.FIRST_COMPLETED,
-                timeout=0.1)
+                timeout=0.1,
+            )
 
             # Handle task error might destroy other events that are also in
             # the done_futures, and should be processed later. Because of that
@@ -350,8 +363,10 @@ class ProcessExecutor:
                 future = self.done_futures.pop()
 
                 if future not in self.futures:
-                    raise Exception(f"Adhesive BUG: Future {future} not registered in futures. This "
-                                    f"shouldn't happen. Please report it")
+                    raise Exception(
+                        f"Adhesive BUG: Future {future} not registered in futures. This "
+                        f"shouldn't happen. Please report it"
+                    )
 
                 future_mapping = self.futures[future]
                 self.remove_future(future)
@@ -362,7 +377,10 @@ class ProcessExecutor:
                     # check sub-process termination
                     found = False
                     for ev in self.events.excluding(ActiveEventState.DONE):
-                        if ev.parent_id == self.root_event.token_id and ev != self.root_event:
+                        if (
+                            ev.parent_id == self.root_event.token_id
+                            and ev != self.root_event
+                        ):
                             found = True
                             break
 
@@ -371,7 +389,8 @@ class ProcessExecutor:
                         self.events.transition(
                             event=self.root_event,
                             state=ActiveEventState.ROUTING,
-                            data=self.root_event.context)
+                            data=self.root_event.context,
+                        )
 
                     continue
 
@@ -381,7 +400,8 @@ class ProcessExecutor:
                     self.events.transition(
                         event=future_mapping.event_id,
                         state=ActiveEventState.ROUTING,
-                        data=context)
+                        data=context,
+                    )
                 except CancelTaskFinishModeException:
                     pass
                 except concurrent.futures.CancelledError:
@@ -391,9 +411,9 @@ class ProcessExecutor:
                     # the done_futures, and should be processed later.
                     self.handle_task_error(
                         TaskError(
-                            error = traceback.format_exc(),
-                            exception = e,
-                            failed_event = self.events[future_mapping.event_id],
+                            error=traceback.format_exc(),
+                            exception=e,
+                            failed_event=self.events[future_mapping.event_id],
                         )
                     )
 
@@ -406,8 +426,7 @@ class ProcessExecutor:
         self.futures.pop(future)
         self.done_futures.discard(future)
 
-    def register_event(self,
-                       event: ActiveEvent) -> ActiveEvent:
+    def register_event(self, event: ActiveEvent) -> ActiveEvent:
         """
         Register the event into a big map for finding, so we can access it later
         for parents and what not, without serializing the event graph to
@@ -417,9 +436,11 @@ class ProcessExecutor:
         :return:
         """
         if event.token_id in self.events:
-            raise Exception(f"Event {event.token_id} is already registered as "
-                            f"{self.events[event.token_id]}. Got a new request to register "
-                            f"it as {event}.")
+            raise Exception(
+                f"Event {event.token_id} is already registered as "
+                f"{self.events[event.token_id]}. Got a new request to register "
+                f"it as {event}."
+            )
 
         LOG.debug(f"Register {event}")
 
@@ -429,11 +450,12 @@ class ProcessExecutor:
 
         return event
 
-    def unregister_event(self,
-                         event: ActiveEvent) -> None:
+    def unregister_event(self, event: ActiveEvent) -> None:
         if event.token_id not in self.events:
-            raise Exception(f"{event} not found in events. Either the event was "
-                            f"already terminated, either it was not registered.")
+            raise Exception(
+                f"{event} not found in events. Either the event was "
+                f"already terminated, either it was not registered."
+            )
 
         lane_controller.deallocate_workspace(self.adhesive_process, event)
 
@@ -447,10 +469,7 @@ class ProcessExecutor:
 
         del self.events[event.token_id]
 
-    def enqueue_event(self,
-                      *,
-                      event: Event,
-                      event_data: Any) -> None:
+    def enqueue_event(self, *, event: Event, event_data: Any) -> None:
         with self.enqueued_events_lock:
             self.enqueued_events.append((event, event_data))
 
@@ -469,13 +488,11 @@ class ProcessExecutor:
 
         for event, event_data in new_events:
             new_event = self.clone_event(
-                self.root_event,
-                event,
-                parent_id=self.root_event.token_id)
+                self.root_event, event, parent_id=self.root_event.token_id
+            )
             new_event.context.data.event = event_data
 
-    def get_parent(self,
-                   token_id: str) -> ActiveEvent:
+    def get_parent(self, token_id: str) -> ActiveEvent:
         """
         Find the parent of an event by looking at the event ids.
         :param token_id:
@@ -489,9 +506,8 @@ class ProcessExecutor:
         return parent
 
     def fire_timer(
-            self,
-            parent_event: ActiveEvent,
-            boundary_event: TimerBoundaryEvent) -> None:
+        self, parent_event: ActiveEvent, boundary_event: TimerBoundaryEvent
+    ) -> None:
         """
         Called when a timer was fired. If the event is supposed to be
         cancelled, it will attempt to cancel it.
@@ -502,22 +518,22 @@ class ProcessExecutor:
         if not boundary_event.cancel_activity:
             return
 
-        self.cancel_subtree(parent_event,
-                            CancelTaskFinishModeException(root_node=True))
+        self.cancel_subtree(parent_event, CancelTaskFinishModeException(root_node=True))
 
-    def cancel_subtree(self,
-                       parent_event: ActiveEvent,
-                       e: CancelTaskFinishModeException) -> None:
+    def cancel_subtree(
+        self, parent_event: ActiveEvent, e: CancelTaskFinishModeException
+    ) -> None:
         # we move the nested events into error
         for potential_child in list(self.events.events.values()):
             if potential_child.parent_id != parent_event.token_id:
                 continue
 
-            self.cancel_subtree(potential_child, CancelTaskFinishModeException(task_error=e.task_error))
+            self.cancel_subtree(
+                potential_child, CancelTaskFinishModeException(task_error=e.task_error)
+            )
 
         if parent_event.future:
-            self.cancel_future(future=parent_event.future,
-                               exception=e)
+            self.cancel_future(future=parent_event.future, exception=e)
 
         self.events.transition(
             event=parent_event,
@@ -533,20 +549,21 @@ class ProcessExecutor:
         for future in self.futures:
             # future.running()
             with cast(Any, future)._condition:
-                if cast(Any, future)._state in ['RUNNING', 'PENDING']:
+                if cast(Any, future)._state in ["RUNNING", "PENDING"]:
                     return True
 
         return False
 
-    def handle_task_error(self,
-                          task_error: TaskError) -> None:
+    def handle_task_error(self, task_error: TaskError) -> None:
         handling_event: ActiveEvent = task_error.failed_event
 
         if not isinstance(handling_event.task, ProcessTask):
             handling_event = self.get_parent(handling_event.token_id)
 
-        while not cast(ProcessTask, handling_event.task).error_task and \
-                handling_event != self.root_event:
+        while (
+            not cast(ProcessTask, handling_event.task).error_task
+            and handling_event != self.root_event
+        ):
             handling_event = self.get_parent(handling_event.token_id)
 
         if handling_event == self.root_event:
@@ -555,8 +572,7 @@ class ProcessExecutor:
 
         self.task_error_handling(handling_event, task_error)
 
-    def root_error_handling(self,
-                            task_error: TaskError) -> None:
+    def root_error_handling(self, task_error: TaskError) -> None:
         """
         Error handling that happens when no other task had error handling
         configured, and the error event bubbled to the top.
@@ -569,31 +585,34 @@ class ProcessExecutor:
 
         raise_unhandled_exception(task_error)
 
-    def task_error_handling(self,
-                            event: ActiveEvent,
-                            task_error: TaskError) -> None:
+    def task_error_handling(self, event: ActiveEvent, task_error: TaskError) -> None:
         """
         Error handling that happens on a task that has at least one associated
         boundary event.
         """
         if not isinstance(event.task, ProcessTask):
-            raise Exception(f"Adhesive BUG: error in {event} handling. Called on a wrong task type.")
+            raise Exception(
+                f"Adhesive BUG: error in {event} handling. Called on a wrong task type."
+            )
 
         process_task = cast(ProcessTask, event.task)
 
         if not process_task.error_task:
-            raise Exception(f"Adhesive BUG: error in {event} handling. Called on a process task "
-                            f"without an associated error boundary event.")
+            raise Exception(
+                f"Adhesive BUG: error in {event} handling. Called on a process task "
+                f"without an associated error boundary event."
+            )
 
         new_event = self.clone_event(event, process_task.error_task)
         new_event.context.data._error = task_error.error
 
-        self.cancel_subtree(event, CancelTaskFinishModeException(root_node=True, task_error=task_error))
+        self.cancel_subtree(
+            event, CancelTaskFinishModeException(root_node=True, task_error=task_error)
+        )
 
     def processing_event(self, event: ActiveEvent, data: Any) -> None:
         # if there is no processing needed, we skip to routing
-        if isinstance(event.task, Event) or \
-                isinstance(event.task, NonWaitingGateway):
+        if isinstance(event.task, Event) or isinstance(event.task, NonWaitingGateway):
             self.events.transition(
                 event=event,
                 state=ActiveEventState.ROUTING,
@@ -603,27 +622,20 @@ class ProcessExecutor:
 
         # if we need to wait, we wait.
         if isinstance(event.task, WaitingGateway):
-            self.events.transition(
-                event=event,
-                state=ActiveEventState.WAITING
-            )
+            self.events.transition(event=event, state=ActiveEventState.WAITING)
             return
 
         # normally we shouldn't wait for tasks, since it's counter BPMN, so
         # we allow configuring waiting for it.
         if self.config.wait_tasks and (
-                isinstance(event.task, ProcessTask) or
-                isinstance(event.task, Process)
+            isinstance(event.task, ProcessTask) or isinstance(event.task, Process)
         ):
-            self.events.transition(
-                event=event,
-                state=ActiveEventState.WAITING
-            )
+            self.events.transition(event=event, state=ActiveEventState.WAITING)
             return
 
         if self.cleanup_clustered_deduplication_events(
-                event,
-                search_state=ActiveEventState.PROCESSING):
+            event, search_state=ActiveEventState.PROCESSING
+        ):
             return
 
         # deduplication requires checks in the process
@@ -632,7 +644,7 @@ class ProcessExecutor:
             self.events.transition(
                 event=event,
                 state=ActiveEventState.WAITING,
-                reason="this is a deduplication event, it needs to wait"
+                reason="this is a deduplication event, it needs to wait",
             )
             return
 
@@ -641,8 +653,7 @@ class ProcessExecutor:
             state=ActiveEventState.RUNNING,
         )
 
-    def get_process(self,
-                    event: ActiveEvent) -> Process:
+    def get_process(self, event: ActiveEvent) -> Process:
         if not event.parent_id:
             return self.adhesive_process.process
 
@@ -657,11 +668,15 @@ class ProcessExecutor:
         # if we have deduplication, we might be waiting, even without predecessors,
         # since we need to check for events after in the graph with the same
         # deduplication id
-        if self.cleanup_clustered_deduplication_events(event, search_state=ActiveEventState.WAITING):
+        if self.cleanup_clustered_deduplication_events(
+            event, search_state=ActiveEventState.WAITING
+        ):
             return
 
-        if isinstance(event.task, ProcessTask) and \
-                cast(ProcessTask, event.task).deduplicate is not None:
+        if (
+            isinstance(event.task, ProcessTask)
+            and cast(ProcessTask, event.task).deduplicate is not None
+        ):
             self.events.set_waiting_deduplication(event=event)
 
             # if we don't have events downstream running, we're done, we need to
@@ -671,7 +686,8 @@ class ProcessExecutor:
                 self.events.transition(
                     event=event,
                     state=ActiveEventState.RUNNING,
-                    reason="no deduplication downstream event running")
+                    reason="no deduplication downstream event running",
+                )
 
             return
 
@@ -680,21 +696,28 @@ class ProcessExecutor:
 
         # FIXME: deduplication events even if they land
         if other_waiting:
-            new_data = ExecutionData.merge(other_waiting.context.data, event.context.data)
+            new_data = ExecutionData.merge(
+                other_waiting.context.data, event.context.data
+            )
             other_waiting.context.data = new_data
 
             self.events.transition(
                 event=event,
                 state=ActiveEventState.DONE,
-                reason="merged to other event waiting to same task"
+                reason="merged to other event waiting to same task",
             )
             # return  # this event is done
 
         # FIXME: implement a search map for the graph with the events
-        potential_predecessors = list(map(
-            lambda e: e.task,
-            filter(lambda e: is_potential_predecessor(self, event, e),
-                   self.events.iterate(ACTIVE_STATES))))
+        potential_predecessors = list(
+            map(
+                lambda e: e.task,
+                filter(
+                    lambda e: is_potential_predecessor(self, event, e),
+                    self.events.iterate(ACTIVE_STATES),
+                ),
+            )
+        )
 
         # this should return for initial loops
         process = self.get_process(event)
@@ -707,17 +730,20 @@ class ProcessExecutor:
             return None
 
         if not other_waiting:
-            self.events.transition(event=event,
-                                   state=ActiveEventState.RUNNING,
-                                   reason="no other event is running")
+            self.events.transition(
+                event=event,
+                state=ActiveEventState.RUNNING,
+                reason="no other event is running",
+            )
             return
 
-        if other_waiting.state == ActiveEventState.WAITING and \
-                tasks_waiting_count == 1:
+        if other_waiting.state == ActiveEventState.WAITING and tasks_waiting_count == 1:
             # FIXME: why no data mereg is happening here?
-            self.events.transition(event=other_waiting,
-                                   state=ActiveEventState.RUNNING,
-                                   reason="transitioned by another waiting task")
+            self.events.transition(
+                event=other_waiting,
+                state=ActiveEventState.RUNNING,
+                reason="transitioned by another waiting task",
+            )
             return
 
         LOG.debug(f"Waiting for none, yet staying in WAITING? {event}")
@@ -728,23 +754,26 @@ class ProcessExecutor:
             loop_controller.evaluate_initial_loop(event, self.clone_event)
 
             if event.loop_type == ActiveLoopType.INITIAL_EMPTY:
-                self.events.transition(event=event,
-                                       state=ActiveEventState.ROUTING,
-                                       data=event.context)
+                self.events.transition(
+                    event=event, state=ActiveEventState.ROUTING, data=event.context
+                )
             else:
-                self.events.transition(event=event,
-                                       state=ActiveEventState.DONE)
+                self.events.transition(event=event, state=ActiveEventState.DONE)
 
             return
 
-        if event.deduplication_id is not None and \
-                event is self.events.get_waiting_deduplication(event=event):
+        if (
+            event.deduplication_id is not None
+            and event is self.events.get_waiting_deduplication(event=event)
+        ):
             self.events.clear_waiting_deduplication(event=event)
 
-        if event.deduplication_id \
-                and isinstance(event.task, ProcessTask) \
-                and cast(ProcessTask, event.task).deduplicate \
-                and self.events.get_running_deduplication_event_count(event=event) > 1:
+        if (
+            event.deduplication_id
+            and isinstance(event.task, ProcessTask)
+            and cast(ProcessTask, event.task).deduplicate
+            and self.events.get_running_deduplication_event_count(event=event) > 1
+        ):
             raise Exception(f"A deduplicated event is already running for {event}")
 
         # Since the data is potentially updated in WAIT, we need to ensure
@@ -764,19 +793,21 @@ class ProcessExecutor:
             self.active_timers[event.token_id] = timers
 
             for timer_event in event.task.timer_events:
-                timers.add(create_active_timer(
-                    fire_timer=self.fire_timer,
-                    parent_token=event,
-                    boundary_event_definition=timer_event))
+                timers.add(
+                    create_active_timer(
+                        fire_timer=self.fire_timer,
+                        parent_token=event,
+                        boundary_event_definition=timer_event,
+                    )
+                )
 
         if isinstance(event.task, Process):
             for start_task in event.task.start_events.values():
                 if isinstance(start_task, ProcessTask) and start_task.loop:
                     # we start a loop by firing the loop events, and consume this event.
-                    loop_controller.create_loop(event,
-                                                self.clone_event,
-                                                start_task,
-                                                parent_id=event.token_id)
+                    loop_controller.create_loop(
+                        event, self.clone_event, start_task, parent_id=event.token_id
+                    )
                 else:
                     self.clone_event(event, start_task, parent_id=event.token_id)
 
@@ -784,22 +815,22 @@ class ProcessExecutor:
 
         if isinstance(event.task, Task):
             if event.task.id not in self.tasks_impl:
-                error_message = f"BUG: Task id {event.task.id} ({event.task.name}) " \
-                                f"not found in implementations {self.tasks_impl}"
+                error_message = (
+                    f"BUG: Task id {event.task.id} ({event.task.name}) "
+                    f"not found in implementations {self.tasks_impl}"
+                )
 
                 LOG.critical(red(error_message, bold=True))
                 raise Exception(error_message)
 
             future: Future[ExecutionToken] = self.pool.schedule(
-                self.tasks_impl[event.task.id].invoke,
-                args=(copy_event(event),))
+                self.tasks_impl[event.task.id].invoke, args=(copy_event(event),)
+            )
             self.assign_event_future(event, future)
             return None
 
         if isinstance(event.task, ScriptTask):
-            future = self.pool.schedule(
-                call_script_task,
-                args=(copy_event(event),))
+            future = self.pool.schedule(call_script_task, args=(copy_event(event),))
             self.assign_event_future(event, future)
             return None
 
@@ -819,9 +850,7 @@ class ProcessExecutor:
             data=event.context,
         )
 
-    def routing_event(self,
-                   event: ActiveEvent,
-                   data: Any) -> None:
+    def routing_event(self, event: ActiveEvent, data: Any) -> None:
 
         try:
             # Since we're in routing, we passed the actual running, so we need to update the
@@ -831,15 +860,13 @@ class ProcessExecutor:
             # we don't route, since we have live events created from the
             # INITIAL loop type
             if event.loop_type == ActiveLoopType.INITIAL:
-                self.events.transition(event=event,
-                                       state=ActiveEventState.DONE)
+                self.events.transition(event=event, state=ActiveEventState.DONE)
                 return
 
             if loop_controller.next_conditional_loop_iteration(event, self.clone_event):
                 # obviously the done checks are not needed, since we're
                 # still in the loop
-                self.events.transition(event=event,
-                                       state=ActiveEventState.DONE)
+                self.events.transition(event=event, state=ActiveEventState.DONE)
 
                 return
 
@@ -858,19 +885,14 @@ class ProcessExecutor:
             self.events.transition(
                 event=event,
                 state=ActiveEventState.DONE_CHECK,
-                data=OutgoingEdgesFinishMode(outgoing_edges)
+                data=OutgoingEdgesFinishMode(outgoing_edges),
             )
         except Exception as e:
             self.handle_task_error(
-                TaskError(
-                    error=traceback.format_exc(),
-                    exception=e,
-                    failed_event=event
-                ))
+                TaskError(error=traceback.format_exc(), exception=e, failed_event=event)
+            )
 
-    def done_check_event(self,
-                   event: ActiveEvent,
-                   finish_mode: TaskFinishMode) -> None:
+    def done_check_event(self, event: ActiveEvent, finish_mode: TaskFinishMode) -> None:
         """
         Runs the handling for an event that is considered an end
         event in its parent.
@@ -884,14 +906,17 @@ class ProcessExecutor:
         if event.loop_type == ActiveLoopType.COLLECTION_SERIAL:
             if event._next_event:
                 event._next_event.context.data = ExecutionData.merge(
-                    event._next_event.context.data,
-                    event.context.data
+                    event._next_event.context.data, event.context.data
                 )
 
                 self.register_event(event._next_event)
 
-        if isinstance(finish_mode, OutgoingEdgesFinishMode) and finish_mode.outgoing_edges or \
-           isinstance(finish_mode, CancelTaskFinishModeException) and not finish_mode.root_node:
+        if (
+            isinstance(finish_mode, OutgoingEdgesFinishMode)
+            and finish_mode.outgoing_edges
+            or isinstance(finish_mode, CancelTaskFinishModeException)
+            and not finish_mode.root_node
+        ):
             self.events.transition(
                 event=event,
                 state=ActiveEventState.DONE,
@@ -911,7 +936,7 @@ class ProcessExecutor:
                     self.events.transition(
                         event=ev,
                         state=ActiveEventState.RUNNING,
-                        reason="last event for same deduplication_id was done"
+                        reason="last event for same deduplication_id was done",
                     )
 
                     self.events.transition(
@@ -922,14 +947,16 @@ class ProcessExecutor:
 
                     # if our deduplication node is an end state, we need to merge its
                     # content into the parent
-                    if isinstance(finish_mode, OutgoingEdgesFinishMode) and \
-                            not finish_mode.outgoing_edges:
+                    if (
+                        isinstance(finish_mode, OutgoingEdgesFinishMode)
+                        and not finish_mode.outgoing_edges
+                    ):
                         assert event.parent_id
 
                         # since this happens in done, we don't need to update the task_name anymore
                         self.events[event.parent_id].context.data = ExecutionData.merge(
                             self.events[event.parent_id].context.data,
-                            event.context.data
+                            event.context.data,
                         )
 
                     return None  # ==> we're done
@@ -951,8 +978,10 @@ class ProcessExecutor:
 
             # deduplication waiting events need to be woken up only when there's no other
             # event downstream running.
-            if self_event.state == ActiveEventState.WAITING and \
-                    not is_deduplication_event(self_event):
+            if (
+                self_event.state == ActiveEventState.WAITING
+                and not is_deduplication_event(self_event)
+            ):
                 waiting_events.append(self_event)
 
         for waiting_event in waiting_events:
@@ -962,9 +991,15 @@ class ProcessExecutor:
             if waiting_event.task.process_id != process.id:
                 continue
 
-            potential_predecessors = list(map(
-                lambda e: e.task,
-                filter(lambda e: is_potential_predecessor(self, waiting_event, e), self.events.events.values())))
+            potential_predecessors = list(
+                map(
+                    lambda e: e.task,
+                    filter(
+                        lambda e: is_potential_predecessor(self, waiting_event, e),
+                        self.events.events.values(),
+                    ),
+                )
+            )
 
             # FIXME: it seems that WAITING events get invoked even if they shouldn't be
             # since they are deduplication events that should still be waiting
@@ -985,21 +1020,20 @@ class ProcessExecutor:
                 break
 
         # we merge into the parent event if it's an end state.
-        if event.parent_id is not None and \
-                not isinstance(finish_mode, CancelTaskFinishModeException):
+        if event.parent_id is not None and not isinstance(
+            finish_mode, CancelTaskFinishModeException
+        ):
             # since this happens in done, we don't need to update the task_name anymore
             self.events[event.parent_id].context.data = ExecutionData.merge(
-                self.events[event.parent_id].context.data,
-                event.context.data
+                self.events[event.parent_id].context.data, event.context.data
             )
 
-            if not is_active_event_same_parent and \
-                    event.parent_id == self.root_event.token_id and \
-                    self.are_active_futures:
-                self.events.transition(
-                    event=event,
-                    state=ActiveEventState.DONE
-                )
+            if (
+                not is_active_event_same_parent
+                and event.parent_id == self.root_event.token_id
+                and self.are_active_futures
+            ):
+                self.events.transition(event=event, state=ActiveEventState.DONE)
                 return None  # ==> if we still have running futures, we don't kill the main process
 
             if not is_active_event_same_parent:
@@ -1007,28 +1041,26 @@ class ProcessExecutor:
                 self.events.transition(
                     event=parent_event,
                     state=ActiveEventState.ROUTING,
-                    data=parent_event.context
+                    data=parent_event.context,
                 )
 
-        self.events.transition(
-            event=event,
-            state=ActiveEventState.DONE
-        )
+        self.events.transition(event=event, state=ActiveEventState.DONE)
 
     def done_event(self, event: ActiveEvent, data: Any) -> None:
         self.unregister_event(event)
 
-    def cleanup_clustered_deduplication_events(self,
-                                               event: ActiveEvent,
-                                               *,
-                                               search_state: ActiveEventState) -> bool:
+    def cleanup_clustered_deduplication_events(
+        self, event: ActiveEvent, *, search_state: ActiveEventState
+    ) -> bool:
         # if this is not a deduplication event we're done
         if is_deduplication_event(event):
             return False
 
-        LOG.debug("Cleaning up %s against each %s",
-                  event,
-                  self.events.bystate[search_state].values())
+        LOG.debug(
+            "Cleaning up %s against each %s",
+            event,
+            self.events.bystate[search_state].values(),
+        )
 
         self_event_found = False
 
@@ -1044,11 +1076,13 @@ class ProcessExecutor:
                 continue
 
             if not self_event_found:
-                if self.is_same_deduplication_id(event=event, other_processing_event=other_processing_event):
+                if self.is_same_deduplication_id(
+                    event=event, other_processing_event=other_processing_event
+                ):
                     self.events.transition(
                         event=other_processing_event,
                         state=ActiveEventState.DONE,
-                        reason="later event for the same deduplication_id arrived"
+                        reason="later event for the same deduplication_id arrived",
                     )
 
                 continue
@@ -1059,25 +1093,33 @@ class ProcessExecutor:
                 self.events.transition(
                     event=event,
                     state=ActiveEventState.DONE,
-                    reason="another deduplicated event for same deduplication_id on same even state"
+                    reason="another deduplicated event for same deduplication_id on same even state",
                 )
 
-                LOG.debug("Dropped event %s since %s had the same deduplication_id.",
-                          event,
-                          other_processing_event)
+                LOG.debug(
+                    "Dropped event %s since %s had the same deduplication_id.",
+                    event,
+                    other_processing_event,
+                )
                 return True
 
         return False
 
-    def is_same_deduplication_id(self, event: ActiveEvent, other_processing_event: ActiveEvent) -> bool:
-        return isinstance(other_processing_event.task, ProcessTask) and \
-            cast(ProcessTask, other_processing_event.task).deduplicate is not None \
+    def is_same_deduplication_id(
+        self, event: ActiveEvent, other_processing_event: ActiveEvent
+    ) -> bool:
+        return (
+            isinstance(other_processing_event.task, ProcessTask)
+            and cast(ProcessTask, other_processing_event.task).deduplicate is not None
             and other_processing_event.deduplication_id == event.deduplication_id
+        )
 
-    def clone_event(self,
-                    old_event: ActiveEvent,
-                    task: ExecutableNode,
-                    parent_id: Optional[str] = None) -> ActiveEvent:
+    def clone_event(
+        self,
+        old_event: ActiveEvent,
+        task: ExecutableNode,
+        parent_id: Optional[str] = None,
+    ) -> ActiveEvent:
 
         if parent_id is None:
             parent_id = old_event.parent_id
@@ -1090,9 +1132,11 @@ class ProcessExecutor:
         # deduplication events running tracked in events.transition(RUNNING),
         # or cloned events from the original deduplication event, and
         # tracked here
-        if old_event.deduplication_id is not None and \
-                event.deduplication_id is not None and \
-                event.deduplication_id == old_event.deduplication_id:
+        if (
+            old_event.deduplication_id is not None
+            and event.deduplication_id is not None
+            and event.deduplication_id == old_event.deduplication_id
+        ):
             self.events.register_deduplication_event(event)
 
         self.register_event(event)
@@ -1100,10 +1144,11 @@ class ProcessExecutor:
         return event
 
     def startup_processing_pool(self) -> None:
-        self.pool: Union[pebble.pool.ProcessPool, pebble.pool.ThreadPool] = \
-            pebble.pool.ProcessPool(max_workers=ProcessExecutor.pool_size) \
-                if config.current.parallel_processing == "process" \
-                else pebble.pool.ThreadPool(max_workers=ProcessExecutor.pool_size)
+        self.pool: Union[pebble.pool.ProcessPool, pebble.pool.ThreadPool] = (
+            pebble.pool.ProcessPool(max_workers=ProcessExecutor.pool_size)
+            if config.current.parallel_processing == "process"
+            else pebble.pool.ThreadPool(max_workers=ProcessExecutor.pool_size)
+        )
 
         # activate the pool manually, to instantiate the processes
         self.pool.active  # type: ignore
@@ -1127,9 +1172,7 @@ class ProcessExecutor:
             # FIXME: we currently ignore exceptions. I've seen in threading mode +
             # cancel events that some futures are somehow in an invalid state.
 
-    def assign_event_future(self,
-                            event: ActiveEvent,
-                            future: Future) -> None:
+    def assign_event_future(self, event: ActiveEvent, future: Future) -> None:
         LOG.debug(f"Assigned {future} to {event}")
 
         self.futures[future] = FutureMapping(
@@ -1138,17 +1181,16 @@ class ProcessExecutor:
         )
         event.future = future
 
-    def cancel_future(self,
-                      *,
-                      future: Future,
-                      exception: Exception) -> None:
+    def cancel_future(self, *, future: Future, exception: Exception) -> None:
         # cancel the task for this event
         if config.current.parallel_processing != "process":
-            LOG.warning(f"Cancel task on boundary event was requested, "
-                        f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
-                        f"to 'process', but '{config.current.parallel_processing}'. "
-                        f"The result of the task is ignored, but the thread "
-                        f"keeps running in the background.")
+            LOG.warning(
+                f"Cancel task on boundary event was requested, "
+                f"but the ADHESIVE_PARALLEL_PROCESSING is not set "
+                f"to 'process', but '{config.current.parallel_processing}'. "
+                f"The result of the task is ignored, but the thread "
+                f"keeps running in the background."
+            )
 
         if future in self.futures:
             future_mapping = self.futures[future]
@@ -1171,6 +1213,79 @@ class ProcessExecutor:
             future.set_exception(exception)
         except Exception:
             pass
+
+    def _print_task_mappings(self):
+        print(green("Mappings", bold=True))
+        self._print_process_task_mappings(process=self.adhesive_process.process)
+
+    def _print_process_task_mappings(self, *, process: Process, indent=0) -> None:
+        print(
+            "{indent}{type} {name} ({id})".format(
+                indent="  " * indent,
+                type=green("process")
+                if process is self.adhesive_process.process
+                else green("sub-process"),
+                name=yellow(process.name, bold=True),
+                id=white(process.id),
+            )
+        )
+
+        indent += 1
+
+        for task_id, task in process.tasks.items():
+            task_impl = self.tasks_impl.get(task_id, None)
+
+            if isinstance(task, Process):
+                self._print_process_task_mappings(process=task, indent=indent + 1)
+                continue
+
+            if isinstance(task, Event) and not isinstance(task, MessageEvent):
+                continue
+
+            if isinstance(task, Gateway):
+                continue
+
+            if isinstance(task, ScriptTask):
+                print(
+                    "{indent}{type} {name} ({id}) -> {none}".format(
+                        indent="  " * indent,
+                        type=green("script"),
+                        name=yellow(task.name, bold=True),
+                        id=white(task.id),
+                        none=cyan("<bpmn embedded script>", bold=True),
+                    )
+                )
+                continue
+
+            if not task_impl:
+                print(
+                    "{indent}{type} {name} ({id}) -> {none}".format(
+                        indent="  " * indent,
+                        type=green("task"),
+                        name=yellow(task.name, bold=True),
+                        id=white(task.id),
+                        none=red("NONE", bold=False),
+                    )
+                )
+                continue
+
+            task_type = "task"
+
+            if isinstance(task, ComplexGateway):
+                task_type = "gateway"
+            elif isinstance(task, UserTask):
+                task_type = "user task"
+
+            print(
+                "{indent}{type} {name} ({id}) -> {fn} ({file})".format(
+                    indent="  " * indent,
+                    type=green(task_type),
+                    name=yellow(task.name, bold=True),
+                    id=white(task.id),
+                    file=inspect.getfile(task_impl.code),
+                    fn=cyan(task_impl.code.__name__, bold=True),
+                )
+            )
 
 
 from adhesive.model.process_validator import _validate_tasks

@@ -16,12 +16,8 @@ def validate_left_button(context) -> None:
 # Test labels picked from labels
 @adhesive.usertask("Pick The Right Button")
 def pick_right_button(context, ui) -> None:
-    ui.add_default_button("button",
-                          title="Left",
-                          value="left")
-    ui.add_default_button("button",
-                          title="Right",
-                          value="right")
+    ui.add_default_button("button", title="Left", value="left")
+    ui.add_default_button("button", title="Right", value="right")
 
 
 @adhesive.task("Validate Right Button Was Pressed")

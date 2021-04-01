@@ -23,16 +23,16 @@ def merge_dict(dict1: Dict, dict2: Dict) -> None:
 
         dict1[k2] = v2
 
+
 class ExecutionData:
-    def __init__(self,
-                 initial_data: Optional[Dict] = None):
+    def __init__(self, initial_data: Optional[Dict] = None):
         self._data = dict(initial_data) if initial_data else dict()
 
     def as_dict(self) -> Dict:
         return self._data
 
     def __getattr__(self, item: str):
-        if item.startswith("__") or item == '_data':
+        if item.startswith("__") or item == "_data":
             return super(ExecutionData, self).__getattribute__(item)
 
         if item not in self._data:
@@ -57,7 +57,7 @@ class ExecutionData:
         return self.as_dict()
 
     @staticmethod
-    def merge(*data_items: 'ExecutionData') -> 'ExecutionData':
+    def merge(*data_items: "ExecutionData") -> "ExecutionData":
         result = ExecutionData()
 
         for data in data_items:

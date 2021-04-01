@@ -6,8 +6,9 @@ test = unittest.TestCase()
 test.maxDiff = None
 
 
-def assert_equal_execution(expected: Dict[str, int],
-                           actual: Dict[str, Set[str]]) -> None:
+def assert_equal_execution(
+    expected: Dict[str, int], actual: Dict[str, Set[str]]
+) -> None:
     test.assertSetEqual(set(expected.keys()), set(actual.keys()))
     actual_dict = dict()
 

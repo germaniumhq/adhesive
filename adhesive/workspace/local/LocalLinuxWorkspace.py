@@ -17,10 +17,8 @@ class LocalLinuxWorkspace(Workspace):
     folder is being allocated, that will be cleaned up at the end of the
     execution.
     """
-    def __init__(self,
-                 execution_id: str,
-                 token_id: str,
-                 pwd: str="") -> None:
+
+    def __init__(self, execution_id: str, token_id: str, pwd: str = "") -> None:
         super(LocalLinuxWorkspace, self).__init__(
             execution_id=execution_id,
             token_id=token_id,
@@ -30,51 +28,37 @@ class LocalLinuxWorkspace(Workspace):
         if not pwd:
             self.pwd = ensure_folder(self)
 
-    def run(self,
-            command: str,
-            shell: str = "/bin/sh",
-            capture_stdout: bool = False) -> Union[str, None]:
+    def run(
+        self, command: str, shell: str = "/bin/sh", capture_stdout: bool = False
+    ) -> Union[str, None]:
         if capture_stdout:
             return subprocess.check_output(
-                [
-                    shell, "-c", command
-                ],
+                [shell, "-c", command],
                 cwd=self.pwd,
                 stderr=sys.stderr,
-            ).decode('utf-8')
+            ).decode("utf-8")
 
         subprocess.check_call(
-            [
-                shell, "-c", command
-            ],
-            cwd=self.pwd,
-            stdout=sys.stdout,
-            stderr=sys.stderr)
+            [shell, "-c", command], cwd=self.pwd, stdout=sys.stdout, stderr=sys.stderr
+        )
 
         return None
 
-    def run_output(self,
-                   command: str,
-                   shell: str = "/bin/sh") -> str:
+    def run_output(self, command: str, shell: str = "/bin/sh") -> str:
         return subprocess.check_output(
-            [
-                shell, "-c", command
-            ],
+            [shell, "-c", command],
             cwd=self.pwd,
             stderr=sys.stderr,
-        ).decode('utf-8')
+        ).decode("utf-8")
 
-    def write_file(
-            self,
-            file_name: str,
-            content: str) -> None:
+    def write_file(self, file_name: str, content: str) -> None:
 
         full_path = os.path.join(self.pwd, file_name)
 
         with open(full_path, "wt") as f:
             f.write(content)
 
-    def rm(self, path: Optional[str]=None) -> None:
+    def rm(self, path: Optional[str] = None) -> None:
         if path is None:
             LOG.debug("rmtree {}", self.pwd)
             shutil.rmtree(self.pwd)
@@ -92,7 +76,7 @@ class LocalLinuxWorkspace(Workspace):
         else:
             shutil.rmtree(remove_path)
 
-    def mkdir(self, path: str=None) -> None:
+    def mkdir(self, path: str = None) -> None:
         LOG.debug("mkdir {}", path)
 
         full_path = self.pwd
@@ -105,19 +89,15 @@ class LocalLinuxWorkspace(Workspace):
 
         os.mkdir(full_path)
 
-    def copy_to_agent(self,
-                      from_path: str,
-                      to_path: str):
+    def copy_to_agent(self, from_path: str, to_path: str):
         LOG.debug("copy {} to {}", from_path, to_path)
         copy_tree(from_path, to_path)
 
-    def copy_from_agent(self,
-                        from_path: str,
-                        to_path: str):
+    def copy_from_agent(self, from_path: str, to_path: str):
         LOG.debug("copy {} to {}", from_path, to_path)
         shutil.copytree(from_path, to_path)
 
-    def clone(self) -> 'LocalLinuxWorkspace':
+    def clone(self) -> "LocalLinuxWorkspace":
         return LocalLinuxWorkspace(
             execution_id=self.execution_id,
             token_id=self.token_id,
@@ -126,4 +106,3 @@ class LocalLinuxWorkspace(Workspace):
 
 
 from adhesive.storage.task_storage import ensure_folder
-

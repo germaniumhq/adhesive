@@ -12,17 +12,18 @@ LOG = logging.getLogger(__name__)
 
 
 class SshWorkspace(Workspace):
-    def __init__(self,
-                 execution_id: str,
-                 token_id: str,
-                 ssh: str,
-                 pwd: Optional[str] = None,
-                 ssh_connection=None,
-                 **kw: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        execution_id: str,
+        token_id: str,
+        ssh: str,
+        pwd: Optional[str] = None,
+        ssh_connection=None,
+        **kw: Dict[str, Any],
+    ) -> None:
         super(SshWorkspace, self).__init__(
-            execution_id=execution_id,
-            token_id=token_id,
-            pwd='/' if not pwd else pwd)
+            execution_id=execution_id, token_id=token_id, pwd="/" if not pwd else pwd
+        )
 
         # cloning needs to create new connections since tasks are executed
         # in different processes
@@ -45,10 +46,9 @@ class SshWorkspace(Workspace):
 
         return self._sftp
 
-    def run(self,
-            command: str,
-            shell: str = "/bin/sh",
-            capture_stdout: bool = False) -> Union[str, None]:
+    def run(
+        self, command: str, shell: str = "/bin/sh", capture_stdout: bool = False
+    ) -> Union[str, None]:
 
         channel = None
 
@@ -64,7 +64,11 @@ class SshWorkspace(Workspace):
             if capture_stdout:
                 result = bytes()
 
-                while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
+                while (
+                    not channel.exit_status_ready()
+                    or channel.recv_ready()
+                    or channel.recv_stderr_ready()
+                ):
                     while channel.recv_ready():
                         result += channel.recv(1024)
 
@@ -74,11 +78,17 @@ class SshWorkspace(Workspace):
                 exit_status = channel.recv_exit_status()
 
                 if exit_status != 0:
-                    raise Exception(f"Exit status is not zero, instead is {exit_status}")
+                    raise Exception(
+                        f"Exit status is not zero, instead is {exit_status}"
+                    )
 
-                return result.decode('utf-8')
+                return result.decode("utf-8")
 
-            while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
+            while (
+                not channel.exit_status_ready()
+                or channel.recv_ready()
+                or channel.recv_stderr_ready()
+            ):
                 while channel.recv_ready():
                     os.write(sys.stdout.fileno(), channel.recv(1024))
 
@@ -95,9 +105,7 @@ class SshWorkspace(Workspace):
 
         return None
 
-    def run_output(self,
-                   command: str,
-                   shell: str = "/bin/sh") -> str:
+    def run_output(self, command: str, shell: str = "/bin/sh") -> str:
 
         channel = None
 
@@ -112,7 +120,11 @@ class SshWorkspace(Workspace):
 
             result = bytes()
 
-            while not channel.exit_status_ready() or channel.recv_ready() or channel.recv_stderr_ready():
+            while (
+                not channel.exit_status_ready()
+                or channel.recv_ready()
+                or channel.recv_stderr_ready()
+            ):
                 while channel.recv_ready():
                     result += channel.recv(1024)
 
@@ -124,51 +136,46 @@ class SshWorkspace(Workspace):
             if exit_status != 0:
                 raise Exception(f"Exit status is not zero, instead is {exit_status}")
 
-            return result.decode('utf-8')
+            return result.decode("utf-8")
         finally:
             if channel:
                 channel.close()
 
         return None
 
-    def write_file(
-            self,
-            file_name: str,
-            content: str) -> None:
+    def write_file(self, file_name: str, content: str) -> None:
         self.sftp.chdir(self.pwd)
         with self.sftp.file(file_name, "w") as f:
             f.write(content)
 
     def rm(self, path: Optional[str] = None) -> None:
         if path is None:
-            self.run(f'rm -fr {shlex.quote(self.pwd)}')
+            self.run(f"rm -fr {shlex.quote(self.pwd)}")
             return
 
-        self.run(f'rm -fr {shlex.quote(path)}')
+        self.run(f"rm -fr {shlex.quote(path)}")
 
     def mkdir(self, path: Optional[str] = None) -> None:
         if path is None:
-            self.run(f'mkdir -p {shlex.quote(self.pwd)}')
+            self.run(f"mkdir -p {shlex.quote(self.pwd)}")
             return
 
-        self.run(f'mkdir -p {shlex.quote(path)}')
+        self.run(f"mkdir -p {shlex.quote(path)}")
 
-    def copy_to_agent(self,
-                      from_path: str,
-                      to_path: str):
+    def copy_to_agent(self, from_path: str, to_path: str):
         raise Exception("not implemented")
 
-    def copy_from_agent(self,
-                        from_path: str,
-                        to_path: str):
+    def copy_from_agent(self, from_path: str, to_path: str):
         raise Exception("not implemented")
 
-    def clone(self) -> 'SshWorkspace':
-        result = SshWorkspace(execution_id=self.execution_id,
-                              token_id=self.token_id,
-                              ssh=self._ssh,
-                              pwd=self.pwd,
-                              ssh_connection=self.ssh)
+    def clone(self) -> "SshWorkspace":
+        result = SshWorkspace(
+            execution_id=self.execution_id,
+            token_id=self.token_id,
+            ssh=self._ssh,
+            pwd=self.pwd,
+            ssh_connection=self.ssh,
+        )
 
         return result
 
@@ -177,21 +184,22 @@ class SshWorkspace(Workspace):
             self._sftp.close()
         self.ssh.close()
 
+
 # TypeError: Can't instantiate abstract class SshWorkspace with abstract
 # methods clone, copy_from_agent, copy_to_agent, mkdir, rm, write_file
 
 
 @contextmanager
-def inside(workspace: Workspace,
-           ssh: str,
-           **kw):
+def inside(workspace: Workspace, ssh: str, **kw):
     w = None
 
     try:
-        w = SshWorkspace(execution_id=workspace.execution_id,
-                         token_id=workspace.token_id,
-                         ssh=ssh,
-                         **kw)
+        w = SshWorkspace(
+            execution_id=workspace.execution_id,
+            token_id=workspace.token_id,
+            ssh=ssh,
+            **kw,
+        )
         yield w
     finally:
         if w is not None:

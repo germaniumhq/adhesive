@@ -14,15 +14,17 @@ class ExecutionLoop:
     """
     Holds the current looping information.
     """
-    def __init__(self,
-                 *args,
-                 event_id: str,
-                 parent_loop: Optional['ExecutionLoop'],
-                 task: ProcessTask,
-                 item: Any,
-                 index: int,
-                 expression: str,
-             ) -> None:
+
+    def __init__(
+        self,
+        *args,
+        event_id: str,
+        parent_loop: Optional["ExecutionLoop"],
+        task: ProcessTask,
+        item: Any,
+        index: int,
+        expression: str,
+    ) -> None:
         if args:
             raise Exception("You need to pass the parameters by name")
 
@@ -65,9 +67,14 @@ class ExecutionLoop:
         return f"Loop[ event_id: {self.event_id}, index: {self.index}, key: {self._key}, value: {self._value}"
 
     @staticmethod
-    def create_loop(event: 'adhesive.model.ActiveEvent.ActiveEvent',
-                    clone_event: Callable[['adhesive.model.ActiveEvent.ActiveEvent', 'ProcessTask'], 'adhesive.model.ActiveEvent.ActiveEvent'],
-                    target_task: 'ProcessTask') -> int:
+    def create_loop(
+        event: "adhesive.model.ActiveEvent.ActiveEvent",
+        clone_event: Callable[
+            ["adhesive.model.ActiveEvent.ActiveEvent", "ProcessTask"],
+            "adhesive.model.ActiveEvent.ActiveEvent",
+        ],
+        target_task: "ProcessTask",
+    ) -> int:
         assert target_task.loop
 
         expression = target_task.loop.loop_expression
@@ -89,7 +96,8 @@ class ExecutionLoop:
                 task=target_task,
                 item=item,
                 index=index,
-                expression=expression)
+                expression=expression,
+            )
 
             # if we're iterating over a map, we're going to store the
             # values as well.
@@ -107,7 +115,7 @@ class ExecutionLoop:
         return index
 
 
-def parent_loop_id(e: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]:
+def parent_loop_id(e: "adhesive.model.ActiveEvent.ActiveEvent") -> Optional[str]:
     if not e.context.loop:
         return None
 
@@ -117,7 +125,7 @@ def parent_loop_id(e: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]
     return f"{e.context.loop.parent_loop.event_id}:{e.context.loop.parent_loop.index}"
 
 
-def loop_id(event: 'adhesive.model.ActiveEvent.ActiveEvent') -> Optional[str]:
+def loop_id(event: "adhesive.model.ActiveEvent.ActiveEvent") -> Optional[str]:
     """
     Finds the loop id where this event executes. This is the owning loop ID.
     :param event:

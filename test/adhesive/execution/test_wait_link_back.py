@@ -13,12 +13,15 @@ class TestWaitLinkBack(unittest.TestCase):
         process_executor = ProcessExecutor(adhesive.process)
         data = process_executor.execute()
 
-        assert_equal_execution({
-            "Increment X by 1": 5,
-            "Build Germanium Image": 1,
-        }, data.executions)
+        assert_equal_execution(
+            {
+                "Increment X by 1": 5,
+                "Build Germanium Image": 1,
+            },
+            data.executions,
+        )
         self.assertFalse(process_executor.events)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

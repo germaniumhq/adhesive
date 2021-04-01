@@ -5,7 +5,7 @@ import unittest
 test = unittest.TestCase()
 
 
-@adhesive.task('Loop item')
+@adhesive.task("Loop item")
 def loop_item(context):
     context.data.execution_count += 1
 
@@ -17,14 +17,12 @@ def loop_item(context):
         context.data.collection = ["a", "b", "c"]
 
 
-data = adhesive.process_start()\
-    .task("Loop item", loop="collection")\
-    .process_end()\
-    .build(initial_data={
-        "execution_count": 0,
-        "collection": True
-    })
+data = (
+    adhesive.process_start()
+    .task("Loop item", loop="collection")
+    .process_end()
+    .build(initial_data={"execution_count": 0, "collection": True})
+)
 
 
 test.assertEqual(4, data.execution_count, "It should have executed four times")
-

@@ -8,10 +8,13 @@ from .test_tasks import adhesive
 
 class TestUserTaskJoin(unittest.TestCase):
     def test_link_back_execution(self):
-        adhesive.process.process = read_bpmn_file("test/adhesive/xml/user-task-join.bpmn")
+        adhesive.process.process = read_bpmn_file(
+            "test/adhesive/xml/user-task-join.bpmn"
+        )
 
-        process_executor = ProcessExecutor(adhesive.process,
-                                             ut_provider=TestUserTaskProvider())
+        process_executor = ProcessExecutor(
+            adhesive.process, ut_provider=TestUserTaskProvider()
+        )
         data = process_executor.execute()
 
         self.assertEqual("OK", data.OK)
@@ -22,5 +25,5 @@ class TestUserTaskJoin(unittest.TestCase):
         self.assertFalse(process_executor.events)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

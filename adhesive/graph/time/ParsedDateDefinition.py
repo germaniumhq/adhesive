@@ -6,7 +6,7 @@ class ParsedDateDefinition:
         self.date = date
 
     @staticmethod
-    def from_str(s: str) -> 'ParsedDateDefinition':
+    def from_str(s: str) -> "ParsedDateDefinition":
         try:
             parsed_date = dateutil.parser.parse(s)
 

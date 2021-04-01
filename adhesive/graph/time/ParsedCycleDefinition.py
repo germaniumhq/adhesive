@@ -12,14 +12,16 @@ class ParsedCycleDefinition:
         self.repeat_count = -1
 
     @staticmethod
-    def from_str(segments: str) -> 'ParsedCycleDefinition':
+    def from_str(segments: str) -> "ParsedCycleDefinition":
         cycle_segments = segments.split("/")
         result = ParsedCycleDefinition()
 
         if len(cycle_segments) != 2:
-            raise Exception(f"Unable to parse the cycle definition {segments}. Segment count "
-                            f"doesn't match. Expected 2, got {len(cycle_segments)} segments "
-                            f"divided by /. ")
+            raise Exception(
+                f"Unable to parse the cycle definition {segments}. Segment count "
+                f"doesn't match. Expected 2, got {len(cycle_segments)} segments "
+                f"divided by /. "
+            )
 
         m = REPEATING_RE.match(cycle_segments[0])
         if not m:

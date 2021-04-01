@@ -3,12 +3,25 @@ from adhesive.time_patch import patch_time
 patch_time()
 
 from contextlib import contextmanager
-from typing import Callable, TypeVar, Optional, Union, List, Generator, Any, cast, IO, TextIO
+from typing import (
+    Callable,
+    TypeVar,
+    Optional,
+    Union,
+    List,
+    Generator,
+    Any,
+    cast,
+    IO,
+    TextIO,
+)
 
 from adhesive import config
 from adhesive.consoleui.ConsoleUserTaskProvider import ConsoleUserTaskProvider
 from adhesive.execution.ExecutionLane import ExecutionLane
-from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
+from adhesive.execution.ExecutionMessageCallbackEvent import (
+    ExecutionMessageCallbackEvent,
+)
 from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive.execution.ExecutionToken import ExecutionToken
@@ -23,13 +36,14 @@ from adhesive.process_read.programmatic import generate_from_calls
 from adhesive.process_read.tasks import generate_from_tasks
 from adhesive.workspace.Workspace import Workspace
 
-T = TypeVar('T')
-V = TypeVar('V')
+T = TypeVar("T")
+V = TypeVar("V")
 
-process = AdhesiveProcess('_root')
+process = AdhesiveProcess("_root")
 
 
 UI = UiBuilderApi
+
 
 class Token(ExecutionToken[T]):
     workspace: Workspace
@@ -66,16 +80,17 @@ MessageGenerator = Generator[Any, Any, None]
 LaneFunction = _DecoratedFunction[T, WorkspaceGenerator]
 MessageFunction = _DecoratedFunction[T, MessageGenerator]
 
-#FIXME: move decorators into their own place
+# FIXME: move decorators into their own place
 
 
-def task(*task_names: str,
-         re: Optional[Union[str, List[str]]] = None,
-         loop: Optional[str] = None,
-         when: Optional[str] = None,
-         lane: Optional[str] = None,
-         deduplicate: Optional[str] = None,
-         ) -> Callable[[_DecoratedFunction[T, None]], _DecoratedFunction[T, None]]:
+def task(
+    *task_names: str,
+    re: Optional[Union[str, List[str]]] = None,
+    loop: Optional[str] = None,
+    when: Optional[str] = None,
+    lane: Optional[str] = None,
+    deduplicate: Optional[str] = None,
+) -> Callable[[_DecoratedFunction[T, None]], _DecoratedFunction[T, None]]:
     def wrapper_builder(f: _DecoratedFunction[T, None]) -> _DecoratedFunction[T, None]:
         task = ExecutionTask(
             code=f,
@@ -98,14 +113,17 @@ def task(*task_names: str,
 gateway = task
 
 
-def usertask(*task_names: str,
-             re: Optional[Union[str, List[str]]] = None,
-             loop: Optional[str] = None,
-             when: Optional[str] = None,
-             lane: Optional[str] = None,
-             deduplicate: Optional[str] = None,
-        ) -> Callable[[_DecoratedUiFunction[T, None]], _DecoratedUiFunction[T, None]]:
-    def wrapper_builder(f: _DecoratedUiFunction[T, None]) -> _DecoratedUiFunction[T, None]:
+def usertask(
+    *task_names: str,
+    re: Optional[Union[str, List[str]]] = None,
+    loop: Optional[str] = None,
+    when: Optional[str] = None,
+    lane: Optional[str] = None,
+    deduplicate: Optional[str] = None,
+) -> Callable[[_DecoratedUiFunction[T, None]], _DecoratedUiFunction[T, None]]:
+    def wrapper_builder(
+        f: _DecoratedUiFunction[T, None]
+    ) -> _DecoratedUiFunction[T, None]:
         usertask = ExecutionUserTask(
             code=f,
             expressions=task_names,
@@ -122,33 +140,36 @@ def usertask(*task_names: str,
     return wrapper_builder
 
 
-def lane(*lane_names:str,
-         re: Optional[Union[str, List[str]]] = None,
-         ) -> Callable[[LaneFunction], WorkspaceGenerator]:
+def lane(
+    *lane_names: str,
+    re: Optional[Union[str, List[str]]] = None,
+) -> Callable[[LaneFunction], WorkspaceGenerator]:
     """
     Allow defining a lane where a custom workspace will be created. This
     function needs to yield a workspace that will be used. It's a
     contextmanager. When all the execution tokens exit the lane, the code after
     the yield will be executed.
     """
+
     def wrapper_builder(f: LaneFunction) -> WorkspaceGenerator:
         newf: WorkspaceGenerator = cast(WorkspaceGenerator, contextmanager(f))
-        process.lane_definitions.append(ExecutionLane(
-            code=newf,  # type: ignore
-            expressions=lane_names,
-            regex_expressions=re))
+        process.lane_definitions.append(
+            ExecutionLane(
+                code=newf, expressions=lane_names, regex_expressions=re  # type: ignore
+            )
+        )
         return newf
 
     return wrapper_builder
 
 
-def message(*message_names: str,
-             re: Optional[Union[str, List[str]]] = None) -> Callable[[MessageFunction], MessageFunction]:
+def message(
+    *message_names: str, re: Optional[Union[str, List[str]]] = None
+) -> Callable[[MessageFunction], MessageFunction]:
     def wrapper_builder(f: MessageFunction) -> MessageFunction:
         message_definition = ExecutionMessageEvent(
-            code=f,
-            expressions=message_names,
-            regex_expressions=re)
+            code=f, expressions=message_names, regex_expressions=re
+        )
 
         process.message_definitions.append(message_definition)
 
@@ -157,20 +178,20 @@ def message(*message_names: str,
     return wrapper_builder
 
 
-def message_callback(*message_names: str,
-                     re: Optional[Union[str, List[str]]] = None) \
-        -> Callable[[_DecoratedCallbackFunction], _DecoratedCallbackFunction]:
+def message_callback(
+    *message_names: str, re: Optional[Union[str, List[str]]] = None
+) -> Callable[[_DecoratedCallbackFunction], _DecoratedCallbackFunction]:
     """
     Obtain a message callback, that can push the
     :param message_names:
     :param re:
     :return:
     """
+
     def wrapper_builder(f: _DecoratedCallbackFunction) -> _DecoratedCallbackFunction:
         message_definition = ExecutionMessageCallbackEvent(
-            code=f,
-            expressions=message_names,
-            regex_expressions=re)
+            code=f, expressions=message_names, regex_expressions=re
+        )
 
         process.message_callback_definitions.append(message_definition)
 
@@ -181,14 +202,17 @@ def message_callback(*message_names: str,
 
 # FIXME: move builders into their own place
 
-def build(ut_provider: Optional['UserTaskProvider'] = None,
-          wait_tasks: bool = True,
-          initial_data = None):
+
+def build(
+    ut_provider: Optional["UserTaskProvider"] = None,
+    wait_tasks: bool = True,
+    initial_data=None,
+):
     process.process = generate_from_tasks(process)
 
-    return _build(ut_provider=ut_provider,
-                  wait_tasks=wait_tasks,
-                  initial_data=initial_data)
+    return _build(
+        ut_provider=ut_provider, wait_tasks=wait_tasks, initial_data=initial_data
+    )
 
 
 def process_start():
@@ -198,21 +222,25 @@ def process_start():
     return builder
 
 
-def bpmn_build(file_name: Union[str, IO[bytes], TextIO],
-               ut_provider: Optional['UserTaskProvider'] = None,
-               wait_tasks: bool = True,
-               initial_data = None):
+def bpmn_build(
+    file_name: Union[str, IO[bytes], TextIO],
+    ut_provider: Optional["UserTaskProvider"] = None,
+    wait_tasks: bool = True,
+    initial_data=None,
+):
     """ Start a build that was described in BPMN """
     process.process = read_bpmn_file(file_name)
 
-    return _build(ut_provider=ut_provider,
-                  wait_tasks=wait_tasks,
-                  initial_data=initial_data)
+    return _build(
+        ut_provider=ut_provider, wait_tasks=wait_tasks, initial_data=initial_data
+    )
 
 
-def _build(ut_provider: Optional['UserTaskProvider'] = None,
-           wait_tasks: bool = True,
-           initial_data=None):
+def _build(
+    ut_provider: Optional["UserTaskProvider"] = None,
+    wait_tasks: bool = True,
+    initial_data=None,
+):
 
     configure_logging(config.current)
 
@@ -220,9 +248,8 @@ def _build(ut_provider: Optional['UserTaskProvider'] = None,
         ut_provider = ConsoleUserTaskProvider()
 
     return ProcessExecutor(
-        process,
-        ut_provider=ut_provider,
-        wait_tasks=wait_tasks).execute(initial_data=initial_data)
+        process, ut_provider=ut_provider, wait_tasks=wait_tasks
+    ).execute(initial_data=initial_data)
 
 
 from adhesive.model.UserTaskProvider import UserTaskProvider

@@ -9,15 +9,9 @@ def populate_data(context):
 @adhesive.usertask("Single Checkbox UI")
 def single_checkbox(context, ui) -> None:
     ui.add_checkbox_group(
-        "checkbox",
-        title="0123456789012",
-        values=context.data.branches
+        "checkbox", title="0123456789012", values=context.data.branches
     )
-    ui.add_radio_group(
-        "radio",
-        title="0123456789012",
-        values=context.data.branches
-    )
+    ui.add_radio_group("radio", title="0123456789012", values=context.data.branches)
 
 
 @adhesive.usertask("Single Checkbox ui 2")

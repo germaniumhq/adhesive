@@ -25,13 +25,12 @@ def ensure_default_lane(process: AdhesiveProcess) -> None:
     if DEFAULT_LANE_ID.key in process.lanes:
         return
 
-    @adhesive.lane('default')
+    @adhesive.lane("default")
     def lane_default(context: adhesive.Token) -> adhesive.WorkspaceGenerator:
         yield context.workspace
 
 
-def allocate_workspace(process: AdhesiveProcess,
-                       event: ActiveEvent) -> None:
+def allocate_workspace(process: AdhesiveProcess, event: ActiveEvent) -> None:
     """
     Allocates a workspace. This matches against the available lanes,
     and creates the workspace.
@@ -52,8 +51,7 @@ def allocate_workspace(process: AdhesiveProcess,
     event.context.workspace = lane.workspace.clone()
 
 
-def deallocate_workspace(process: AdhesiveProcess,
-                         event: ActiveEvent) -> None:
+def deallocate_workspace(process: AdhesiveProcess, event: ActiveEvent) -> None:
     """
     Deallocates a workspace. This also checks for potentially the need
     to destroy workspaces (including parent ones)
@@ -76,8 +74,7 @@ def deallocate_workspace(process: AdhesiveProcess,
         lane = parent_lane
 
 
-def fill_in_lane_id(process: AdhesiveProcess,
-                    event: ActiveEvent) -> None:
+def fill_in_lane_id(process: AdhesiveProcess, event: ActiveEvent) -> None:
     """
     Ensures the lane_id is not the cloned one, but the one where the task
     resides.
@@ -97,12 +94,13 @@ def fill_in_lane_id(process: AdhesiveProcess,
     lane_definition = parent_process.get_lane_definition(event.task.id)
 
     event.context.lane = ExecutionLaneId(
-            lane_id=lane_definition.id,
-            lane_name=lane_definition.name)
+        lane_id=lane_definition.id, lane_name=lane_definition.name
+    )
 
 
-def find_existing_lane_for_event(process: AdhesiveProcess,
-                                 event: ActiveEvent) -> Optional[AdhesiveLane]:
+def find_existing_lane_for_event(
+    process: AdhesiveProcess, event: ActiveEvent
+) -> Optional[AdhesiveLane]:
     """
     Finds out the lane for an event (if it exists). This function
     happens after the `fill_lane_id` in the `allocate_workspace`, or
@@ -117,9 +115,11 @@ def find_existing_lane_for_event(process: AdhesiveProcess,
     return process.lanes[event.context.lane.key]
 
 
-def create_lane_for_event(process: AdhesiveProcess,
-                          event: ActiveEvent,
-                          execution_lane_id: Optional[ExecutionLaneId]) -> AdhesiveLane:
+def create_lane_for_event(
+    process: AdhesiveProcess,
+    event: ActiveEvent,
+    execution_lane_id: Optional[ExecutionLaneId],
+) -> AdhesiveLane:
     """
     Creates the lane object and the associated workspace. Happens
     in the `allocate_workspace` after the `fill_lane_id` se we're guaranteed to
@@ -128,8 +128,9 @@ def create_lane_for_event(process: AdhesiveProcess,
     assert event.context.lane
 
     for lane_definition in process.lane_definitions:
-        params = token_utils.matches(lane_definition.re_expressions,
-                                     event.context.lane.name)
+        params = token_utils.matches(
+            lane_definition.re_expressions, event.context.lane.name
+        )
 
         if params is None:
             continue
@@ -147,7 +148,9 @@ def create_lane_for_event(process: AdhesiveProcess,
         workspace = type(gen).__enter__(gen)
 
         if not isinstance(workspace, Workspace):
-            raise Exception(f"The lane yielded the wrong type {type(workspace)} instead of a Workspace")
+            raise Exception(
+                f"The lane yielded the wrong type {type(workspace)} instead of a Workspace"
+            )
 
         parent_lane: Optional[AdhesiveLane] = None
 
@@ -159,16 +162,18 @@ def create_lane_for_event(process: AdhesiveProcess,
             lane_id=event.context.lane,
             workspace=workspace,
             generator=gen,
-            parent_lane=parent_lane)
+            parent_lane=parent_lane,
+        )
 
         process.lanes[event.context.lane.key] = lane
 
         return lane
 
     raise Exception(
-            f"Unable to find any definition for lane "
-            f"`{event.context.lane.name}`. Use the @adhesive.lane "
-            f"decorator to create them, and yield the workspace.")
+        f"Unable to find any definition for lane "
+        f"`{event.context.lane.name}`. Use the @adhesive.lane "
+        f"decorator to create them, and yield the workspace."
+    )
 
 
 def create_default_workspace(context) -> Workspace:

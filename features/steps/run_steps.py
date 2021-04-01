@@ -10,14 +10,17 @@ test = unittest.TestCase()
 
 @step("I run adhesive on a process with a UT with a single checkbox")
 def run_the_process_with_a_single_checkbox(contxt):
-    subprocess.check_call(["python", "-m", "adhesive.mainapp"],
-                          cwd=f"{os.getcwd()}/features/processes/single_checkbox")
+    subprocess.check_call(
+        ["python", "-m", "adhesive.mainapp"],
+        cwd=f"{os.getcwd()}/features/processes/single_checkbox",
+    )
 
 
 @step("I run adhesive without UI redirection on '(.*?)'")
 def run_without_ui_redirection(contxt, folder):
-    subprocess.check_call(["python", "-m", "adhesive.mainapp"],
-                          cwd=f"{os.getcwd()}/features/{folder}")
+    subprocess.check_call(
+        ["python", "-m", "adhesive.mainapp"], cwd=f"{os.getcwd()}/features/{folder}"
+    )
 
 
 @step("I run adhesive on '(.*?)'")
@@ -80,13 +83,8 @@ def noop(context):
 
 
 @step("the '(.*?)' is executed only once")
-def task_executed_after_two_tasks(context,
-                                  waiting_task: str) -> None:
-    #raise Exception(f'Run  {waiting_task}')
-    print(f'Run  {waiting_task}')
-    print(f'STDOUT: {context.process_stdout}')
-    test.assertEqual(
-        1,
-        context.process_stdout.count(f'Run  {waiting_task}')
-    )
-
+def task_executed_after_two_tasks(context, waiting_task: str) -> None:
+    # raise Exception(f'Run  {waiting_task}')
+    print(f"Run  {waiting_task}")
+    print(f"STDOUT: {context.process_stdout}")
+    test.assertEqual(1, context.process_stdout.count(f"Run  {waiting_task}"))

@@ -7,7 +7,9 @@ from adhesive.execution.ExecutionTask import ExecutionTask
 from adhesive.graph.ProcessTask import ProcessTask
 from adhesive.execution.ExecutionMessageEvent import ExecutionMessageEvent
 from adhesive.execution.ExecutionLane import ExecutionLane
-from adhesive.execution.ExecutionMessageCallbackEvent import ExecutionMessageCallbackEvent
+from adhesive.execution.ExecutionMessageCallbackEvent import (
+    ExecutionMessageCallbackEvent,
+)
 
 from adhesive.execution import token_utils
 
@@ -24,9 +26,11 @@ from adhesive.model.generate_methods import display_unmatched_items, MatchableIt
 LOG = logging.getLogger(__name__)
 
 
-def _validate_tasks(self: 'ProcessExecutor',
-                    process: Process,
-                    missing_dict: Optional[Dict[str, MatchableItem]] = None) -> None:
+def _validate_tasks(
+    self: "ProcessExecutor",
+    process: Process,
+    missing_dict: Optional[Dict[str, MatchableItem]] = None,
+) -> None:
     """
     Recursively traverse the graph, and print to the user if it needs to implement
     some tasks.
@@ -47,16 +51,17 @@ def _validate_tasks(self: 'ProcessExecutor',
             continue
 
         # gateways don't have associated tasks with them.
-        if isinstance(task, Event) or \
-                isinstance(task, Gateway):
+        if isinstance(task, Event) or isinstance(task, Gateway):
             continue
 
         if isinstance(task, ScriptTask):
             if task.language in ("python", "text/python", "python3", "text/python3"):
                 continue
 
-            raise Exception(f"Unknown script task language: {task.language}. Only python and "
-                            f"text/python are supported.")
+            raise Exception(
+                f"Unknown script task language: {task.language}. Only python and "
+                f"text/python are supported."
+            )
 
         if isinstance(task, Task):
             adhesive_task = _match_task(self, task)
@@ -172,16 +177,28 @@ def _match_lane(self, lane_name: str) -> Optional[ExecutionLane]:
     return None
 
 
-def _match_message_event(self, message_event_name: str) -> Optional[
-    Union[ExecutionMessageEvent, ExecutionMessageCallbackEvent]]:
+def _match_message_event(
+    self, message_event_name: str
+) -> Optional[Union[ExecutionMessageEvent, ExecutionMessageCallbackEvent]]:
     for message_definition in self.adhesive_process.message_definitions:
-        if token_utils.matches(message_definition.re_expressions, message_event_name) is not None:
+        if (
+            token_utils.matches(message_definition.re_expressions, message_event_name)
+            is not None
+        ):
             return message_definition
 
-    for message_callback_definition in self.adhesive_process.message_callback_definitions:
-        if token_utils.matches(message_callback_definition.re_expressions, message_event_name) is not None:
+    for (
+        message_callback_definition
+    ) in self.adhesive_process.message_callback_definitions:
+        if (
+            token_utils.matches(
+                message_callback_definition.re_expressions, message_event_name
+            )
+            is not None
+        ):
             return message_callback_definition
 
     return None
+
 
 from adhesive.model.ProcessExecutor import ProcessExecutor

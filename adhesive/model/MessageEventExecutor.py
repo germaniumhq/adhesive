@@ -13,14 +13,18 @@ LOG = logging.getLogger(__name__)
 
 
 class MessageEventExecutor:
-    def __init__(self,
-                 root_event: ActiveEvent,
-                 message_event: MessageEvent,
-                 execution_message_event: ExecutionMessageEvent,
-                 enqueue_event) -> None:
+    def __init__(
+        self,
+        root_event: ActiveEvent,
+        message_event: MessageEvent,
+        execution_message_event: ExecutionMessageEvent,
+        enqueue_event,
+    ) -> None:
         self.id = str(uuid.uuid4())
 
-        self.root_event = root_event.clone(message_event, None)  # Used only to print the task name
+        self.root_event = root_event.clone(
+            message_event, None
+        )  # Used only to print the task name
         self.execution_message_event = execution_message_event
         self.enqueue_event = enqueue_event
 
@@ -38,21 +42,21 @@ class MessageEventExecutor:
         # event handler uses the context of the root_event, and that one is bounded
         # to the [root process] task.
         event_name_parsed = token_utils.parse_name(
-            self.root_event.context,
-            self.root_event.task.name)
+            self.root_event.context, self.root_event.task.name
+        )
 
         LOG.info(yellow("Run  ") + yellow(event_name_parsed, bold=True))
 
         # FIXME: implement a decent test
         try:
-            params = token_utils.matches(self.execution_message_event.re_expressions,
-                                         event_name_parsed)
+            params = token_utils.matches(
+                self.execution_message_event.re_expressions, event_name_parsed
+            )
 
-            for event_data in self.execution_message_event.code(self.root_event.context, *params):
-                self.enqueue_event(
-                    event=self.root_event.task,
-                    event_data=event_data
-                )
+            for event_data in self.execution_message_event.code(
+                self.root_event.context, *params
+            ):
+                self.enqueue_event(event=self.root_event.task, event_data=event_data)
         except Exception as e:
             LOG.error(red("Failed ") + red(event_name_parsed, bold=True))
             LOG.error(e)

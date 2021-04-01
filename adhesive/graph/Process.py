@@ -18,19 +18,19 @@ class Process(ExecutableNode):
     """
     A process for the build
     """
-    def __init__(self,
-                 *args,
-                 id: str,
-                 name: str = '[root process]',
-                 # parent_process is needed for subprocesses
-                 parent_process: Optional['Process'] = None) -> None:
+
+    def __init__(
+        self,
+        *args,
+        id: str,
+        name: str = "[root process]",
+        # parent_process is needed for subprocesses
+        parent_process: Optional["Process"] = None
+    ) -> None:
         if args:
             raise Exception("You need to pass in named arguments")
 
-        super(Process, self).__init__(
-            id=id,
-            name=name,
-            parent_process=parent_process)
+        super(Process, self).__init__(id=id, name=name, parent_process=parent_process)
 
         self._start_events: Dict[str, Union[StartEvent, ProcessTask]] = dict()
         self._message_events: Dict[str, MessageEvent] = dict()
@@ -44,7 +44,7 @@ class Process(ExecutableNode):
         self._lanes: Dict[str, Lane] = dict()
         self._graph = nx.MultiDiGraph()
 
-        self.error_task: Optional['ErrorBoundaryEvent'] = None
+        self.error_task: Optional["ErrorBoundaryEvent"] = None
 
     @property
     def start_events(self) -> Dict[str, Union[StartEvent, ProcessTask]]:
@@ -98,20 +98,21 @@ class Process(ExecutableNode):
         self.add_task(boundary_event)
 
         if isinstance(boundary_event, ErrorBoundaryEvent):
-            process_task = cast(ProcessTask, self._tasks[boundary_event.attached_task_id])
+            process_task = cast(
+                ProcessTask, self._tasks[boundary_event.attached_task_id]
+            )
             process_task.error_task = boundary_event
 
         if isinstance(boundary_event, TimerBoundaryEvent):
-            process_task = cast(ProcessTask, self._tasks[boundary_event.attached_task_id])
+            process_task = cast(
+                ProcessTask, self._tasks[boundary_event.attached_task_id]
+            )
             process_task.add_timer(boundary_event)
 
     def add_edge(self, edge: Edge) -> None:
         """Add an edge into the graph. """
         self._edges[edge.id] = edge
-        self._graph.add_edge(
-            edge.source_id,
-            edge.target_id,
-            _edge=edge)
+        self._graph.add_edge(edge.source_id, edge.target_id, _edge=edge)
 
     def add_start_event(self, event: StartEvent) -> None:
         self._start_events[event.id] = event
@@ -149,17 +150,16 @@ class Process(ExecutableNode):
 
         return False
 
-    def are_predecessors(self,
-                         task: ExecutableNode,
-                         potential_predecessors: Iterable[ExecutableNode]) -> Optional[str]:
+    def are_predecessors(
+        self, task: ExecutableNode, potential_predecessors: Iterable[ExecutableNode]
+    ) -> Optional[str]:
         predecessors = list(potential_predecessors)
         for potential_predecessor in predecessors:
             # FIXME: cross subprocess exceptions are handled as no predecessors
             try:
                 if nx.algorithms.has_path(
-                        self._graph,
-                        potential_predecessor.id,
-                        task.id):
+                    self._graph, potential_predecessor.id, task.id
+                ):
                     return potential_predecessor.id
             except Exception:
                 pass

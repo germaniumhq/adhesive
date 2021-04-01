@@ -1,12 +1,12 @@
 import adhesive
 
 
-@adhesive.task('Noop Task')
+@adhesive.task("Noop Task")
 def noop_task(context):
     pass
 
 
-@adhesive.task('Error Was Correctly Routed')
+@adhesive.task("Error Was Correctly Routed")
 def error_was_routed(context):
     context.data.error_was_routed = True
 
@@ -14,4 +14,3 @@ def error_was_routed(context):
 data = adhesive.bpmn_build("test.bpmn")
 
 assert data.error_was_routed
-

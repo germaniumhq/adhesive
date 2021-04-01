@@ -32,5 +32,5 @@ class TestLogRedirection(unittest.TestCase):
         self.assertEqual(original_stderr_fileno, sys.stderr.fileno())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

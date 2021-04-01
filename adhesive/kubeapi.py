@@ -9,20 +9,14 @@ from yamldict import YamlDict, YamlList
 from yamldict.YamlNavigator import YamlNavigator
 
 
-class KubeApi():
+class KubeApi:
     ALL: str = ":all:"
 
-    def __init__(self,
-                 workspace: Workspace,
-                 namespace: Optional[str] = None) -> None:
+    def __init__(self, workspace: Workspace, namespace: Optional[str] = None) -> None:
         self._workspace = workspace
         self._namespace = namespace
 
-    def get(self,
-            *args,
-            kind: str,
-            name: str,
-            namespace: Optional[str] = None) -> Any:
+    def get(self, *args, kind: str, name: str, namespace: Optional[str] = None) -> Any:
         """
         Gets an object from the kubernetes API
         :param args:
@@ -43,24 +37,24 @@ class KubeApi():
         elif namespace:
             command += f" --namespace={namespace}"
 
-        object_data = self._workspace.run(
-            command,
-            capture_stdout=True)
+        object_data = self._workspace.run(command, capture_stdout=True)
 
         assert object_data
 
         return YamlDict(
-            property_name=f"{{kind:{kind}}}",
-            content=yaml.safe_load(object_data))
+            property_name=f"{{kind:{kind}}}", content=yaml.safe_load(object_data)
+        )
 
     def yaml(self, content: str) -> YamlDict:
         return YamlDict(content=yaml.safe_load(content))
 
-    def getall(self,
-               *args,
-               kind: str,
-               filter: Optional[str] = None,
-               namespace: Optional[str] = None) -> YamlList:
+    def getall(
+        self,
+        *args,
+        kind: str,
+        filter: Optional[str] = None,
+        namespace: Optional[str] = None,
+    ) -> YamlList:
         """
         Gets an object from the kubernetes API
         :param args:
@@ -84,9 +78,7 @@ class KubeApi():
         elif namespace:
             command += f" --namespace={namespace}"
 
-        object_data = self._workspace.run(
-            command,
-            capture_stdout=True)
+        object_data = self._workspace.run(command, capture_stdout=True)
 
         assert object_data
 
@@ -94,17 +86,14 @@ class KubeApi():
 
         if content.kind == "List" and content.apiVersion == "v1":
             return YamlList(
-                property_name=f"{{kind:List[{kind}]}}",
-                content=content.items._raw)
+                property_name=f"{{kind:List[{kind}]}}", content=content.items._raw
+            )
 
-        return YamlList(property_name=f"{{kind:List[{kind}]}}",
-                        content=[content._raw])
+        return YamlList(property_name=f"{{kind:List[{kind}]}}", content=[content._raw])
 
-    def exists(self,
-               *args,
-               kind: str,
-               name: str,
-               namespace: Optional[str] = None) -> bool:
+    def exists(
+        self, *args, kind: str, name: str, namespace: Optional[str] = None
+    ) -> bool:
         """
         Checks if an object exists
         :param args:
@@ -131,11 +120,9 @@ class KubeApi():
         except Exception:
             return False
 
-    def delete(self,
-               *args,
-               kind: str,
-               name: str,
-               namespace: Optional[str] = None) -> None:
+    def delete(
+        self, *args, kind: str, name: str, namespace: Optional[str] = None
+    ) -> None:
         """
         Delete an object
         :param args:
@@ -159,11 +146,9 @@ class KubeApi():
 
         self._workspace.run(command)
 
-    def create(self,
-               *args,
-               kind: str,
-               name: str,
-               namespace: Optional[str] = None) -> None:
+    def create(
+        self, *args, kind: str, name: str, namespace: Optional[str] = None
+    ) -> None:
         """
         Delete an object
         :param args:
@@ -187,12 +172,14 @@ class KubeApi():
 
         self._workspace.run(command)
 
-    def scale(self,
-              *args,
-              kind: str,
-              name: str,
-              replicas: int,
-              namespace: Optional[str] = None) -> None:
+    def scale(
+        self,
+        *args,
+        kind: str,
+        name: str,
+        replicas: int,
+        namespace: Optional[str] = None,
+    ) -> None:
         """
         Delete an object
         :param args:
@@ -216,9 +203,11 @@ class KubeApi():
 
         self._workspace.run(command)
 
-    def apply(self,
-              content: Union[str, YamlDict, Dict, YamlList, List],
-              namespace: Optional[str] = None) -> None:
+    def apply(
+        self,
+        content: Union[str, YamlDict, Dict, YamlList, List],
+        namespace: Optional[str] = None,
+    ) -> None:
         """
         Apply the content
         :param content:

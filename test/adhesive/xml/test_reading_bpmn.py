@@ -64,7 +64,7 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual('data.route == "task"', task_route.condition)
 
         task_route = process.edges["_10"]
-        self.assertEqual('', task_route.condition)
+        self.assertEqual("", task_route.condition)
 
     def test_reading_parallel_gateway_bpmn(self) -> None:
         process = read_bpmn_file("test/adhesive/xml/gateway-parallel.bpmn")
@@ -104,10 +104,7 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
-        self.assertTrue(isinstance(
-            process.tasks["_4"],
-            ComplexGateway
-        ))
+        self.assertTrue(isinstance(process.tasks["_4"], ComplexGateway))
 
     def test_reading_error_event_interrupting(self) -> None:
         process = read_bpmn_file("test/adhesive/xml/error-event-interrupting.bpmn")
@@ -117,16 +114,15 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
-        boundary_event: ErrorBoundaryEvent = cast(ErrorBoundaryEvent, process.tasks["_6"])
-        self.assertTrue(isinstance(
-            process.tasks["_6"],
-            ErrorBoundaryEvent
-        ))
+        boundary_event: ErrorBoundaryEvent = cast(
+            ErrorBoundaryEvent, process.tasks["_6"]
+        )
+        self.assertTrue(isinstance(process.tasks["_6"], ErrorBoundaryEvent))
 
         self.assertTrue(boundary_event.cancel_activity)
         self.assertFalse(boundary_event.parallel_multiple)
 
-        parent_event: Task = cast(Task, process.tasks['_3'])
+        parent_event: Task = cast(Task, process.tasks["_3"])
         self.assertEqual(parent_event.error_task, boundary_event)
 
     def test_reading_human_task(self) -> None:
@@ -137,10 +133,7 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
-        self.assertTrue(isinstance(
-            process.tasks["_3"],
-            UserTask
-        ))
+        self.assertTrue(isinstance(process.tasks["_3"], UserTask))
 
     def test_reading_script_task(self) -> None:
         process = read_bpmn_file("test/adhesive/xml/script.bpmn")
@@ -150,14 +143,13 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
-        self.assertTrue(isinstance(
-            process.tasks["_3"],
-            ScriptTask
-        ))
+        self.assertTrue(isinstance(process.tasks["_3"], ScriptTask))
 
         script_task: ScriptTask = cast(ScriptTask, process.tasks["_3"])
         self.assertEqual("text/python", script_task.language)
-        self.assertEqual(textwrap.dedent("""\
+        self.assertEqual(
+            textwrap.dedent(
+                """\
             import uuid
             
             if not context.data.executions:
@@ -166,7 +158,10 @@ class TestReadingBpmn(unittest.TestCase):
             if context.task.name not in context.data.executions:
                 context.data.executions[context.task.name] = set()
             
-            context.data.executions[context.task.name].add(str(uuid.uuid4()))"""), script_task.script)
+            context.data.executions[context.task.name].add(str(uuid.uuid4()))"""
+            ),
+            script_task.script,
+        )
 
     def test_reading_loop(self) -> None:
         process = read_bpmn_file("test/adhesive/xml/loop.bpmn")
@@ -176,10 +171,7 @@ class TestReadingBpmn(unittest.TestCase):
         self.assertEqual(1, len(process.start_events))
         self.assertEqual(1, len(process.end_events))
 
-        self.assertTrue(isinstance(
-            process.tasks["_5"],
-            Task
-        ))
+        self.assertTrue(isinstance(process.tasks["_5"], Task))
 
         loop = cast(ProcessTask, process.tasks["_5"]).loop
         assert loop
@@ -214,5 +206,5 @@ class TestReadingBpmn(unittest.TestCase):
             read_bpmn_file("test/adhesive/xml/unsupported-call-activity.bpmn")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

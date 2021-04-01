@@ -30,7 +30,7 @@ class AdhesiveConfig:
         ]
 
     @property
-    def boolean(self) -> 'AdhesiveBooleanResolver':
+    def boolean(self) -> "AdhesiveBooleanResolver":
         return AdhesiveBooleanResolver(self)
 
 
@@ -41,4 +41,3 @@ class AdhesiveBooleanResolver:
     def __getattr__(self, key: str) -> bool:
         value = self._config.__getattr__(key)
         return convert_to_bool(value)
-

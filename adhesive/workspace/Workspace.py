@@ -15,27 +15,21 @@ class Workspace(ABC):
     :param token_id: The id of the current token being processed.
     :param pwd: The current folder.
     """
-    def __init__(self,
-                 execution_id: str,
-                 token_id: str,
-                 pwd: str) -> None:
+
+    def __init__(self, execution_id: str, token_id: str, pwd: str) -> None:
         self.execution_id = execution_id
         self.token_id = token_id
         self.pwd = pwd
 
     @abstractmethod
-    def write_file(
-            self,
-            file_name: str,
-            content: str) -> None:
+    def write_file(self, file_name: str, content: str) -> None:
         pass
 
     # FIXME: split this into two methods, instead of the `capture_stdout` flag
     @abstractmethod
-    def run(self,
-            command: str,
-            shell: str = "/bin/sh",
-            capture_stdout: bool = False) -> Union[str, None]:
+    def run(
+        self, command: str, shell: str = "/bin/sh", capture_stdout: bool = False
+    ) -> Union[str, None]:
         """
         Run a new command in the current workspace.
 
@@ -46,9 +40,7 @@ class Workspace(ABC):
         pass
 
     @abstractmethod
-    def run_output(self,
-            command: str,
-            shell: str = "/bin/sh") -> str:
+    def run_output(self, command: str, shell: str = "/bin/sh") -> str:
         """
         Run a new command in the current workspace, and returns the stdout as a string.
         If the command returns a non-zero exit code, an exception is thrown.
@@ -82,9 +74,7 @@ class Workspace(ABC):
         pass
 
     @abstractmethod
-    def copy_to_agent(self,
-                      from_path: str,
-                      to_path: str) -> None:
+    def copy_to_agent(self, from_path: str, to_path: str) -> None:
         """
         Copy the files to the agent from the current disk.
         :param from_path:
@@ -94,9 +84,7 @@ class Workspace(ABC):
         pass
 
     @abstractmethod
-    def copy_from_agent(self,
-                        from_path: str,
-                        to_path: str) -> None:
+    def copy_from_agent(self, from_path: str, to_path: str) -> None:
         """
         Copy the files from the agent to the current disk.
         :param from_path:
@@ -145,7 +133,7 @@ class Workspace(ABC):
             self.pwd = current_folder
 
     @abstractmethod
-    def clone(self) -> 'Workspace':
+    def clone(self) -> "Workspace":
         """
         Clone the current workspace, so parallel tasks can do
         things such as chdir, or temp_folder.

@@ -12,15 +12,18 @@ LOG = logging.getLogger(__name__)
 
 
 class KubeWorkspace(Workspace):
-    def __init__(self,
-                 workspace: Workspace,
-                 pwd: Optional[str] = None,
-                 pod_name: Optional[str] = None,
-                 namespace: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        workspace: Workspace,
+        pwd: Optional[str] = None,
+        pod_name: Optional[str] = None,
+        namespace: Optional[str] = None,
+    ) -> None:
         super(KubeWorkspace, self).__init__(
             execution_id=workspace.execution_id,
             token_id=workspace.token_id,
-            pwd=pwd if pwd else workspace.pwd)
+            pwd=pwd if pwd else workspace.pwd,
+        )
 
         self.parent_workspace = workspace
 
@@ -32,10 +35,9 @@ class KubeWorkspace(Workspace):
         self.pod_name: str = pod_name
         self.namespace = namespace
 
-    def run(self,
-            command: str,
-            shell: str = "/bin/sh",
-            capture_stdout: bool = False) -> Union[str, None]:
+    def run(
+        self, command: str, shell: str = "/bin/sh", capture_stdout: bool = False
+    ) -> Union[str, None]:
 
         LOG.debug(f"Workspace: kube({self.id}).run: {command}")
         parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
@@ -49,9 +51,7 @@ class KubeWorkspace(Workspace):
 
         return self.parent_workspace.run(exec_command, capture_stdout=capture_stdout)
 
-    def run_output(self,
-                   command: str,
-                   shell: str = "/bin/sh") -> str:
+    def run_output(self, command: str, shell: str = "/bin/sh") -> str:
         LOG.debug(f"Workspace: kube({self.id}).run: {command}")
         parsed_command = f"cd {shlex.quote(self.pwd)};{command}"
 
@@ -64,10 +64,7 @@ class KubeWorkspace(Workspace):
 
         return self.parent_workspace.run_output(exec_command)
 
-    def write_file(
-            self,
-            file_name: str,
-            content: str) -> None:
+    def write_file(self, file_name: str, content: str) -> None:
         """
         Write a file on the remote docker instance. Since we can't
         really just write files, we create a temp file, then we
@@ -84,7 +81,7 @@ class KubeWorkspace(Workspace):
         finally:
             self.parent_workspace.rm(tmp_file)
 
-    def rm(self, path: Optional[str]=None) -> None:
+    def rm(self, path: Optional[str] = None) -> None:
         """
         Remove a path from the container. We're calling `rm` to do
         the actual operation.
@@ -104,29 +101,26 @@ class KubeWorkspace(Workspace):
 
         self.run(f"mkdir -p {shlex.quote(full_path)}")
 
-    def copy_to_agent(self,
-                      from_path: str,
-                      to_path: str):
+    def copy_to_agent(self, from_path: str, to_path: str):
         if self.namespace is not None:
             self.parent_workspace.run(
                 f"kubectl cp --namespace {shlex.quote(self.namespace)} "
-                f"{from_path} {self.pod_name}:{to_path}")
+                f"{from_path} {self.pod_name}:{to_path}"
+            )
             return
 
-        self.parent_workspace.run(
-                f"kubectl cp {from_path} {self.pod_name}:{to_path}")
+        self.parent_workspace.run(f"kubectl cp {from_path} {self.pod_name}:{to_path}")
 
-    def copy_from_agent(self,
-                        from_path: str,
-                        to_path: str):
+    def copy_from_agent(self, from_path: str, to_path: str):
         if self.namespace is not None:
             self.parent_workspace.run(
-                    f"kubectl cp --namespace {shlex.quote(self.namespace)} "
-                    f"{self.pod_name}:{from_path} {to_path}")
+                f"kubectl cp --namespace {shlex.quote(self.namespace)} "
+                f"{self.pod_name}:{from_path} {to_path}"
+            )
 
         self.parent_workspace.run(f"kubectl cp {self.pod_name}:{from_path} {to_path}")
 
-    def clone(self) -> 'KubeWorkspace':
+    def clone(self) -> "KubeWorkspace":
         # FIXME: should return the parent workspace somehow
         return KubeWorkspace(
             workspace=self.parent_workspace,
@@ -137,20 +131,18 @@ class KubeWorkspace(Workspace):
 
     def _destroy(self):
         self.parent_workspace.run(
-                f"kubectl rm "
-                f"--namespace {shlex.quote(self.namespace)} "
-                f"-f {self.pod_name}")
+            f"kubectl rm "
+            f"--namespace {shlex.quote(self.namespace)} "
+            f"-f {self.pod_name}"
+        )
 
 
 @contextmanager
-def inside(workspace: Workspace,
-           pod_name: str,
-           namespace: Optional[str] = None):
+def inside(workspace: Workspace, pod_name: str, namespace: Optional[str] = None):
     try:
-        w = KubeWorkspace(workspace=workspace,
-                          pod_name=pod_name,
-                          pwd="/",
-                          namespace=namespace)
+        w = KubeWorkspace(
+            workspace=workspace, pod_name=pod_name, pwd="/", namespace=namespace
+        )
         yield w
     finally:
         pass

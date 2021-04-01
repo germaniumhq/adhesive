@@ -18,18 +18,19 @@ class GatewayController:
         if isinstance(event.task, ExclusiveGateway):
             gateway = cast(Gateway, event.task)
             outgoing_edges = GatewayController.route_single_output(
-                process, gateway, event)
+                process, gateway, event
+            )
         else:
             outgoing_edges = GatewayController.route_all_outputs(
-                process, event.task, event)
+                process, event.task, event
+            )
 
         return outgoing_edges
 
     @staticmethod
     def route_single_output(
-            process: Process,
-            gateway: Gateway,
-            event: ActiveEvent) -> List[Edge]:
+        process: Process, gateway: Gateway, event: ActiveEvent
+    ) -> List[Edge]:
 
         default_edge = None
         result_edge = None
@@ -61,9 +62,8 @@ class GatewayController:
 
     @staticmethod
     def route_all_outputs(
-            process: Process,
-            task: ProcessTask,
-            event: ActiveEvent) -> List[Edge]:
+        process: Process, task: ProcessTask, event: ActiveEvent
+    ) -> List[Edge]:
 
         result_edges = []
         edges = process.get_outgoing_edges(task.id)
@@ -78,12 +78,10 @@ class GatewayController:
         return result_edges
 
 
-def eval_edge(condition: str,
-              event: ActiveEvent) -> Any:
+def eval_edge(condition: str, event: ActiveEvent) -> Any:
     # FIXME: for some reason if this is in the get_eval_data() the script
     # task executions are failing.
     # FIXME: use the yaml parsing, or just another Data object?
     eval_data = addict.Dict(token_utils.get_eval_data(event.context))
 
     return eval(condition, globals(), eval_data)
-
