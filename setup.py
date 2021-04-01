@@ -12,7 +12,7 @@ extras_require = {
 
 setup(
     name='adhesive',
-    version="2021.3.13",
+    version="2021.4.1",
     description='adhesive',
     long_description=readme,
     author='Bogdan Mustiata',
