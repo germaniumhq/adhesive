@@ -10,7 +10,7 @@ extras_require = {"ssh": ["paramiko==2.6.0"]}
 
 setup(
     name="adhesive",
-    version="2021.4.2",
+    version="2021.4.3",
     description="adhesive",
     long_description=readme,
     author="Bogdan Mustiata",
@@ -29,7 +29,7 @@ setup(
         "python-dateutil==2.8.1",
         "yamldict >= 1.2.0, <2.0",
         "Pebble==4.6.1",
-        "cached_task==2021.4.2",
+        "cached_task==2021.4.3",
     ],
     extras_require=extras_require,
     packages=packages,

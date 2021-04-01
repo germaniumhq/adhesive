@@ -10,4 +10,4 @@ schedule==0.6.0
 python-dateutil==2.8.1
 yamldict >= 1.2.0, <2.0
 Pebble==4.6.1
-cached_task==2021.4.2
+cached_task==2021.4.3
