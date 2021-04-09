@@ -68,7 +68,7 @@ class DockerWorkspace(Workspace):
         LOG.debug(f"Workspace: docker({self.id}).run: {command}")
 
         return self.parent_workspace.run(
-            f"docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}",
+            f"set -e; docker exec -w {shlex.quote(self.pwd)} {shlex.quote(self.container_id)} {shell} -c {shlex.quote(command)}",
             capture_stdout=capture_stdout,
         )
 
