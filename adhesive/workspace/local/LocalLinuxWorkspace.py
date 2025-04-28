@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
-from distutils.dir_util import copy_tree
+import shutil
 from typing import Optional, Union
 
 from adhesive.workspace.Workspace import Workspace
@@ -91,7 +91,7 @@ class LocalLinuxWorkspace(Workspace):
 
     def copy_to_agent(self, from_path: str, to_path: str):
         LOG.debug("copy {} to {}", from_path, to_path)
-        copy_tree(from_path, to_path)
+        shutil.copytree(from_path, to_path, dirs_exist_ok=True)
 
     def copy_from_agent(self, from_path: str, to_path: str):
         LOG.debug("copy {} to {}", from_path, to_path)

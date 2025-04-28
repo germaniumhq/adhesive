@@ -1,0 +1,6 @@
+[ ] - refactor the config reading into something reasonable
+[ ] - fix the tests with the parallel/serial execution
+[ ] - fix the tests with the message generation
+[ ] - fix the workspace_ssh tests
+[ ] - implement live reloading
+[ ] - implement UI for the tokens view / restart (synthetic tokens?)

@@ -1,1 +1,11 @@
-_gbs/lin64/_gbs/prepare-build2/requirements.txt
+addict==2.4.0
+networkx==3.4.2
+npyscreen==4.10.5
+colorama==0.4.6
+termcolor_util==2022.11.1
+PyYAML==6.0.2
+paramiko==3.5.1         # optional
+click == 8.1.8
+schedule==1.2.2
+python-dateutil==2.8.2
+Pebble==5.1.1
