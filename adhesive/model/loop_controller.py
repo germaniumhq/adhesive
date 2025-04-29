@@ -125,9 +125,9 @@ def create_collection_loop(clone_event, event, loop_data):
             new_event.context.loop._value = loop_data[item]
 
         # FIXME: this knows way too much about how the ExecutionTokens are
-        # supposed to function
+        #        supposed to function
         # FIXME: rename all event.contexts to event.token. Context is only
-        # true in the scope of an execution task.
+        #        true in the scope of an execution task.
         LOG.debug(f"Loop value {new_event.context.loop.value}")
 
         index += 1

@@ -105,9 +105,9 @@ class ExecutionLoop:
                 new_event.context.loop._value = result[item]
 
             # FIXME: this knows way too much about how the ExecutionTokens are
-            # supposed to function
+            #        supposed to function
             # FIXME: rename all event.contexts to event.token. Context is only
-            # true in the scope of an execution task.
+            #        true in the scope of an execution task.
             new_event.context._update_title_from_data()
 
             index += 1

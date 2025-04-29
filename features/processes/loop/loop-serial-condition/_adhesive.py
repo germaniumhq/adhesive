@@ -5,16 +5,17 @@ test = unittest.TestCase()
 
 
 @adhesive.task("Task")
-def task(context):
-    context.data.execution_count += 1
-    context.data.parallel_check += context.loop.index
+def task(token):
+    token.data.execution_count += 1
+    token.data.parallel_check += token.loop.index
+    print(token.loop.index)
 
-    if context.loop.index >= 2:
-        context.data.execution_count = False
+    if token.loop.index >= 2:
+        token.data.loop_condition = False
 
 
 data = adhesive.bpmn_build(
-    "loop-parallel-condition.bpmn",
+    "loop-serial-condition.bpmn",
     initial_data={
         "loop_condition": "True",
         "execution_count": 0,
