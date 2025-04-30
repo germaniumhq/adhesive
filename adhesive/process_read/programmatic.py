@@ -383,7 +383,7 @@ class ProcessBuilder:
             self.process.add_edge(new_edge)
 
         if not when:
-            self.pre_current_when_task = self.current_task
+            self.pre_current_when_task = new_task
 
         self.current_task = new_task
 

@@ -12,34 +12,34 @@ def find_open_port() -> int:
 
 
 @adhesive.lane("ssh")
-def lane_ssh(context):
+def lane_ssh(token):
     with ssh.inside(
-        context.workspace,
+        token.workspace,
         "172.17.0.1",
         username="root",
         password="root",
-        port=context.data.ssh_port,
+        port=token.data.ssh_port,
     ) as w:
         yield w
 
 
 @adhesive.task("Start SSH Server")
-def start_ssh_server(context):
+def start_ssh_server(token):
     print("starting server...")
-    context.data.ssh_port = find_open_port()
-    container_id = context.workspace.run(
-        f"docker run -d -p {context.data.ssh_port}:22 rastasheep/ubuntu-sshd:18.04",
+    token.data.ssh_port = find_open_port()
+    container_id = token.workspace.run(
+        f"docker run -d -p {token.data.ssh_port}:22 rastasheep/ubuntu-sshd:18.04",
         capture_stdout=True,
     )
 
-    context.data.container_id = container_id
+    token.data.container_id = container_id
     print("[OK] started server")
 
 
 @adhesive.task("Task", lane="ssh", loop="items")
-def run_ls_in_ssh(context):
-    print(context.workspace)
-    context.workspace.run(
+def run_ls_in_ssh(token):
+    print(token.workspace)
+    token.workspace.run(
         f"""
         whoami
         ls -la
@@ -48,9 +48,9 @@ def run_ls_in_ssh(context):
 
 
 @adhesive.task("Shutdown Server")
-def shutdown_server(context):
+def shutdown_server(token):
     print("shutting down server...")
-    context.workspace.run(f"docker rm -f {context.data.container_id}")
+    token.workspace.run(f"docker rm -f {token.data.container_id}")
     print("[OK] server was shutdown")
 
 

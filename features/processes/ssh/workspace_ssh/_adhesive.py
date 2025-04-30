@@ -15,7 +15,7 @@ def find_open_port() -> int:
     return port
 
 
-@adhesive.task("Start\ SSH\ Server")
+@adhesive.task("Start SSH Server")
 def start_ssh_server(context):
     print("starting server...")
     context.data.ssh_port = find_open_port()
@@ -68,7 +68,7 @@ def run_ls_inside_server(context):
         assert_equal(pwd, w.pwd)
 
 
-@adhesive.task("Test\ write_file\ API")
+@adhesive.task("Test write_file API")
 def test_write_file_api(context):
     with ssh.inside(
         context.workspace,
@@ -84,20 +84,20 @@ def test_write_file_api(context):
         assert "yay" == test_content
 
 
-@adhesive.task("Shutdown\ Server")
+@adhesive.task("Shutdown Server")
 def shutdown_server(context):
     print("shutting down server...")
     context.workspace.run(f"docker rm -f {context.data.container_id}")
     print("[OK] server was shutdown")
 
 
-@adhesive.task("Test\ Failed")
+@adhesive.task("Test Failed")
 def test_failed(context):
     print(context.data.as_dict())
     context.data.test_failed = True
 
 
-@adhesive.task("Check\ if\ test\ failed")
+@adhesive.task("Check if test failed")
 def check_if_test_failed(context):
     if context.data._error:
         print("Uh oh, we got an error in the ssh execution")
