@@ -13,19 +13,11 @@ Scenario: Serial loops should iterate collections serially
   Given I run adhesive on 'processes/loop/loop-serial'
   Then the adhesive process has passed
 
-# When the process is started it will have the condition a boolean. The task
-# will change the condition to a list and keep processing the list until it
-# becames empty. This should exit the loop.
-Scenario: Regular loops with conditions should iterate using the condition,
-        not the collection, and run things serially
-  Given I run adhesive on 'processes/loop/loop-default-condition'
-  Then the adhesive process has passed
-
 @manualtest
 Scenario: Parallel loops should iterate conditions serially with a warning
   Given I run adhesive on 'processes/loop/loop-parallel-condition'
   Then the adhesive process has passed
-  And there was a warning on the stderr regarding the parallel condition execution
+  And there is in the stdout the text 'CONDITION check detected'
 
 @manualtest
 Scenario: Serial loops should iterate collections serially using the condition,

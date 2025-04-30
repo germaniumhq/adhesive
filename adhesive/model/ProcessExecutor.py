@@ -312,9 +312,6 @@ class ProcessExecutor:
             callback(event, data)
             event, data = self.events.pop(state)
 
-    def new_event(self, event: ActiveEvent, data: Any):
-        self.events.transition(event=event, state=ActiveEventState.PROCESSING)
-
     def execute_process_event_loop(self) -> None:
         """
         Main event loop. Processes the events from a process until no more
@@ -359,63 +356,9 @@ class ProcessExecutor:
             # inadvertently exit to soon, before trying to clone the enqueued events.
             self.read_enqueued_events()
 
+            # if we have some futures that finished, we
             while self.done_futures:
-                future = self.done_futures.pop()
-
-                if future not in self.futures:
-                    raise Exception(
-                        f"Adhesive BUG: Future {future} not registered in futures. This "
-                        f"shouldn't happen. Please report it"
-                    )
-
-                future_mapping = self.futures[future]
-                self.remove_future(future)
-
-                # a message executor has finished
-                if future_mapping.event_id == "__message_executor":
-                    # FIXME: this is duplicated code from done_event
-                    # check sub-process termination
-                    found = False
-                    for ev in self.events.excluding(ActiveEventState.DONE):
-                        if (
-                            ev.parent_id == self.root_event.token_id
-                            and ev != self.root_event
-                        ):
-                            found = True
-                            break
-
-                    # FIXME: why could this be not found?
-                    if not found:
-                        self.events.transition(
-                            event=self.root_event,
-                            state=ActiveEventState.ROUTING,
-                            data=self.root_event.context,
-                        )
-
-                    continue
-
-                try:
-                    context = future.result()
-
-                    self.events.transition(
-                        event=future_mapping.event_id,
-                        state=ActiveEventState.ROUTING,
-                        data=context,
-                    )
-                except CancelTaskFinishModeException:
-                    pass
-                except concurrent.futures.CancelledError:
-                    pass
-                except Exception as e:
-                    # handle task error might destroy other events that are also in
-                    # the done_futures, and should be processed later.
-                    self.handle_task_error(
-                        TaskError(
-                            error=traceback.format_exc(),
-                            exception=e,
-                            failed_event=self.events[future_mapping.event_id],
-                        )
-                    )
+                self.process_done_futures()
 
             # we evaluate all timers that might still be pending
             schedule.run_pending()
@@ -482,15 +425,78 @@ class ProcessExecutor:
         new_events = []
 
         # we release the lock ASAP
-        with self.enqueued_events_lock:
-            new_events.extend(self.enqueued_events)
-            self.enqueued_events.clear()
+        if self.enqueued_events:
+            with self.enqueued_events_lock:
+                new_events.extend(self.enqueued_events)
+                self.enqueued_events.clear()
 
         for event, event_data in new_events:
             new_event = self.clone_event(
                 self.root_event, event, parent_id=self.root_event.token_id
             )
             new_event.context.data.event = event_data
+
+    def process_done_futures(self) -> None:
+        """
+        Processes the futures that are done.
+        """
+        future = self.done_futures.pop()
+
+        if future not in self.futures:
+            raise Exception(
+                f"Adhesive BUG: Future {future} not registered in futures. This "
+                f"shouldn't happen. Please report it"
+            )
+
+        future_mapping = self.futures[future]
+        self.remove_future(future)
+
+        # a message executor has finished
+        if future_mapping.event_id == "__message_executor":
+            # FIXME: this is duplicated code from done_event
+            # check sub-process termination
+            found = False
+
+            for ev in self.events.excluding(ActiveEventState.DONE):
+                if (
+                        ev.parent_id == self.root_event.token_id
+                        and ev != self.root_event
+                ):
+                    found = True
+                    break
+
+            # FIXME: why could this be not found?
+            if not found:
+                self.events.transition(
+                    event=self.root_event,
+                    state=ActiveEventState.ROUTING,
+                    data=self.root_event.context,
+                )
+
+            return
+
+        try:
+            token = future.result()
+
+            self.events.transition(
+                event=future_mapping.event_id,
+                state=ActiveEventState.ROUTING,
+                data=token,
+            )
+        except CancelTaskFinishModeException:
+            pass
+        except concurrent.futures.CancelledError:
+            pass
+        except Exception as e:
+            # handle task error might destroy other events that are also in
+            # the done_futures, and should be processed later.
+            self.handle_task_error(
+                TaskError(
+                    error=traceback.format_exc(),
+                    exception=e,
+                    failed_event=self.events[future_mapping.event_id],
+                )
+            )
 
     def get_parent(self, token_id: str) -> ActiveEvent:
         """
@@ -609,6 +615,13 @@ class ProcessExecutor:
         self.cancel_subtree(
             event, CancelTaskFinishModeException(root_node=True, task_error=task_error)
         )
+
+    def new_event(self, event: ActiveEvent, data: Any):
+        """
+        An event from the new state will get processed. The event already has
+        its data associated with it.
+        """
+        self.events.transition(event=event, state=ActiveEventState.PROCESSING)
 
     def processing_event(self, event: ActiveEvent, data: Any) -> None:
         # if there is no processing needed, we skip to routing
@@ -850,12 +863,15 @@ class ProcessExecutor:
             data=event.context,
         )
 
-    def routing_event(self, event: ActiveEvent, data: Any) -> None:
-
+    def routing_event(self, event: ActiveEvent, token: Any) -> None:
+        """
+        Routing makes decisions what to do with the event after it finished
+        execution.
+        """
         try:
             # Since we're in routing, we passed the actual running, so we need to update the
             # context with the new execution token.
-            event.context = data
+            event.context = token
 
             # we don't route, since we have live events created from the
             # INITIAL loop type

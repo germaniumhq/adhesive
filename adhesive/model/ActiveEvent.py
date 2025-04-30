@@ -38,13 +38,16 @@ PRE_RUN_STATES = {
     ActiveEventState.WAITING,
 }
 
-
 class ActiveEvent:
     """
-    An event that passes through the system. It can fork
-    in case there are multiple executions going down.
-    """
+    An event that passes through the system. It can fork in case there
+    are multiple executions going down. The event is considered by adhesive
+    framework _only_, not the implementation of the steps. The Event is
+    being used for routing, duplicated, etc.
 
+    The data relevant to the task is present in the token field, and this is
+    being sent to the task implementations.
+    """
     def __init__(
         self,
         execution_id: str,
@@ -86,13 +89,13 @@ class ActiveEvent:
         """
         Clone the current event for another task id target.
         """
-        result = ActiveEvent(
+        active_event = ActiveEvent(
             execution_id=self.execution_id,
             parent_id=parent_id,  # FIXME: why, if this is a clone
             context=self.context.clone(task),
             deduplication_id=self.deduplication_id,
         )
-        result.context.token_id = result.token_id
+        active_event.context.token_id = active_event.token_id
 
         # if we are exiting the current loop, we need to switch to the
         # parent loop.
@@ -109,13 +112,13 @@ class ActiveEvent:
             and self.context.task != task
             and parent_id == self.parent_id
         ):
-            result.context.loop = self.context.loop.parent_loop
+            active_event.context.loop = self.context.loop.parent_loop
         else:
-            result.context.loop = self.context.loop
+            active_event.context.loop = self.context.loop
 
-        result.context._update_title_from_data()
+        active_event.context._update_title_from_data()
 
-        return result
+        return active_event
 
     @property
     def task(self) -> ExecutableNode:

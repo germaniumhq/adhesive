@@ -81,8 +81,6 @@ def create_condition_loop(clone_event, event, loop_data):
 
     new_event = clone_event(event, event.task)
 
-    new_event.loop_type = ActiveLoopType.CONDITION
-
     assert new_event.context
 
     new_event.context.loop = ExecutionLoop(
@@ -93,6 +91,11 @@ def create_condition_loop(clone_event, event, loop_data):
         index=0,
         expression=event.task.loop.loop_expression,
     )
+
+    if event.task.loop.parallel:
+        LOG.warning(f"Task `{event.task.name}` marked as parallel, however CONDITION check detected. Conditional looping can only be serial.")
+
+    new_event.loop_type = ActiveLoopType.CONDITION
 
     return
 
@@ -197,7 +200,7 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
     if event.loop_type != ActiveLoopType.CONDITION:
         return False
 
-    result = evaluate_loop_expression(event)
+    result = evaluate_bool_loop_expression(event)
 
     if not result:
         return False
@@ -221,6 +224,9 @@ def next_conditional_loop_iteration(event: ActiveEvent, clone_event) -> bool:
 
 
 def is_collection(what: Any) -> bool:
+    if isinstance(what, str) or isinstance(what, int):
+        return False
+
     return hasattr(what, "__iter__")
 
 
@@ -235,3 +241,21 @@ def evaluate_loop_expression(event: ActiveEvent) -> Any:
     result = eval(event.task.loop.loop_expression, {}, eval_data)
 
     return result
+
+def evaluate_bool_loop_expression(event: ActiveEvent) -> bool:
+    """
+    Evaluates a loop expression as a boolean. That means strings such as "True" or "False"
+    are also correctly interpreted. This is only for conditional loops.
+    """
+    loop_value = evaluate_loop_expression(event)
+
+    if isinstance(loop_value, bool):
+        return loop_value
+
+    if isinstance(loop_value, str):
+        return loop_value.lower() in ("true", "t", "1")
+
+    if isinstance(loop_value, int):
+        return loop_value != 0
+
+    raise Exception("unsupported `bool` loop expression %s in %s.", loop_value, event)
