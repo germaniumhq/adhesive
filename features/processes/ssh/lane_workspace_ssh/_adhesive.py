@@ -36,7 +36,7 @@ def start_ssh_server(token):
     print("[OK] started server")
 
 
-@adhesive.task("Task", lane="ssh", loop="items")
+@adhesive.task("Task")
 def run_ls_in_ssh(token):
     print(token.workspace)
     token.workspace.run(
@@ -54,10 +54,16 @@ def shutdown_server(token):
     print("[OK] server was shutdown")
 
 
+@adhesive.task("Raise Error")
+def raise_error(token: adhesive.Token) -> None:
+    raise token.data.event
+
+
 # We need to create more than the number of available channels, to see if we leak
 # channels with executions. Another limit is the amount of parallel connections.
 # For that we configure the pool_size in the `.adhesive/config.yml` in this folder.
-adhesive.build(
+adhesive.bpmn_build(
+    "lane-workspace.bpmn",
     initial_data={
         "items": range(40),
     }
